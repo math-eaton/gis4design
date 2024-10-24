@@ -1,7 +1,18 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
-import * as d3 from 'd3-geo'; // Import d3-geo for geographic projections
+import * as satellite from 'satellite.js';
+
+// satellite stuff
+
+const tleLine1 = '1 25544U 98067A   21275.54791667  .00000265  00000-0  12841-4 0  9990';
+const tleLine2 = '2 25544  51.6447 154.2736 0001996  84.2664  13.1377 15.48854069312036';
+
+const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
+
+
+
+//
 
 // 'A' key toggles ascii
 // 'W' key toggles wireframe
@@ -17,8 +28,11 @@ export function orbitalView(containerId) {
     let directionalLight;
     let sphere; // Global reference to the sphere
     const sphereRadius = 1; // Define the sphere and graticule radius here
-    const earthRotationSpeed = 0.001; // Simulate Earth's rotation speed 
+    const earthRotationSpeed = 0.0002; // Simulate Earth's rotation speed 
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
+
+    let satelliteMesh; // Reference to the satellite mesh
+
 
     window.addEventListener('keydown', (event) => {
         if (event.key === 'A' || event.key === 'a') {
@@ -94,6 +108,7 @@ export function orbitalView(containerId) {
         scene.add(pivot);
     
         addEarthSphere();
+        addSatellite(); // Add the satellite
 
         // Load and visualize the graticules
         loadAllData();
@@ -104,20 +119,50 @@ export function orbitalView(containerId) {
 
     function initLights() {
         // Ambient light for general low-level lighting
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.5); // Reduce ambient light intensity
+        const ambientLight = new THREE.AmbientLight(0x404040, 1); 
         scene.add(ambientLight);
         
         // Directional light acting as the Sun (Fixed, static position)
-        directionalLight = new THREE.DirectionalLight(0xffffff, 20); // Increase intensity to brighten the day side
+        directionalLight = new THREE.DirectionalLight(0x696969, 100); // Increase intensity to brighten the day side
         directionalLight.position.set(100, 0, 100); // Sun position (far from Earth)
         directionalLight.castShadow = true; // Enable shadows
         scene.add(directionalLight);
         
-        // Optional: Create a hemisphere light for more dynamic lighting
         const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5);
         scene.add(hemiLight);
     }
-    
+
+    function addSatellite() {
+        const geometry = new THREE.SphereGeometry(0.01, 8, 8); // Increase the satellite size for better visibility
+        const material = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Red color for satellite
+        satelliteMesh = new THREE.Mesh(geometry, material);
+
+        // Initial satellite position (calculated from TLE data)
+        const position = getSatellitePosition();
+        satelliteMesh.position.copy(position);
+        pivot.add(satelliteMesh); // Add satellite to pivot for rotation
+    }
+
+    function getSatellitePosition() {
+        // Get the satellite's position in ECI (Earth-Centered Inertial) coordinates
+        const now = new Date();
+        const positionAndVelocity = satellite.propagate(satrec, now);
+        const positionEci = positionAndVelocity.position;
+        const gmst = satellite.gstime(now);
+        const positionGd = satellite.eciToGeodetic(positionEci, gmst);
+
+        // Extract lat, lon, and altitude
+        const longitude = satellite.degreesLong(positionGd.longitude);
+        const latitude = satellite.degreesLat(positionGd.latitude);
+        const altitude = positionGd.height * 0.001; // Scale the altitude for better visibility
+
+        // Convert to a 3D vector position based on Earth's radius and satellite altitude
+        let altitudeFactor = 1;
+        const satellitePosition = latLonToVector3(latitude, longitude, sphereRadius + (altitude * altitudeFactor)); // Altitude exaggerated by factor
+        return satellitePosition;
+    }
+
+
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -133,6 +178,10 @@ function animate() {
     }
 
     controls.update();
+
+    // Update satellite position based on current time
+    satelliteMesh.position.copy(getSatellitePosition());
+
     
     // Render the scene based on whether ASCII effect is enabled or not
     if (isAsciiEnabled) {
@@ -165,7 +214,7 @@ function animate() {
             emissive: 0x000000, // No self-illumination    
             transparent: true,
             alphaHash: true,
-            shininess: 1,
+            // shininess: 1,
             wireframe: wireframe,
         });
 
@@ -197,20 +246,20 @@ function animate() {
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    function animate() {
-        animationFrameId = requestAnimationFrame(animate);
-        if (isRotationEnabled) {
-            pivot.rotation.y += 0.0005;
-        }
+    // function animate() {
+    //     animationFrameId = requestAnimationFrame(animate);
+    //     if (isRotationEnabled) {
+    //         pivot.rotation.y += 0.0005;
+    //     }
 
-        controls.update();
+    //     controls.update();
 
-        if (isAsciiEnabled) {
-            effect.render(scene, camera);
-        } else {
-            renderer.render(scene, camera);
-        }
-    }
+    //     if (isAsciiEnabled) {
+    //         effect.render(scene, camera);
+    //     } else {
+    //         renderer.render(scene, camera);
+    //     }
+    // }
 
     window.addEventListener('keydown', (event) => {
         if (event.key === 'R' || event.key === 'r') {
