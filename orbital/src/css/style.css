@@ -25,7 +25,7 @@ body {
   height: 100%;
   user-select: none;
   cursor: url('../cursor/arrow.cur'), auto;
-  background: #374242;
+  background: #ffffff;
   background-size: cover;
   background-position: center;
   background-repeat: repeat;
@@ -36,8 +36,8 @@ body {
   transition: zoom 0.3s;
   mix-blend-mode:exclusion;
   /* mix-blend-mode:hue; */
-  filter: brightness(0.9) contrast(0.666);
-  cursor: none;
+  /* filter: brightness(0.9) contrast(0.666); */
+  /* cursor: none; */
 }
 
 .text {
@@ -104,7 +104,7 @@ button {
   height: 100%;
   z-index: 1;
   /* filter: contrast(0.45) brightness(1.5) drop-shadow(16px 16px 20px blue); */
-  filter: drop-shadow(16px 16px 20px blue);
+  /* filter: drop-shadow(16px 16px 20px blue); */
   image-rendering: pixelated;
 }
 
@@ -261,5 +261,5 @@ button {
 }
 
 *{
-  cursor: none;
+  /* cursor: none; */
 }

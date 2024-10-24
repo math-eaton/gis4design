@@ -18,6 +18,7 @@ export function orbitalView(containerId) {
     let sphere; // Global reference to the sphere
     const sphereRadius = 1; // Define the sphere and graticule radius here
     const earthRotationSpeed = 0.001; // Simulate Earth's rotation speed 
+    const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
 
     window.addEventListener('keydown', (event) => {
         if (event.key === 'A' || event.key === 'a') {
@@ -45,11 +46,17 @@ export function orbitalView(containerId) {
         scene = new THREE.Scene();
 
         camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 5); // Start slightly above and in front of the Earth
+        camera.rotation.x = -earthTilt; // Tilt the camera to simulate the Earth's tilt
         camera.position.z = 30;
 
         renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setClearColor(0xC0C0C0, 0);
+
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Higher quality shadows
+
         document.getElementById(containerId).appendChild(renderer.domElement);
 
         // ASCII effect setup
@@ -69,6 +76,10 @@ export function orbitalView(containerId) {
         // controls.panSpeed = 0.5;
         controls.rotateSpeed = 0.25;
 
+        controls.minDistance = 10;
+        controls.maxDistance = 66;
+
+
 
         initLights()
         // const ambientLight = new THREE.AmbientLight(0x404040, 50);
@@ -79,8 +90,9 @@ export function orbitalView(containerId) {
         // scene.add(directionalLight);
 
         pivot = new THREE.Group();
+        pivot.rotation.z = earthTilt; // Tilt the entire Earth system by 23.4 degrees on the Z-axis
         scene.add(pivot);
-
+    
         addEarthSphere();
 
         // Load and visualize the graticules
@@ -96,7 +108,7 @@ export function orbitalView(containerId) {
         scene.add(ambientLight);
         
         // Directional light acting as the Sun (Fixed, static position)
-        directionalLight = new THREE.DirectionalLight(0xffffff, 3); // Increase intensity to brighten the day side
+        directionalLight = new THREE.DirectionalLight(0xffffff, 20); // Increase intensity to brighten the day side
         directionalLight.position.set(100, 0, 100); // Sun position (far from Earth)
         directionalLight.castShadow = true; // Enable shadows
         scene.add(directionalLight);
@@ -144,16 +156,16 @@ function animate() {
 
     // Function to add the Earth sphere to match the graticule radius
     function addEarthSphere() {
-        const geometry = new THREE.SphereGeometry(sphereRadius, 36, 36); 
+        const geometry = new THREE.SphereGeometry(sphereRadius, 64, 64); 
         const material = new THREE.MeshStandardMaterial({
             color: 0x000000, //  Earth
-            opacity: 0.9,  
-            roughness: 0.8, // Higher roughness to reduce shininess
+            opacity: 0.85,  
+            roughness: 2.8, // Higher roughness to reduce shininess
             metalness: 0.1, // Low metalness for a more diffuse surface
             emissive: 0x000000, // No self-illumination    
             transparent: true,
             alphaHash: true,
-            shininess: 5,
+            shininess: 1,
             wireframe: wireframe,
         });
 
@@ -331,7 +343,7 @@ function addCoastlinesToScene(data) {
     function addGraticulesToScene(data) {
         const lineMaterial = new THREE.LineBasicMaterial({ 
                 color: 0xaaaaaa, 
-                opacity: 0.25,
+                opacity: 0.35,
                 alphaHash: true,
                 linewidth: 1 
             }); 
