@@ -133,15 +133,35 @@ export function orbitalView(containerId) {
 
 // satellite stuff
 
-    // fetch TLE data from your Node.js server
-    function loadTLEData() {
-        fetch('http://localhost:3000/satellites')
-            .then(response => response.json())
-            .then(tleArray => {
-                visualizeSatellites(tleArray);
-            })
-            .catch(error => console.error('Error fetching TLE data:', error));
-    }
+    // fetch TLE data from server + static fallback
+function loadTLEData() {
+    fetch('http://localhost:3000/satellites')
+        .then(response => {
+            if (!response.ok) throw new Error('Server fetch failed');
+            return response.json();
+        })
+        .then(tleArray => {
+            visualizeSatellites(tleArray);
+        })
+        .catch(error => {
+            console.warn('Error fetching TLE data from server:', error);
+            console.log('Attempting to load data from local static file...');
+
+            // Fallback to local file if the server request fails
+            fetch('cachedSatellites.json')
+                .then(localResponse => {
+                    if (!localResponse.ok) throw new Error('Local file fetch failed');
+                    return localResponse.json();
+                })
+                .then(tleArray => {
+                    console.log('Loaded TLE data from local static file.');
+                    visualizeSatellites(tleArray);
+                })
+                .catch(localError => {
+                    console.error('Failed to load TLE data from both server and local file:', localError);
+                });
+        });
+}
 
     function visualizeSatellites(tleArray) {
         tleArray.forEach(sat => {
