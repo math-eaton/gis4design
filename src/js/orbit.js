@@ -3,15 +3,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
 import * as satellite from 'satellite.js';
 
-// satellite stuff
-
-const tleLine1 = '1 25544U 98067A   21275.54791667  .00000265  00000-0  12841-4 0  9990';
-const tleLine2 = '2 25544  51.6447 154.2736 0001996  84.2664  13.1377 15.48854069312036';
-
-const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
-
-
-
 //
 
 // 'A' key toggles ascii
@@ -28,11 +19,27 @@ export function orbitalView(containerId) {
     let directionalLight;
     let sphere; // Global reference to the sphere
     const sphereRadius = 1; // Define the sphere and graticule radius here
-    const earthRotationSpeed = 0.0002; // Simulate Earth's rotation speed 
+    const earthRotationSpeed = 0.0005; // Simulate Earth's rotation speed 
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
 
-    let satelliteMesh; // Reference to the satellite mesh
 
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'R' || event.key === 'r') {
+            isRotationEnabled = !isRotationEnabled;
+        }
+    });
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'W' || event.key === 'w') {
+            wireframe = !wireframe;
+            pivot.traverse(function (child) {
+                if (child.isMesh) {
+                    child.material.wireframe = wireframe;
+                    child.material.needsUpdate = true;
+                }
+            });
+        }
+    });
 
     window.addEventListener('keydown', (event) => {
         if (event.key === 'A' || event.key === 'a') {
@@ -86,29 +93,21 @@ export function orbitalView(containerId) {
         controls.enablePan = false;
         controls.dampingFactor = 0.25;
 
-        controls.zoomSpeed = 0.25;
+        controls.zoomSpeed = 0.666;
         // controls.panSpeed = 0.5;
         controls.rotateSpeed = 0.25;
 
         controls.minDistance = 10;
         controls.maxDistance = 66;
 
-
-
         initLights()
-        // const ambientLight = new THREE.AmbientLight(0x404040, 50);
-        // scene.add(ambientLight);
-
-        // const directionalLight = new THREE.DirectionalLight(0xffffff, 10);
-        // directionalLight.position.set(5, 5, 5).normalize();
-        // scene.add(directionalLight);
-
+        
         pivot = new THREE.Group();
         pivot.rotation.z = earthTilt; // Tilt the entire Earth system by 23.4 degrees on the Z-axis
         scene.add(pivot);
     
         addEarthSphere();
-        addSatellite(); // Add the satellite
+        loadTLEData(); // Fetch and visualize the TLE data from node server
 
         // Load and visualize the graticules
         loadAllData();
@@ -123,7 +122,7 @@ export function orbitalView(containerId) {
         scene.add(ambientLight);
         
         // Directional light acting as the Sun (Fixed, static position)
-        directionalLight = new THREE.DirectionalLight(0x696969, 100); // Increase intensity to brighten the day side
+        directionalLight = new THREE.DirectionalLight(0x8a8a8a, 100); // Increase intensity to brighten the day side
         directionalLight.position.set(100, 0, 100); // Sun position (far from Earth)
         directionalLight.castShadow = true; // Enable shadows
         scene.add(directionalLight);
@@ -132,35 +131,99 @@ export function orbitalView(containerId) {
         scene.add(hemiLight);
     }
 
-    function addSatellite() {
-        const geometry = new THREE.SphereGeometry(0.01, 8, 8); // Increase the satellite size for better visibility
-        const material = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Red color for satellite
-        satelliteMesh = new THREE.Mesh(geometry, material);
+// satellite stuff
 
-        // Initial satellite position (calculated from TLE data)
-        const position = getSatellitePosition();
-        satelliteMesh.position.copy(position);
-        pivot.add(satelliteMesh); // Add satellite to pivot for rotation
+    // fetch TLE data from your Node.js server
+    function loadTLEData() {
+        fetch('http://localhost:3000/satellites')
+            .then(response => response.json())
+            .then(tleArray => {
+                visualizeSatellites(tleArray);
+            })
+            .catch(error => console.error('Error fetching TLE data:', error));
     }
 
-    function getSatellitePosition() {
-        // Get the satellite's position in ECI (Earth-Centered Inertial) coordinates
-        const now = new Date();
-        const positionAndVelocity = satellite.propagate(satrec, now);
-        const positionEci = positionAndVelocity.position;
-        const gmst = satellite.gstime(now);
-        const positionGd = satellite.eciToGeodetic(positionEci, gmst);
-
-        // Extract lat, lon, and altitude
-        const longitude = satellite.degreesLong(positionGd.longitude);
-        const latitude = satellite.degreesLat(positionGd.latitude);
-        const altitude = positionGd.height * 0.001; // Scale the altitude for better visibility
-
-        // Convert to a 3D vector position based on Earth's radius and satellite altitude
-        let altitudeFactor = 1;
-        const satellitePosition = latLonToVector3(latitude, longitude, sphereRadius + (altitude * altitudeFactor)); // Altitude exaggerated by factor
-        return satellitePosition;
+    function visualizeSatellites(tleArray) {
+        tleArray.forEach(sat => {
+            const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
+    
+            // Propagate the satellite's position and get real-time lat/lon/alt
+            const now = new Date();
+            const positionAndVelocity = satellite.propagate(satrec, now);
+            const gmst = satellite.gstime(now);
+            const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+            const lat = satellite.degreesLat(positionGd.latitude);
+            const lon = satellite.degreesLong(positionGd.longitude);
+            let altitude = positionGd.height;
+    
+            // Adjust altitude scaling to fit the Three.js scene
+            const altitudeScaleFactor = 1;  // Adjust this based on your scene's scale
+            altitude = altitude / 6371 * altitudeScaleFactor;  // Earth’s radius is ~6371 km
+    
+            // Convert lat/lon/alt to 3D vector
+            const position = latLonToVector3(lat, lon, 1 + altitude);
+            
+            // Create satellite visualization (e.g., a small sphere)
+            const satelliteGeometry = new THREE.SphereGeometry(0.004, 2, 2); 
+            const satelliteMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        
+            const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
+            satelliteMesh.position.copy(position);
+            pivot.add(satelliteMesh); // Add the satellite to the pivot (Earth)
+        });
     }
+
+
+    // space stations
+    // fetchTLEData('https://celestrak.com/NORAD/elements/stations.txt').then(tleArray => {
+    //     visualizeSatellites(tleArray);
+    //     console.log(tleArray)
+    // });
+
+    //all satellites
+    
+
+    // fetchTLEData('https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle').then(tleArray => {
+    //     visualizeSatellites(tleArray);
+    //     console.log(tleArray)
+    // });
+
+
+    function visualizeSatellites(tleArray) {
+        tleArray.forEach(sat => {
+            const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
+    
+            // Propagate the satellite's position and get real-time lat/lon/alt
+            const now = new Date();
+            const positionAndVelocity = satellite.propagate(satrec, now);
+            const gmst = satellite.gstime(now);
+            const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+            const lat = satellite.degreesLat(positionGd.latitude);
+            const lon = satellite.degreesLong(positionGd.longitude);
+            let altitude = positionGd.height;
+    
+            // Scale the altitude by an appropriate factor (e.g., 100 or 1000)
+            const altitudeScaleFactor = 1;  // Adjust this based on your scene's scale
+            altitude = altitude / 6371 * altitudeScaleFactor;  // Earth’s radius is ~6371 km
+    
+            // Convert lat/lon/alt to 3D vector
+            const position = latLonToVector3(lat, lon, 1 + altitude); // Adjust altitude scaling
+            
+            // Create satellite visualization (e.g., a sphere)
+            const satelliteGeometry = new THREE.SphereGeometry(0.004, 2, 2); 
+            const satelliteMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xff0000,
+                wireframe: true,
+                alphaHash: true,
+                });
+        
+            const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
+            
+            satelliteMesh.position.copy(position);
+            pivot.add(satelliteMesh); // Add the satellite to the scene
+        });
+    }
+    
 
 
     function onWindowResize() {
@@ -180,7 +243,7 @@ function animate() {
     controls.update();
 
     // Update satellite position based on current time
-    satelliteMesh.position.copy(getSatellitePosition());
+    // satelliteMesh.position.copy(getSatellitePosition());
 
     
     // Render the scene based on whether ASCII effect is enabled or not
@@ -208,13 +271,12 @@ function animate() {
         const geometry = new THREE.SphereGeometry(sphereRadius, 64, 64); 
         const material = new THREE.MeshStandardMaterial({
             color: 0x000000, //  Earth
-            opacity: 0.85,  
-            roughness: 2.8, // Higher roughness to reduce shininess
-            metalness: 0.1, // Low metalness for a more diffuse surface
+            opacity: .95,
+            roughness: 2, // Higher roughness to reduce shininess
+            metalness: 0.5, // Low metalness for a more diffuse surface
             emissive: 0x000000, // No self-illumination    
             transparent: true,
             alphaHash: true,
-            // shininess: 1,
             wireframe: wireframe,
         });
 
@@ -224,60 +286,6 @@ function animate() {
         pivot.add(sphere); // Add the sphere to the pivot group, so it rotates with the graticules
     }
     
-
-    // Add markers to the sphere using geographic coordinates
-    function addGeographicMarkers(points) {
-        const markerGeometry = new THREE.SphereGeometry(0.005, 8, 8); // Small marker sphere
-        const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-
-        points.forEach(({ lat, lon }) => {
-            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-            const position = latLonToVector3(lat, lon, 1); // Sphere radius = 1
-            marker.position.copy(position);
-
-            // Add the marker to the scene
-            pivot.add(marker);
-        });
-    }
-
-    function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    // function animate() {
-    //     animationFrameId = requestAnimationFrame(animate);
-    //     if (isRotationEnabled) {
-    //         pivot.rotation.y += 0.0005;
-    //     }
-
-    //     controls.update();
-
-    //     if (isAsciiEnabled) {
-    //         effect.render(scene, camera);
-    //     } else {
-    //         renderer.render(scene, camera);
-    //     }
-    // }
-
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'R' || event.key === 'r') {
-            isRotationEnabled = !isRotationEnabled;
-        }
-    });
-
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'W' || event.key === 'w') {
-            wireframe = !wireframe;
-            pivot.traverse(function (child) {
-                if (child.isMesh) {
-                    child.material.wireframe = wireframe;
-                    child.material.needsUpdate = true;
-                }
-            });
-        }
-    });
 
     init();
 
@@ -366,7 +374,6 @@ function addCoastlinesToScene(data) {
         color: 0xffffff,
         opacity: 0.75,
         alphaHash: true,
-        linewidth: 1 
         }); 
     const radius = 1; // Sphere radius, assuming the sphere's radius is 1
 
@@ -445,6 +452,16 @@ function addCoastlinesToScene(data) {
 
         return new THREE.Vector3(x, y, z);
     }
+
+    /// misc window stuff
+
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
 
 
 }

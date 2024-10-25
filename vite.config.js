@@ -4,6 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   base: '/orbital/',
   build: {
+    outDir: 'dist',
     rollupOptions: {
       // output: {
       //   manualChunks: {
