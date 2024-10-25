@@ -148,7 +148,7 @@ function loadTLEData() {
             console.log('Attempting to load data from local static file...');
 
             // Fallback to local file if the server request fails
-            fetch('cachedSatellites.json')
+            fetch('data/cachedSatellites.json')
                 .then(localResponse => {
                     if (!localResponse.ok) throw new Error('Local file fetch failed');
                     return localResponse.json();
@@ -329,8 +329,8 @@ function animate() {
 
         // List of GeoJSON URLs
         const geoJsonUrls = [
-            'assets/data/ne_110m_coastline.geojson',
-            'assets/data/ne_110m_graticules_10.geojson'
+            'data/ne_110m_coastline.geojson',
+            'data/ne_110m_graticules_10.geojson'
         ];
 
         try {
@@ -363,13 +363,13 @@ function animate() {
     function handleGeoJSONData(url, data) {
         switch (url) {
 
-            case 'assets/data/ne_110m_graticules_10.geojson':
+            case 'data/ne_110m_graticules_10.geojson':
                 console.log("Loaded graticules:", data);
                 addGraticulesToScene(data);
                 break;
 
 
-            case 'assets/data/ne_110m_coastline.geojson':
+            case 'data/ne_110m_coastline.geojson':
                 // Example: Handle contour line GeoJSON
                 console.log("loaded coastlines:", data);
                 addCoastlinesToScene(data);
