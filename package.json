@@ -8,7 +8,8 @@
     "preview": "vite preview",
     "build": "vite build",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "start": "node satQueryServer.js"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",
