@@ -135,7 +135,7 @@ export function orbitalView(containerId) {
 
     // fetch TLE data from server + static fallback
 function loadTLEData() {
-    fetch('http://localhost:3000/satellites')
+    fetch('https://orbital-bbfd.onrender.com/satellites')
         .then(response => {
             if (!response.ok) throw new Error('Server fetch failed');
             return response.json();
