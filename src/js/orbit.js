@@ -2,25 +2,33 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
 import * as satellite from 'satellite.js';
+import Stats from 'stats.js'
 
 //
 
-// 'A' key toggles ascii
 // 'W' key toggles wireframe
 // 'R' key toggles rotation
 
 export function orbitalView(containerId) {
     let scene, camera, renderer, controls, pivot, effect;
     let animationFrameId;
+
+    // toggle defaults
     let isRotationEnabled = true;
     let wireframe = false;
-    let isAsciiEnabled = false; 
-    let asciiAdded = false; 
+
+    
     let directionalLight;
     let sphere; // Global reference to the sphere
     const sphereRadius = 1; // Define the sphere and graticule radius here
     const earthRotationSpeed = 0.0005; // Simulate Earth's rotation speed 
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
+
+
+    // stats
+    const stats = new Stats()
+    stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
+    // document.body.appendChild(stats.dom)
 
 
     window.addEventListener('keydown', (event) => {
@@ -41,27 +49,6 @@ export function orbitalView(containerId) {
         }
     });
 
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'A' || event.key === 'a') {
-            isAsciiEnabled = !isAsciiEnabled;
-
-            const container = document.getElementById(containerId);
-
-            if (isAsciiEnabled && !asciiAdded) {
-                container.removeChild(renderer.domElement);
-                container.appendChild(effect.domElement);
-                controls.dispose(); 
-                controls = new OrbitControls(camera, effect.domElement); 
-                asciiAdded = true;
-            } else if (!isAsciiEnabled && asciiAdded) {
-                container.removeChild(effect.domElement);
-                container.appendChild(renderer.domElement);
-                controls.dispose();
-                controls = new OrbitControls(camera, renderer.domElement); 
-                asciiAdded = false;
-            }
-        }
-    });
 
     function init() {
         scene = new THREE.Scene();
@@ -184,8 +171,15 @@ function loadTLEData() {
             const position = latLonToVector3(lat, lon, 1 + altitude);
             
             // Create satellite visualization (e.g., a small sphere)
-            const satelliteGeometry = new THREE.SphereGeometry(0.004, 2, 2); 
-            const satelliteMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const satelliteGeometry = new THREE.SphereGeometry(0.004, 1, 1); 
+            const satelliteMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xff0000,
+                wireframe: true,
+                opacity: 0.75,
+                alphaHash: true,
+                depthTest: true,
+                metalness: 1.0,
+                });
         
             const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
             satelliteMesh.position.copy(position);
@@ -193,57 +187,6 @@ function loadTLEData() {
         });
     }
 
-
-    // space stations
-    // fetchTLEData('https://celestrak.com/NORAD/elements/stations.txt').then(tleArray => {
-    //     visualizeSatellites(tleArray);
-    //     console.log(tleArray)
-    // });
-
-    //all satellites
-    
-
-    // fetchTLEData('https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle').then(tleArray => {
-    //     visualizeSatellites(tleArray);
-    //     console.log(tleArray)
-    // });
-
-
-    function visualizeSatellites(tleArray) {
-        tleArray.forEach(sat => {
-            const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
-    
-            // Propagate the satellite's position and get real-time lat/lon/alt
-            const now = new Date();
-            const positionAndVelocity = satellite.propagate(satrec, now);
-            const gmst = satellite.gstime(now);
-            const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-            const lat = satellite.degreesLat(positionGd.latitude);
-            const lon = satellite.degreesLong(positionGd.longitude);
-            let altitude = positionGd.height;
-    
-            // Scale the altitude by an appropriate factor (e.g., 100 or 1000)
-            const altitudeScaleFactor = 1;  // Adjust this based on your scene's scale
-            altitude = altitude / 6371 * altitudeScaleFactor;  // Earth’s radius is ~6371 km
-    
-            // Convert lat/lon/alt to 3D vector
-            const position = latLonToVector3(lat, lon, 1 + altitude); // Adjust altitude scaling
-            
-            // Create satellite visualization (e.g., a sphere)
-            const satelliteGeometry = new THREE.SphereGeometry(0.004, 2, 2); 
-            const satelliteMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xff0000,
-                wireframe: true,
-                alphaHash: true,
-                });
-        
-            const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
-            
-            satelliteMesh.position.copy(position);
-            pivot.add(satelliteMesh); // Add the satellite to the scene
-        });
-    }
-    
 
 
     function onWindowResize() {
@@ -253,7 +196,9 @@ function loadTLEData() {
     }
 
 function animate() {
+    stats.begin()
     animationFrameId = requestAnimationFrame(animate);
+
     
     // Rotate the Earth pivot group (simulating Earth's rotation)
     if (isRotationEnabled) {
@@ -262,16 +207,10 @@ function animate() {
 
     controls.update();
 
-    // Update satellite position based on current time
-    // satelliteMesh.position.copy(getSatellitePosition());
+    renderer.render(scene, camera);
 
-    
     // Render the scene based on whether ASCII effect is enabled or not
-    if (isAsciiEnabled) {
-        effect.render(scene, camera);
-    } else {
-        renderer.render(scene, camera);
-    }
+    stats.end()
 }
 
     // Convert geographic coordinates (lat, lon) to 3D cartesian coordinates
@@ -298,6 +237,7 @@ function animate() {
             transparent: true,
             alphaHash: true,
             wireframe: wireframe,
+            // depthTest: false,
         });
 
         sphere = new THREE.Mesh(geometry, material);
@@ -330,7 +270,10 @@ function animate() {
         // List of GeoJSON URLs
         const geoJsonUrls = [
             'data/ne_110m_coastline.geojson',
-            'data/ne_110m_graticules_10.geojson'
+            'data/ne_110m_graticules_10.geojson',
+            'data/ne_110m_land.geojson',
+            'data/ne_110m_ocean.geojson',
+
         ];
 
         try {
@@ -375,6 +318,20 @@ function animate() {
                 addCoastlinesToScene(data);
                 break;
 
+            case 'data/ne_110m_land.geojson':
+                // Example: Handle contour line GeoJSON
+                console.log("loaded land:", data);
+                // addLandToScene(data);
+                break;
+
+            case 'data/ne_110m_ocean.geojson':
+                // Example: Handle contour line GeoJSON
+                console.log("loaded land:", data);
+                // addOceanToScene(data);
+                break;
+    
+    
+
             // case '/remotesensing/assets/data/CellularTowers_FeaturesToJSON_HIFLD_AOI_20231204.geojson':
             //     // Example: Handle cell tower points GeoJSON
             //     console.log("Loaded cellular towers:", data);
@@ -388,32 +345,35 @@ function animate() {
         }
     }
 
-// add coastlines
-function addCoastlinesToScene(data) {
-    const lineMaterial = new THREE.LineBasicMaterial({ 
-        color: 0xffffff,
-        opacity: 0.75,
-        alphaHash: true,
-        }); 
-    const radius = 1; // Sphere radius, assuming the sphere's radius is 1
 
-    data.features.forEach(feature => {
-        const coordinates = feature.geometry.coordinates;
+    // line data rendering ////////
 
-        // GeoJSON geometries might contain different types (MultiLineString or LineString), handle both
-        if (feature.geometry.type === "LineString") {
-            const lineGeometry = createLineGeometryFromCoordinates(coordinates, radius);
-            const line = new THREE.Line(lineGeometry, lineMaterial);
-            pivot.add(line); // Add the coastline line to the scene pivot
-        } else if (feature.geometry.type === "MultiLineString") {
-            coordinates.forEach(lineString => {
-                const lineGeometry = createLineGeometryFromCoordinates(lineString, radius);
+    // add coastlines
+    function addCoastlinesToScene(data) {
+        const lineMaterial = new THREE.LineBasicMaterial({ 
+            color: 0xffffff,
+            opacity: 0.75,
+            alphaHash: true,
+            }); 
+        const radius = 1; // Sphere radius, assuming the sphere's radius is 1
+
+        data.features.forEach(feature => {
+            const coordinates = feature.geometry.coordinates;
+
+            // GeoJSON geometries might contain different types (MultiLineString or LineString), handle both
+            if (feature.geometry.type === "LineString") {
+                const lineGeometry = createLineGeometryFromCoordinates(coordinates, radius);
                 const line = new THREE.Line(lineGeometry, lineMaterial);
-                pivot.add(line);
-            });
-        }
-    });
-}
+                pivot.add(line); // Add the coastline line to the scene pivot
+            } else if (feature.geometry.type === "MultiLineString") {
+                coordinates.forEach(lineString => {
+                    const lineGeometry = createLineGeometryFromCoordinates(lineString, radius);
+                    const line = new THREE.Line(lineGeometry, lineMaterial);
+                    pivot.add(line);
+                });
+            }
+        });
+    }
 
     // Add graticules to the scene
     function addGraticulesToScene(data) {
@@ -460,6 +420,11 @@ function addCoastlinesToScene(data) {
 
         return geometry;
     }
+
+
+    // polygon data rendering ////////////
+
+    
 
     // Convert geographic coordinates (lat, lon) to 3D cartesian coordinates
     function latLonToVector3(lat, lon, radius) {
