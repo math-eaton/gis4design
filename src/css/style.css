@@ -26,7 +26,7 @@ body {
   height: 100%;
   user-select: none;
   cursor: url('../cursor/arrow.cur'), auto;
-  background: #000000;
+  background: #101010;
   background-size: cover;
   background-position: center;
   background-repeat: repeat;
