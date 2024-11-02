@@ -20,12 +20,15 @@ export function orbitalView(containerId) {
     
     let directionalLight;
     let sphere; // Global reference to the sphere
-    const sphereRadius = 1; // Define the sphere and graticule radius here
-    const earthRadiusKm = 6371;
+    const earthRadiusKm = 6371; // Earth's radius in kilometers
+    const sphereRadius = 1; // Earth’s radius as 1 unit in Three.js
+    const scaleFactor = sphereRadius / earthRadiusKm; // Base scaling factor for consistency
     const altitudeScaleFactor = sphereRadius / earthRadiusKm; // Scale real-world distances to scene units
     const earthRotationSpeed = 0.0005; // Simulate Earth's rotation speed 
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
+
     const planets = [];
+    const distanceCompressionFactor = 10; // Adjust for visibility in scene
 
     let moonMesh;
 
@@ -60,7 +63,7 @@ export function orbitalView(containerId) {
         camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 0, 800); // Start slightly above and in front of the Earth
         camera.rotation.x = -earthTilt; // Tilt the camera to simulate the Earth's tilt
-        camera.position.z = 66;
+        camera.position.z = 66 * distanceCompressionFactor; // Adjust based on scene needs
     
         renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -161,11 +164,9 @@ export function orbitalView(containerId) {
         if (!moonMesh) return; // Ensure moonMesh exists before updating
     
         const moonOrbitalPeriod = 27.32; // Moon's orbital period around Earth in days
-        const moonAverageAltitudeKm = 384400; // Moon's average distance from Earth in kilometers
-    
-        // Scale moon's distance based on Earth's radius and scene scaling
-        const moonDistanceFromEarth = moonAverageAltitudeKm * altitudeScaleFactor;
-    
+        const moonAverageAltitudeKm = 384400; // Average distance to Moon in kilometers
+        const moonDistanceFromEarth = moonAverageAltitudeKm * scaleFactor; // Scaled distance in scene units
+            
         // Calculate elliptical orbit
         const angle = (2 * Math.PI * time) / (moonOrbitalPeriod * 24 * 3600 * 1000); // Adjust time scale
         const eccentricity = 0.0549; // Moon's orbital eccentricity
@@ -197,9 +198,9 @@ export function orbitalView(containerId) {
         const { a, e, i, T } = orbitalParams[planet];
     
         const angle = (2 * Math.PI * time) / T;
-        const x = a * (Math.cos(angle) - e);
-        const z = a * Math.sin(angle) * Math.sqrt(1 - e ** 2);
-    
+        const x = a * (Math.cos(angle) - e) * scaleFactor * distanceCompressionFactor;
+        const z = a * Math.sin(angle) * Math.sqrt(1 - e ** 2) * scaleFactor * distanceCompressionFactor;
+            
         const cosInclination = Math.cos(i * (Math.PI / 180));
         const sinInclination = Math.sin(i * (Math.PI / 180));
         const adjustedY = 0 * cosInclination - z * sinInclination;
@@ -213,7 +214,7 @@ export function orbitalView(containerId) {
     const sizeScaleFactor = 0.5;
 
     function addPlanet(planetName, color, relativeRadius) {
-        const planetRadius = sphereRadius * relativeRadius * sizeScaleFactor;
+        const planetRadius = sphereRadius * (relativeRadius / earthRadiusKm) * scaleFactor;
         const geometry = new THREE.SphereGeometry(planetRadius, 32, 32);
         const material = new THREE.MeshStandardMaterial({ color });
         const planetMesh = new THREE.Mesh(geometry, material);
@@ -254,43 +255,40 @@ function loadTLEData() {
         });
 }
 
-    function visualizeSatellites(tleArray) {
-        tleArray.forEach(sat => {
-            const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
-    
-            // Propagate the satellite's position and get real-time lat/lon/alt
-            const now = new Date();
-            const positionAndVelocity = satellite.propagate(satrec, now);
-            const gmst = satellite.gstime(now);
-            const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-            const lat = satellite.degreesLat(positionGd.latitude);
-            const lon = satellite.degreesLong(positionGd.longitude);
-            let altitude = positionGd.height;
-    
-            // Adjust altitude scaling to fit the Three.js scene
-            // let altitudeScaleFactor = 1;  // Adjust this based on your scene's scale
-            altitude = altitude / earthRadiusKm * 1;  // Earth’s radius is ~6371 km
-    
-            // Convert lat/lon/alt to 3D vector
-            const position = latLonToVector3(lat, lon, 1 + altitude);
-            
-            // Create satellite visualization (e.g., a small sphere)
-            const satelliteGeometry = new THREE.SphereGeometry(0.004, 1, 1); 
-            const satelliteMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xff0000,
-                wireframe: true,
-                opacity: 0.75,
-                alphaHash: true,
-                depthTest: true,
-                metalness: 1.0,
-                });
-        
-            const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
-            satelliteMesh.position.copy(position);
-            pivot.add(satelliteMesh); // Add the satellite to the pivot (Earth)
-        });
-    }
+function visualizeSatellites(tleArray) {
+    tleArray.forEach(sat => {
+        const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
 
+        // Propagate the satellite's position and get real-time lat/lon/alt
+        const now = new Date();
+        const positionAndVelocity = satellite.propagate(satrec, now);
+        const gmst = satellite.gstime(now);
+        const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+        const lat = satellite.degreesLat(positionGd.latitude);
+        const lon = satellite.degreesLong(positionGd.longitude);
+        
+        // Altitude in kilometers, scaled to scene units and compressed for visibility
+        let altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
+
+        // Convert lat/lon/alt to 3D vector in scene units
+        const position = latLonToVector3(lat, lon, sphereRadius + altitude);
+
+        // Create satellite visualization (e.g., a small sphere)
+        const satelliteGeometry = new THREE.SphereGeometry(0.004, 1, 1);
+        const satelliteMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff0000,
+            wireframe: true,
+            opacity: 0.75,
+            alphaHash: true,
+            depthTest: true,
+            metalness: 1.0,
+        });
+
+        const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
+        satelliteMesh.position.copy(position);
+        pivot.add(satelliteMesh); // Add the satellite to the pivot (Earth)
+    });
+}
 
 
     function onWindowResize() {
