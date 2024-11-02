@@ -23,12 +23,12 @@ export function orbitalView(containerId) {
     const earthRadiusKm = 6371; // Earth's radius in kilometers
     const sphereRadius = 1; // Earth’s radius as 1 unit in Three.js
     const scaleFactor = sphereRadius / earthRadiusKm; // Base scaling factor for consistency
-    const altitudeScaleFactor = sphereRadius / earthRadiusKm; // Scale real-world distances to scene units
+    // const altitudeScaleFactor = sphereRadius / earthRadiusKm; // Scale real-world distances to scene units
     const earthRotationSpeed = 0.0005; // Simulate Earth's rotation speed 
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
 
     const planets = [];
-    const distanceCompressionFactor = 10; // Adjust for visibility in scene
+    let distanceCompressionFactor = 1; // Initial v exaggeration factor
 
     let moonMesh;
 
@@ -63,7 +63,7 @@ export function orbitalView(containerId) {
         camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 0, 800); // Start slightly above and in front of the Earth
         camera.rotation.x = -earthTilt; // Tilt the camera to simulate the Earth's tilt
-        camera.position.z = 66 * distanceCompressionFactor; // Adjust based on scene needs
+        camera.position.z = 66; // Adjust based on scene needs
     
         renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -110,6 +110,9 @@ export function orbitalView(containerId) {
     
         // Load and visualize the graticules
         loadAllData();
+
+        initializeSlider();
+
     
         window.addEventListener('resize', onWindowResize, false);
         animate();
@@ -255,47 +258,67 @@ function loadTLEData() {
         });
 }
 
-function visualizeSatellites(tleArray) {
-    tleArray.forEach(sat => {
-        const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
+let satelliteMeshes = []; // Store satellite mesh references
 
-        // Propagate the satellite's position and get real-time lat/lon/alt
-        const now = new Date();
+
+function visualizeSatellites(tleArray) {
+    // Clear any existing satellite meshes in the array (but keep them in the scene)
+    if (satelliteMeshes.length === 0) {
+        tleArray.forEach(sat => {
+            const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
+            const now = new Date();
+            const positionAndVelocity = satellite.propagate(satrec, now);
+            const gmst = satellite.gstime(now);
+            const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+            const lat = satellite.degreesLat(positionGd.latitude);
+            const lon = satellite.degreesLong(positionGd.longitude);
+            let altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
+
+            const position = latLonToVector3(lat, lon, sphereRadius + altitude);
+            const satelliteGeometry = new THREE.SphereGeometry(0.004, 1, 1);
+            const satelliteMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff0000,
+                wireframe: true,
+                opacity: 0.75,
+                alphaHash: true,
+                depthTest: true,
+                metalness: 1.0,
+            });
+
+            const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
+            satelliteMesh.position.copy(position);
+            satelliteMesh.userData.isSatellite = true;
+            pivot.add(satelliteMesh);
+            satelliteMeshes.push({ mesh: satelliteMesh, satrec }); // Store mesh and satrec reference
+        });
+    } else {
+        // If satellites already exist, just update their positions
+        updateSatellitePositions();
+    }
+}
+
+function updateSatellitePositions() {
+    const now = new Date();
+    const gmst = satellite.gstime(now);
+
+    satelliteMeshes.forEach(({ mesh, satrec }) => {
         const positionAndVelocity = satellite.propagate(satrec, now);
-        const gmst = satellite.gstime(now);
         const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
         const lat = satellite.degreesLat(positionGd.latitude);
         const lon = satellite.degreesLong(positionGd.longitude);
-        
-        // Altitude in kilometers, scaled to scene units and compressed for visibility
         let altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
 
-        // Convert lat/lon/alt to 3D vector in scene units
         const position = latLonToVector3(lat, lon, sphereRadius + altitude);
-
-        // Create satellite visualization (e.g., a small sphere)
-        const satelliteGeometry = new THREE.SphereGeometry(0.004, 1, 1);
-        const satelliteMaterial = new THREE.MeshStandardMaterial({
-            color: 0xff0000,
-            wireframe: true,
-            opacity: 0.75,
-            alphaHash: true,
-            depthTest: true,
-            metalness: 1.0,
-        });
-
-        const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
-        satelliteMesh.position.copy(position);
-        pivot.add(satelliteMesh); // Add the satellite to the pivot (Earth)
+        mesh.position.copy(position);
     });
 }
 
 
-    function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 function animate(time) {
     stats.begin()
@@ -550,6 +573,24 @@ function animate(time) {
 
     /// misc window stuff
 
+    
+
+    function initializeSlider() {
+        const slider = document.getElementById("compression-slider");
+        const output = document.getElementById("compression-value");
+    
+        // Set the initial display of the compression factor
+        output.textContent = distanceCompressionFactor;
+    
+        // Update the compression factor dynamically on slider input
+        slider.addEventListener("change", (event) => {
+            distanceCompressionFactor = parseFloat(event.target.value);
+            output.textContent = distanceCompressionFactor.toFixed(3);
+            updateSatellitePositions(); // Update only once when slider is released
+        });
+    }
+    
+    
 
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;

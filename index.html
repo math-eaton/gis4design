@@ -8,7 +8,14 @@
   <title>orbital</title>
 </head>
 <body>
+
   <div class="figure interactive">
+    <div id="slider-container" style="position: absolute; bottom: 10px; left: 10px;">
+      <label for="compression-slider" style="color: white;">vertical exaggeration:</label>
+      <input type="range" id="compression-slider" min="0.001" max="20" step="0.1" value="0.001" style="width: 200px;">
+      <span id="compression-value" style="color: white;">1</span>
+  </div>
+  
     <div id="threeContainer1" class="vis-container"></div>
   </div>
   </div>
