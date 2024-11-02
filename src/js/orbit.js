@@ -573,6 +573,13 @@ function animate(time) {
 
     /// misc window stuff
 
+    function debounce(func, delay) {
+        let timer;
+        return function (...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
     
 
     function initializeSlider() {
@@ -583,12 +590,15 @@ function animate(time) {
         output.textContent = distanceCompressionFactor;
     
         // Update the compression factor dynamically on slider input
-        slider.addEventListener("change", (event) => {
+        const debouncedUpdateSatellitePositions = debounce(updateSatellitePositions, 10); 
+
+        // Inside initializeSlider
+        slider.addEventListener("input", (event) => {
             distanceCompressionFactor = parseFloat(event.target.value);
             output.textContent = distanceCompressionFactor.toFixed(3);
-            updateSatellitePositions(); // Update only once when slider is released
+            debouncedUpdateSatellitePositions(); // Call the debounced function
         });
-    }
+            }
     
     
 
