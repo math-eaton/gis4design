@@ -10,7 +10,7 @@ import Stats from 'stats.js'
 // 'R' key toggles rotation
 
 export function orbitalView(containerId) {
-    let scene, camera, renderer, controls, pivot, effect;
+    let scene, camera, renderer, controls, pivot;
     let animationFrameId;
 
     // toggle defaults
@@ -21,9 +21,13 @@ export function orbitalView(containerId) {
     let directionalLight;
     let sphere; // Global reference to the sphere
     const sphereRadius = 1; // Define the sphere and graticule radius here
+    const earthRadiusKm = 6371;
+    const altitudeScaleFactor = sphereRadius / earthRadiusKm; // Scale real-world distances to scene units
     const earthRotationSpeed = 0.0005; // Simulate Earth's rotation speed 
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
+    const planets = [];
 
+    let moonMesh;
 
     // stats
     const stats = new Stats()
@@ -52,73 +56,173 @@ export function orbitalView(containerId) {
 
     function init() {
         scene = new THREE.Scene();
-
+    
         camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 5); // Start slightly above and in front of the Earth
+        camera.position.set(0, 0, 800); // Start slightly above and in front of the Earth
         camera.rotation.x = -earthTilt; // Tilt the camera to simulate the Earth's tilt
-        camera.position.z = 30;
-
+        camera.position.z = 66;
+    
         renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setClearColor(0xC0C0C0, 0);
-
+    
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Higher quality shadows
-
+    
         document.getElementById(containerId).appendChild(renderer.domElement);
-
-        // ASCII effect setup
-        const customCharSet = ' g❣♥cx6☹%!&*m☺☻  ';
-        effect = new AsciiEffect(renderer, customCharSet, { invert: true, resolution: 0.4, scale: 1.0, color: false });
-        effect.setSize(window.innerWidth, window.innerHeight);
-        effect.domElement.style.color = 'blue';
-        effect.domElement.style.backgroundColor = 'white';
-
+    
         controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.enableZoom = true;
         controls.enablePan = false;
         controls.dampingFactor = 0.25;
-
+    
         controls.zoomSpeed = 0.666;
-        // controls.panSpeed = 0.5;
         controls.rotateSpeed = 0.25;
-
+    
         controls.minDistance = 10;
-        controls.maxDistance = 66;
-
-        initLights()
-        
+        controls.maxDistance = 100;
+    
+        addSun();
+    
+        // Initialize pivot group before adding the moon or other elements
         pivot = new THREE.Group();
         pivot.rotation.z = earthTilt; // Tilt the entire Earth system by 23.4 degrees on the Z-axis
         scene.add(pivot);
     
+        addMoon(); // Now add the moon after pivot is defined
+    
+        // Add planets to the scene
+        addPlanet("Mercury", 0xbebebe, 2439.7); // Mercury radius in km
+        addPlanet("Venus", 0xffdd44, 6051.8);   // Venus radius in km
+        addPlanet("Earth", 0x2266ff, 6371);     // Earth radius in km
+        addPlanet("Mars", 0xff4422, 3389.5);    // Mars radius in km
+        addPlanet("Jupiter", 0xddddaa, 69911);  // Jupiter radius in km
+        addPlanet("Saturn", 0xeeddbb, 58232);   // Saturn radius in km
+        addPlanet("Uranus", 0xaaffff, 25362);   // Uranus radius in km
+        addPlanet("Neptune", 0x4466ff, 24622);  // Neptune radius in km
+    
         addEarthSphere();
         loadTLEData(); // Fetch and visualize the TLE data from node server
-
+    
         // Load and visualize the graticules
         loadAllData();
-
+    
         window.addEventListener('resize', onWindowResize, false);
         animate();
     }
-
-    function initLights() {
+    
+    function addSun() {
         // Ambient light for general low-level lighting
-        const ambientLight = new THREE.AmbientLight(0x404040, 1); 
+        const ambientLight = new THREE.AmbientLight(0x404040, 1);
         scene.add(ambientLight);
-        
+    
         // Directional light acting as the Sun (Fixed, static position)
-        directionalLight = new THREE.DirectionalLight(0x8a8a8a, 100); // Increase intensity to brighten the day side
-        directionalLight.position.set(100, 0, 100); // Sun position (far from Earth)
-        directionalLight.castShadow = true; // Enable shadows
+        directionalLight = new THREE.DirectionalLight(0x8a8a8a, 100); // Intensity for sunlight effect
+        const sunDistance = 10; // Scaled down for diorama effect
+        directionalLight.position.set(sunDistance, 0, 0); // Sun position along x-axis
+        directionalLight.castShadow = true;
         scene.add(directionalLight);
-        
+    
         const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5);
         scene.add(hemiLight);
-    }
+    
+        // Scaled Sun object
+        const sunRadius = sphereRadius * 109 / 1000; // Approximate Sun diameter
+        const sunGeometry = new THREE.SphereGeometry(sunRadius, 64, 64);
+        const sunMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffbb,    // Yellowish color for the sun
+            emissive: 0xffa500, // Orange-ish emissive color for glow
+            opacity: 0.8,
+            alphaHash: true,
 
-// satellite stuff
+        });
+        const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+        sunMesh.position.copy(directionalLight.position);
+        // scene.add(sunMesh);
+    }
+    
+    function addMoon() {
+        const moonRadius = sphereRadius * 0.273; // Moon radius is about 27.3% of Earth's radius
+        const moonMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffffff, 
+            roughness: 1,
+            metalness: 0,
+            opacity: 0.5,
+            alphaHash: true,
+        });
+    
+        const moonGeometry = new THREE.SphereGeometry(moonRadius, 32, 32);
+        moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+        pivot.add(moonMesh); // Add moon mesh to the pivot so it orbits with Earth
+    }
+    
+    function updateMoonPosition(time) {
+        if (!moonMesh) return; // Ensure moonMesh exists before updating
+    
+        const moonOrbitalPeriod = 27.32; // Moon's orbital period around Earth in days
+        const moonAverageAltitudeKm = 384400; // Moon's average distance from Earth in kilometers
+    
+        // Scale moon's distance based on Earth's radius and scene scaling
+        const moonDistanceFromEarth = moonAverageAltitudeKm * altitudeScaleFactor;
+    
+        // Calculate elliptical orbit
+        const angle = (2 * Math.PI * time) / (moonOrbitalPeriod * 24 * 3600 * 1000); // Adjust time scale
+        const eccentricity = 0.0549; // Moon's orbital eccentricity
+        const x = moonDistanceFromEarth * (Math.cos(angle) - eccentricity);
+        const z = moonDistanceFromEarth * Math.sin(angle) * Math.sqrt(1 - eccentricity ** 2);
+    
+        moonMesh.position.set(x, 0, z); // Set the moon's position based on the scaled altitude
+    }
+    
+
+    // model planets
+
+    const orbitScaleFactor = 20; // Adjust for more proportionate orbits
+
+    const distanceScaleFactor = 0.05;
+
+    function calculatePlanetPosition(planet, time) {
+        const orbitalParams = {
+            Mercury: { a: 57.91e6 * distanceScaleFactor, e: 0.205, i: 7.0, T: 0.24 },
+            Venus: { a: 108.2e6 * distanceScaleFactor, e: 0.007, i: 3.4, T: 0.62 },
+            Earth: { a: 149.6e6 * distanceScaleFactor, e: 0.017, i: 0.0, T: 1.0 },
+            Mars: { a: 227.9e6 * distanceScaleFactor, e: 0.093, i: 1.85, T: 1.88 },
+            Jupiter: { a: 778.5e6 * distanceScaleFactor, e: 0.049, i: 1.3, T: 11.86 },
+            Saturn: { a: 1.429e9 * distanceScaleFactor, e: 0.056, i: 2.49, T: 29.46 },
+            Uranus: { a: 2.871e9 * distanceScaleFactor, e: 0.046, i: 0.77, T: 84.01 },
+            Neptune: { a: 4.495e9 * distanceScaleFactor, e: 0.009, i: 1.77, T: 164.8 }
+        };
+    
+        const { a, e, i, T } = orbitalParams[planet];
+    
+        const angle = (2 * Math.PI * time) / T;
+        const x = a * (Math.cos(angle) - e);
+        const z = a * Math.sin(angle) * Math.sqrt(1 - e ** 2);
+    
+        const cosInclination = Math.cos(i * (Math.PI / 180));
+        const sinInclination = Math.sin(i * (Math.PI / 180));
+        const adjustedY = 0 * cosInclination - z * sinInclination;
+        const adjustedZ = 0 * sinInclination + z * cosInclination;
+    
+        const sunPosition = directionalLight.position;
+        return new THREE.Vector3(x + sunPosition.x, adjustedY + sunPosition.y, adjustedZ + sunPosition.z);
+    }
+            
+
+    const sizeScaleFactor = 0.5;
+
+    function addPlanet(planetName, color, relativeRadius) {
+        const planetRadius = sphereRadius * relativeRadius * sizeScaleFactor;
+        const geometry = new THREE.SphereGeometry(planetRadius, 32, 32);
+        const material = new THREE.MeshStandardMaterial({ color });
+        const planetMesh = new THREE.Mesh(geometry, material);
+        scene.add(planetMesh);
+        planets.push({ name: planetName, mesh: planetMesh });
+    }
+    
+    
+    // irl satellite stuff
 
     // fetch TLE data from server + static fallback
 function loadTLEData() {
@@ -164,8 +268,8 @@ function loadTLEData() {
             let altitude = positionGd.height;
     
             // Adjust altitude scaling to fit the Three.js scene
-            const altitudeScaleFactor = 1;  // Adjust this based on your scene's scale
-            altitude = altitude / 6371 * altitudeScaleFactor;  // Earth’s radius is ~6371 km
+            // let altitudeScaleFactor = 1;  // Adjust this based on your scene's scale
+            altitude = altitude / earthRadiusKm * 1;  // Earth’s radius is ~6371 km
     
             // Convert lat/lon/alt to 3D vector
             const position = latLonToVector3(lat, lon, 1 + altitude);
@@ -195,9 +299,15 @@ function loadTLEData() {
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-function animate() {
+function animate(time) {
     stats.begin()
     animationFrameId = requestAnimationFrame(animate);
+
+    // planets moving
+    planets.forEach(({ name, mesh }) => {
+        const position = calculatePlanetPosition(name, time / 1000); // Scale time if needed
+        mesh.position.copy(position);
+    });
 
     
     // Rotate the Earth pivot group (simulating Earth's rotation)
@@ -206,6 +316,8 @@ function animate() {
     }
 
     controls.update();
+
+    updateMoonPosition(time);
 
     renderer.render(scene, camera);
 
@@ -449,4 +561,4 @@ function animate() {
     
 
 
-}
+    }
