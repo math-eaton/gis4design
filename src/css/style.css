@@ -140,7 +140,26 @@ button {
 }
 
 #slider-container{
+  position: absolute;
+  left: 2vw;
+  bottom: 1vh;
   z-index: 999999;
+  padding: 2vw;
+  filter: grayscale();
+  font-size: 0.75em;
+}
+
+#exaggeration-slider{
+
+  width: 15vw;
+  height: 1vh;
+
+}
+
+#exaggeration-value{
+
+  color: white;
+  
 }
 
 
@@ -211,6 +230,17 @@ button {
   /* .copy-message {
     font-size: small;
     } */
+
+  #slider-container{
+    padding-bottom: 5vh;
+  }    
+
+  #exaggeration-slider{
+
+    width: 50vw;
+  
+  
+  }
 
   #links {
     margin-top: 1em;

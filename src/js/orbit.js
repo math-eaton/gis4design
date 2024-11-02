@@ -17,6 +17,9 @@ export function orbitalView(containerId) {
     let isRotationEnabled = true;
     let wireframe = false;
 
+    // responsive stuff
+    const baseZ = 66; // default z-position value for desktop
+    const mobileScaleFactor = 2; // responsive camera
     
     let directionalLight;
     let sphere; // Global reference to the sphere
@@ -58,9 +61,12 @@ export function orbitalView(containerId) {
 
 
     function init() {
+
         scene = new THREE.Scene();
     
         camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+
         camera.position.set(0, 0, 800); // Start slightly above and in front of the Earth
         camera.rotation.x = -earthTilt; // Tilt the camera to simulate the Earth's tilt
         camera.position.z = 66; // Adjust based on scene needs
@@ -85,6 +91,9 @@ export function orbitalView(containerId) {
     
         controls.minDistance = 10;
         controls.maxDistance = 100;
+
+        // Responsive z-position initialization
+        setResponsiveCameraPosition();
     
         addSun();
     
@@ -115,6 +124,8 @@ export function orbitalView(containerId) {
 
     
         window.addEventListener('resize', onWindowResize, false);
+        onWindowResize(); // run once
+
         animate();
     }
     
@@ -314,11 +325,29 @@ function updateSatellitePositions() {
 }
 
 
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
+    function setResponsiveCameraPosition() {
+        const isMobile = window.innerWidth <= 768;
+        camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
+
+        // Set zoom limits based on device type
+        if (isMobile) {
+            controls.minDistance = 10; // Set closer min zoom for mobile
+            controls.maxDistance = 500; // Set restricted max zoom for mobile
+        } else {
+            controls.minDistance = 10; // Original min zoom for desktop
+            controls.maxDistance = 100; // Original max zoom for desktop
+        }
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Update camera position for responsiveness
+        setResponsiveCameraPosition();
+    }
+
 
 function animate(time) {
     stats.begin()
@@ -583,31 +612,35 @@ function animate(time) {
     
 
     function initializeSlider() {
-        const slider = document.getElementById("compression-slider");
-        const output = document.getElementById("compression-value");
+        const slider = document.getElementById("exaggeration-slider");
+        const output = document.getElementById("exaggeration-value");
     
         // Set the initial display of the compression factor
         output.textContent = distanceCompressionFactor;
     
         // Update the compression factor dynamically on slider input
-        const debouncedUpdateSatellitePositions = debounce(updateSatellitePositions, 10); 
+        const debouncedUpdateSatellitePositions = debounce(updateSatellitePositions, 1); 
 
         // Inside initializeSlider
         slider.addEventListener("input", (event) => {
             distanceCompressionFactor = parseFloat(event.target.value);
-            output.textContent = distanceCompressionFactor.toFixed(3);
+            output.textContent = distanceCompressionFactor.toFixed(1);
             debouncedUpdateSatellitePositions(); // Call the debounced function
         });
             }
     
-    
+
 
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-    }
     
+        // Adjust z position based on new window width
+        const isMobile = window.innerWidth <= 768;
+        camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
+    }
+                
 
 
     }
