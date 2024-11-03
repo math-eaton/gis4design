@@ -309,15 +309,42 @@ function visualizeSatellites(tleArray) {
     }
 }
 
-// Constants for LOD levels
-const MIN_DISTANCE = 10; // Minimum distance to start high LOD visibility
+// vars for LOD levels
+const MIN_DISTANCE = 8; // Minimum distance to start high LOD visibility
 const MAX_DISTANCE = 40; // Maximum distance for low LOD visibility
-const MIN_VISIBLE_PERCENTAGE = 0.33; // N% of satellites visible at low detail
-const MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
+let MIN_VISIBLE_PERCENTAGE = 0.3; // N% of satellites visible at low detail
+let MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
 
-// Constants for satellite size scaling
-const MIN_SCALE = 0.75; // Minimum size when zoomed in
-const MAX_SCALE = 1.25;  // Maximum size when zoomed out
+// vars for satellite size scaling
+let MIN_SCALE = 0.75; // Minimum size when zoomed in
+let MAX_SCALE = 1.25; // Maximum size when zoomed out
+
+// Adjust visibility percentages and scaling based on device type
+function setResponsiveCameraPosition() {
+    const isMobile = window.innerWidth <= 768;
+    camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
+
+    // Set zoom limits based on device type
+    if (isMobile) {
+        controls.minDistance = 10; // Set closer min zoom for mobile
+        controls.maxDistance = 500; // Set restricted max zoom for mobile
+
+        // Adjust visibility percentage and scaling for mobile
+        MIN_VISIBLE_PERCENTAGE = 0.15; // Show 15% of satellites at max zoom out
+        MAX_VISIBLE_PERCENTAGE = 0.75; // Show 75% of satellites at max zoom in on mobile
+        MIN_SCALE = 0.75; 
+        MAX_SCALE = 1.3; 
+    } else {
+        controls.minDistance = 10; // Original min zoom for desktop
+        controls.maxDistance = 100; // Original max zoom for desktop
+
+        // Adjust visibility percentage and scaling for desktop
+        MIN_VISIBLE_PERCENTAGE = 0.3; // Show 30% of satellites at max zoom out
+        MAX_VISIBLE_PERCENTAGE = 1.0; // Show 100% of satellites at max zoom in on desktop
+        MIN_SCALE = 0.75; 
+        MAX_SCALE = 1.25; 
+    }
+}
 
 // Function to adjust satellite visibility and scale based on camera distance
 function adjustSatelliteVisibilityAndScale() {
@@ -363,19 +390,6 @@ function updateSatellitePositions() {
     });
 }
 
-    function setResponsiveCameraPosition() {
-        const isMobile = window.innerWidth <= 768;
-        camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
-
-        // Set zoom limits based on device type
-        if (isMobile) {
-            controls.minDistance = 10; // Set closer min zoom for mobile
-            controls.maxDistance = 500; // Set restricted max zoom for mobile
-        } else {
-            controls.minDistance = 10; // Original min zoom for desktop
-            controls.maxDistance = 100; // Original max zoom for desktop
-        }
-    }
 
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
