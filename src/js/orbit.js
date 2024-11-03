@@ -4,6 +4,7 @@ import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
 import * as satellite from 'satellite.js';
 import Stats from 'stats.js'
 
+
 //
 
 // 'W' key toggles wireframe
@@ -308,6 +309,36 @@ function visualizeSatellites(tleArray) {
     }
 }
 
+// Constants for LOD levels
+const MIN_DISTANCE = 10; // Minimum distance to start high LOD visibility
+const MAX_DISTANCE = 50; // Maximum distance for low LOD visibility
+const MIN_VISIBLE_PERCENTAGE = 0.1; // 10% of satellites visible at low detail
+const MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
+
+// Function to adjust satellite visibility based on camera distance
+function adjustSatelliteVisibility() {
+    const distanceToEarth = camera.position.length();
+
+    // Calculate the visible percentage based on the distance
+    // Clamps percentage between MIN_VISIBLE_PERCENTAGE and MAX_VISIBLE_PERCENTAGE
+    const visiblePercentage = THREE.MathUtils.clamp(
+        ((MAX_DISTANCE - distanceToEarth) / (MAX_DISTANCE - MIN_DISTANCE)) * (MAX_VISIBLE_PERCENTAGE - MIN_VISIBLE_PERCENTAGE) + MIN_VISIBLE_PERCENTAGE,
+        MIN_VISIBLE_PERCENTAGE,
+        MAX_VISIBLE_PERCENTAGE
+    );
+
+    const visibleCount = Math.floor(satelliteMeshes.length * visiblePercentage);
+
+    // Update visibility for satellites based on calculated visible count
+    satelliteMeshes.forEach(({ mesh }, index) => {
+        mesh.visible = index < visibleCount;
+    });
+
+    // Log the current visible count
+    console.log(`Visible satellites: ${visibleCount} of ${satelliteMeshes.length}`);
+}
+
+// Function to update satellite positions with the current distanceCompressionFactor
 function updateSatellitePositions() {
     const now = new Date();
     const gmst = satellite.gstime(now);
@@ -317,13 +348,12 @@ function updateSatellitePositions() {
         const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
         const lat = satellite.degreesLat(positionGd.latitude);
         const lon = satellite.degreesLong(positionGd.longitude);
-        let altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
+        const altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
 
         const position = latLonToVector3(lat, lon, sphereRadius + altitude);
         mesh.position.copy(position);
     });
 }
-
 
     function setResponsiveCameraPosition() {
         const isMobile = window.innerWidth <= 768;
@@ -352,6 +382,12 @@ function updateSatellitePositions() {
 function animate(time) {
     stats.begin()
     animationFrameId = requestAnimationFrame(animate);
+
+    // Adjust satellite visibility based on zoom level
+    adjustSatelliteVisibility();
+
+    // Update positions
+    updateSatellitePositions();
 
     // planets moving
     planets.forEach(({ name, mesh }) => {
