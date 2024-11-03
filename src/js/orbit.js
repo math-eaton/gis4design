@@ -311,31 +311,39 @@ function visualizeSatellites(tleArray) {
 
 // Constants for LOD levels
 const MIN_DISTANCE = 10; // Minimum distance to start high LOD visibility
-const MAX_DISTANCE = 50; // Maximum distance for low LOD visibility
-const MIN_VISIBLE_PERCENTAGE = 0.1; // 10% of satellites visible at low detail
+const MAX_DISTANCE = 40; // Maximum distance for low LOD visibility
+const MIN_VISIBLE_PERCENTAGE = 0.33; // N% of satellites visible at low detail
 const MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
 
-// Function to adjust satellite visibility based on camera distance
-function adjustSatelliteVisibility() {
+// Constants for satellite size scaling
+const MIN_SCALE = 0.75; // Minimum size when zoomed in
+const MAX_SCALE = 1.25;  // Maximum size when zoomed out
+
+// Function to adjust satellite visibility and scale based on camera distance
+function adjustSatelliteVisibilityAndScale() {
     const distanceToEarth = camera.position.length();
 
     // Calculate the visible percentage based on the distance
-    // Clamps percentage between MIN_VISIBLE_PERCENTAGE and MAX_VISIBLE_PERCENTAGE
     const visiblePercentage = THREE.MathUtils.clamp(
         ((MAX_DISTANCE - distanceToEarth) / (MAX_DISTANCE - MIN_DISTANCE)) * (MAX_VISIBLE_PERCENTAGE - MIN_VISIBLE_PERCENTAGE) + MIN_VISIBLE_PERCENTAGE,
         MIN_VISIBLE_PERCENTAGE,
         MAX_VISIBLE_PERCENTAGE
     );
 
+    // Calculate the scale factor based on the distance
+    const scaleFactor = THREE.MathUtils.lerp(MIN_SCALE, MAX_SCALE, (distanceToEarth - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE));
+
     const visibleCount = Math.floor(satelliteMeshes.length * visiblePercentage);
 
-    // Update visibility for satellites based on calculated visible count
+    // Update visibility and scale for satellites
     satelliteMeshes.forEach(({ mesh }, index) => {
         mesh.visible = index < visibleCount;
+        mesh.scale.set(scaleFactor, scaleFactor, scaleFactor); // Apply the calculated scale factor
     });
 
-    // Log the current visible count
+    // Log the current visible count and scale factor
     console.log(`Visible satellites: ${visibleCount} of ${satelliteMeshes.length}`);
+    console.log(`Satellite scale factor: ${scaleFactor}`);
 }
 
 // Function to update satellite positions with the current distanceCompressionFactor
@@ -384,7 +392,7 @@ function animate(time) {
     animationFrameId = requestAnimationFrame(animate);
 
     // Adjust satellite visibility based on zoom level
-    adjustSatelliteVisibility();
+    adjustSatelliteVisibilityAndScale();
 
     // Update positions
     updateSatellitePositions();
@@ -651,21 +659,41 @@ function animate(time) {
         const slider = document.getElementById("exaggeration-slider");
         const output = document.getElementById("exaggeration-value");
     
-        // Set the initial display of the compression factor
-        output.textContent = distanceCompressionFactor;
+        // Function to map slider's linear 0-100 value to an exponential scale between 0.1 and 20
+        function mapSliderToExponential(value) {
+            const minExp = Math.log10(0.1); // Equivalent to -1
+            const maxExp = Math.log10(20);  // Equivalent to about 1.3
+            const scale = minExp + (value / 100) * (maxExp - minExp); // Scale to logarithmic range
+            return Math.pow(10, scale); // Convert from log scale back to normal scale
+        }
+    
+        // Function to map an exponential target value back to the slider's 0-100 range
+        function mapExponentialToSlider(value) {
+            const minExp = Math.log10(0.1);
+            const maxExp = Math.log10(20);
+            const logValue = Math.log10(value);
+            return ((logValue - minExp) / (maxExp - minExp)) * 100;
+        }
+    
+        // Initialize the slider position to 1.0x on load
+        const initialCompressionFactor = 1.0; // Default 1.0x exaggeration
+        const initialSliderValue = mapExponentialToSlider(initialCompressionFactor);
+        slider.value = initialSliderValue;
+        distanceCompressionFactor = initialCompressionFactor;
+        output.textContent = distanceCompressionFactor.toFixed(1) + "x";
+    
+        // Debounce the update function to prevent excessive calls
+        const debouncedUpdateSatellitePositions = debounce(updateSatellitePositions, 1);
     
         // Update the compression factor dynamically on slider input
-        const debouncedUpdateSatellitePositions = debounce(updateSatellitePositions, 1); 
-
-        // Inside initializeSlider
         slider.addEventListener("input", (event) => {
-            distanceCompressionFactor = parseFloat(event.target.value);
-            output.textContent = distanceCompressionFactor.toFixed(1);
+            const rawValue = parseFloat(event.target.value); // Value between 0 and 100 from slider
+            distanceCompressionFactor = mapSliderToExponential(rawValue); // Apply exponential mapping
+            output.textContent = distanceCompressionFactor.toFixed(1) + "x";
             debouncedUpdateSatellitePositions(); // Call the debounced function
         });
-            }
-    
-
+    }
+         
 
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
