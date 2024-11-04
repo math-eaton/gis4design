@@ -240,73 +240,58 @@ export function orbitalView(containerId) {
     
     // irl satellite stuff
 
-    // fetch TLE data from server + static fallback
+// Load TLE data from cached JSON file
 function loadTLEData() {
-    fetch('https://orbital-bbfd.onrender.com/satellites')
+    fetch('data/cachedSatellites.json')
         .then(response => {
-            if (!response.ok) throw new Error('Server fetch failed');
+            if (!response.ok) throw new Error('Failed to load cached TLE data');
             return response.json();
         })
         .then(tleArray => {
             visualizeSatellites(tleArray);
         })
         .catch(error => {
-            console.warn('Error fetching TLE data from server:', error);
-            console.log('Attempting to load data from local static file...');
-
-            // Fallback to local file if the server request fails
-            fetch('data/cachedSatellites.json')
-                .then(localResponse => {
-                    if (!localResponse.ok) throw new Error('Local file fetch failed');
-                    return localResponse.json();
-                })
-                .then(tleArray => {
-                    console.log('Loaded TLE data from local static file.');
-                    visualizeSatellites(tleArray);
-                })
-                .catch(localError => {
-                    console.error('Failed to load TLE data from both server and local file:', localError);
-                });
+            console.error('Error loading TLE data:', error);
         });
 }
+
 
 let satelliteMeshes = []; // Store satellite mesh references
 
 
+// Visualize satellites with TLE data from cache
 function visualizeSatellites(tleArray) {
-    // Clear any existing satellite meshes in the array (but keep them in the scene)
-    if (satelliteMeshes.length === 0) {
-        tleArray.forEach(sat => {
-            const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
-            const now = new Date();
-            const positionAndVelocity = satellite.propagate(satrec, now);
-            const gmst = satellite.gstime(now);
-            const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-            const lat = satellite.degreesLat(positionGd.latitude);
-            const lon = satellite.degreesLong(positionGd.longitude);
-            let altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
+    const now = new Date();
+    const gmst = satellite.gstime(now);
 
-            const position = latLonToVector3(lat, lon, sphereRadius + altitude);
-            const satelliteGeometry = new THREE.SphereGeometry(0.004, 1, 1);
-            const satelliteMaterial = new THREE.MeshStandardMaterial({
-                color: 0xff0000,
-                wireframe: true,
-                opacity: 0.75,
-                alphaHash: true,
-                depthTest: true,
-                metalness: 1.0,
-            });
+    tleArray.forEach((sat, index) => {
+        const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
 
-            const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
-            satelliteMesh.position.copy(position);
-            satelliteMesh.userData.isSatellite = true;
-            pivot.add(satelliteMesh);
-            satelliteMeshes.push({ mesh: satelliteMesh, satrec }); // Store mesh and satrec reference
+        // Calculate orbital parameters from TLE
+        const orbitalParams = {
+            period: satrec.no ? (2 * Math.PI / satrec.no) * 60 : 1440, // Period in minutes
+            inclination: satrec.inclo * (180 / Math.PI), // Inclination in degrees
+            eccentricity: satrec.ecco,
+            apogee: satrec.apogee,
+            perigee: satrec.perigee,
+        };
+
+        const satelliteGeometry = new THREE.SphereGeometry(0.004, 1, 1);
+        const satelliteMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff0000,
+            wireframe: true,
+            opacity: 0.75,
+            alphaHash: true,
+            depthTest: true,
+            metalness: 1.0,
         });
-    } else {
-        // If satellites already exist, just update their positions
-        updateSatellitePositions();
-    }
+
+        const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
+        satelliteMesh.userData = { satrec, orbitalParams, index }; // Store parameters for updates
+
+        pivot.add(satelliteMesh);
+        satelliteMeshes.push(satelliteMesh); // Add mesh to array for easy updates
+    });
 }
 
 // vars for LOD levels
@@ -350,46 +335,79 @@ function setResponsiveCameraPosition() {
 function adjustSatelliteVisibilityAndScale() {
     const distanceToEarth = camera.position.length();
 
-    // Calculate the visible percentage based on the distance
+    // Calculate visible percentage based on distance
     const visiblePercentage = THREE.MathUtils.clamp(
         ((MAX_DISTANCE - distanceToEarth) / (MAX_DISTANCE - MIN_DISTANCE)) * (MAX_VISIBLE_PERCENTAGE - MIN_VISIBLE_PERCENTAGE) + MIN_VISIBLE_PERCENTAGE,
         MIN_VISIBLE_PERCENTAGE,
         MAX_VISIBLE_PERCENTAGE
     );
 
-    // Calculate the scale factor based on the distance
-    const scaleFactor = THREE.MathUtils.lerp(MIN_SCALE, MAX_SCALE, (distanceToEarth - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE));
-
     const visibleCount = Math.floor(satelliteMeshes.length * visiblePercentage);
 
-    // Update visibility and scale for satellites
-    satelliteMeshes.forEach(({ mesh }, index) => {
+    satelliteMeshes.forEach((mesh, index) => {
+        if (!mesh) {
+            console.warn(`Skipping undefined satellite mesh at index ${index}`);
+            return;
+        }
         mesh.visible = index < visibleCount;
-        mesh.scale.set(scaleFactor, scaleFactor, scaleFactor); // Apply the calculated scale factor
+
+        // Calculate scale factor based on distance
+        const satelliteScaleFactor = THREE.MathUtils.lerp(MIN_SCALE, MAX_SCALE, (distanceToEarth - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE));
+        mesh.scale.set(satelliteScaleFactor, satelliteScaleFactor, satelliteScaleFactor); // Apply scale factor
     });
 
-    // Log the current visible count and scale factor
     console.log(`Visible satellites: ${visibleCount} of ${satelliteMeshes.length}`);
-    console.log(`Satellite scale factor: ${scaleFactor}`);
 }
+
+let simulationTime = new Date(); // Starting time for the simulation
+const timeDelta = 1000 / 60; // 1-second increment per frame, can be adjusted
+let timeMultiplier = 10; // Increase to speed up the simulation
 
 // Function to update satellite positions with the current distanceCompressionFactor
 function updateSatellitePositions() {
-    const now = new Date();
-    const gmst = satellite.gstime(now);
+    // Increment the simulation time
+    simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
 
-    satelliteMeshes.forEach(({ mesh, satrec }) => {
-        const positionAndVelocity = satellite.propagate(satrec, now);
+    const gmst = satellite.gstime(simulationTime);
+    const distanceToEarth = camera.position.length();
+
+    // Determine LOD visibility percentage based on camera distance
+    const visiblePercentage = THREE.MathUtils.clamp(
+        ((MAX_DISTANCE - distanceToEarth) / (MAX_DISTANCE - MIN_DISTANCE)) * (MAX_VISIBLE_PERCENTAGE - MIN_VISIBLE_PERCENTAGE) + MIN_VISIBLE_PERCENTAGE,
+        MIN_VISIBLE_PERCENTAGE,
+        MAX_VISIBLE_PERCENTAGE
+    );
+
+    const visibleCount = Math.floor(satelliteMeshes.length * visiblePercentage);
+
+    satelliteMeshes.forEach((mesh, index) => {
+        if (index >= visibleCount) {
+            mesh.visible = false;
+            return;
+        }
+        mesh.visible = true;
+
+        const { satrec } = mesh.userData;
+        const positionAndVelocity = satellite.propagate(satrec, simulationTime);
+        if (!positionAndVelocity.position) return;
+
         const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-        const lat = satellite.degreesLat(positionGd.latitude);
-        const lon = satellite.degreesLong(positionGd.longitude);
-        const altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
 
-        const position = latLonToVector3(lat, lon, sphereRadius + altitude);
+        // Altitude with compression factor
+        const compressedAltitude = positionGd.height * scaleFactor * distanceCompressionFactor;
+        const position = latLonToVector3(
+            satellite.degreesLat(positionGd.latitude),
+            satellite.degreesLong(positionGd.longitude),
+            sphereRadius + compressedAltitude
+        );
+
         mesh.position.copy(position);
+
+        // Adjust size based on camera distance
+        const satelliteScaleFactor = THREE.MathUtils.lerp(MIN_SCALE, MAX_SCALE, (distanceToEarth - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE));
+        mesh.scale.set(satelliteScaleFactor, satelliteScaleFactor, satelliteScaleFactor);
     });
 }
-
 
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -676,7 +694,7 @@ function animate(time) {
         // Function to map slider's linear 0-100 value to an exponential scale between 0.1 and 20
         function mapSliderToExponential(value) {
             const minExp = Math.log10(0.1); // Equivalent to -1
-            const maxExp = Math.log10(20);  // Equivalent to about 1.3
+            const maxExp = Math.log10(25);  // Equivalent to about 1.3
             const scale = minExp + (value / 100) * (maxExp - minExp); // Scale to logarithmic range
             return Math.pow(10, scale); // Convert from log scale back to normal scale
         }
@@ -684,7 +702,7 @@ function animate(time) {
         // Function to map an exponential target value back to the slider's 0-100 range
         function mapExponentialToSlider(value) {
             const minExp = Math.log10(0.1);
-            const maxExp = Math.log10(20);
+            const maxExp = Math.log10(25);
             const logValue = Math.log10(value);
             return ((logValue - minExp) / (maxExp - minExp)) * 100;
         }
