@@ -150,7 +150,7 @@ export function orbitalView(containerId) {
     
         // Sun object setup (your existing code)
         const sunRadius = sphereRadius * 109 * distanceCompressionFactor;
-        const sunGeometry = new THREE.SphereGeometry(sunRadius, 48, 24);
+        const sunGeometry = new THREE.SphereGeometry(sunRadius, 24, 24);
         const sunMaterial = new THREE.MeshBasicMaterial({
             color: 0xffff00,
             emissive: 0xffa500,
@@ -183,7 +183,7 @@ export function orbitalView(containerId) {
         // Initialize Simplex Noise for subtle rotation
         const simplex = new createNoise2D();
         let time = 0;
-        const noiseSpeed = 0.00005;
+        const noiseSpeed = 0.00001;
         const noiseAmplitude = 0.002;
     
         function animateSunRotation() {
