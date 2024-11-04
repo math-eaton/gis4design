@@ -28,8 +28,12 @@ export function orbitalView(containerId) {
     const sphereRadius = 1; // Earth’s radius as 1 unit in Three.js
     const scaleFactor = sphereRadius / earthRadiusKm; // Base scaling factor for consistency
     // const altitudeScaleFactor = sphereRadius / earthRadiusKm; // Scale real-world distances to scene units
-    const earthRotationSpeed = 0.0005; // Simulate Earth's rotation speed 
+    const earthRotationSpeed = (2 * Math.PI) / 86400; // Earth rotation speed in radians per second
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
+
+    const moonOrbitalPeriodInSeconds = 27.32 * 24 * 3600; // 27.32 days in seconds
+    const moonAngularSpeed = (2 * Math.PI) / moonOrbitalPeriodInSeconds; // Moon orbit speed in radians per second
+    
 
     const planets = [];
     let distanceCompressionFactor = 1; // Initial v exaggeration factor
@@ -175,15 +179,14 @@ export function orbitalView(containerId) {
         pivot.add(moonMesh); // Add moon mesh to the pivot so it orbits with Earth
     }
     
-    function updateMoonPosition(time) {
+    function updateMoonPosition() {
         if (!moonMesh) return; // Ensure moonMesh exists before updating
     
-        const moonOrbitalPeriod = 27.32; // Moon's orbital period around Earth in days
         const moonAverageAltitudeKm = 384400; // Average distance to Moon in kilometers
         const moonDistanceFromEarth = moonAverageAltitudeKm * scaleFactor; // Scaled distance in scene units
-            
-        // Calculate elliptical orbit
-        const angle = (2 * Math.PI * time) / (moonOrbitalPeriod * 24 * 3600 * 1000); // Adjust time scale
+    
+        // Calculate the moon's angle based on angular speed and centralized simulation time
+        const angle = moonAngularSpeed * (simulationTime.getTime() / 1000); // Convert simulation time to seconds
         const eccentricity = 0.0549; // Moon's orbital eccentricity
         const x = moonDistanceFromEarth * (Math.cos(angle) - eccentricity);
         const z = moonDistanceFromEarth * Math.sin(angle) * Math.sqrt(1 - eccentricity ** 2);
@@ -191,7 +194,7 @@ export function orbitalView(containerId) {
         moonMesh.position.set(x, 0, z); // Set the moon's position based on the scaled altitude
     }
     
-
+    
     // model planets
 
     const orbitScaleFactor = 20; // Adjust for more proportionate orbits
@@ -360,13 +363,24 @@ function adjustSatelliteVisibilityAndScale() {
 }
 
 let simulationTime = new Date(); // Starting time for the simulation
-const timeDelta = 1000 / 60; // 1-second increment per frame, can be adjusted
-let timeMultiplier = 10; // Increase to speed up the simulation
+const timeDelta = 1000 / 60; // 1-second increment per frame, adjustable
+const timeMultiplier = 1000; // Overall simulation speed multiplier
+
+// Update simulation time centrally
+function updateSimulationTime() {
+    simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
+}
+
+// Adjust Earth rotation based on centralized simulation time
+function updateEarthRotation() {
+    if (isRotationEnabled) {
+        pivot.rotation.y += earthRotationSpeed * (timeDelta / 1000) * timeMultiplier; // Convert timeDelta to seconds
+    }
+}
 
 // Function to update satellite positions with the current distanceCompressionFactor
 function updateSatellitePositions() {
-    // Increment the simulation time
-    simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
+    updateSimulationTime(); // Update the simulation time at the start of each frame
 
     const gmst = satellite.gstime(simulationTime);
     const distanceToEarth = camera.position.length();
@@ -423,11 +437,12 @@ function animate(time) {
     stats.begin()
     animationFrameId = requestAnimationFrame(animate);
 
-    // Adjust satellite visibility based on zoom level
+    // Update all elements using centralized simulation time
     adjustSatelliteVisibilityAndScale();
-
-    // Update positions
     updateSatellitePositions();
+    updateEarthRotation();
+    updateMoonPosition();
+
 
     // planets moving
     planets.forEach(({ name, mesh }) => {
@@ -435,15 +450,8 @@ function animate(time) {
         mesh.position.copy(position);
     });
 
-    
-    // Rotate the Earth pivot group (simulating Earth's rotation)
-    if (isRotationEnabled) {
-        pivot.rotation.y += earthRotationSpeed;
-    }
 
     controls.update();
-
-    updateMoonPosition(time);
 
     renderer.render(scene, camera);
 
