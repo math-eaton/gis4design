@@ -190,10 +190,21 @@ export function orbitalView(containerId) {
         const eccentricity = 0.0549; // Moon's orbital eccentricity
         const x = moonDistanceFromEarth * (Math.cos(angle) - eccentricity);
         const z = moonDistanceFromEarth * Math.sin(angle) * Math.sqrt(1 - eccentricity ** 2);
+        
+        // Set moon position in its orbit plane (inclined relative to Earth)
+        let moonPosition = new THREE.Vector3(x, 0, z);
     
-        moonMesh.position.set(x, 0, z); // Set the moon's position based on the scaled altitude
+        // Rotate the moon's orbit by its inclination (5.145 degrees) around Earth's x-axis
+        const inclination = 5.145 * (Math.PI / 180); // Convert to radians
+        moonPosition.applyAxisAngle(new THREE.Vector3(1, 0, 0), inclination);
+    
+        // Apply Earth's tilt to the moon's orbit
+        moonPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
+    
+        // Set the calculated position
+        moonMesh.position.copy(moonPosition);
     }
-    
+        
     
     // model planets
 
