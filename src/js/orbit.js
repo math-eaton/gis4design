@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
 import * as satellite from 'satellite.js';
 import Stats from 'stats.js'
-
+import { createNoise2D } from 'simplex-noise';
 
 //
 
@@ -11,7 +11,7 @@ import Stats from 'stats.js'
 // 'R' key toggles rotation
 
 export function orbitalView(containerId) {
-    let scene, camera, renderer, controls, pivot;
+    let scene, camera, renderer, controls, pivot, sunMesh;
     let animationFrameId;
 
     // toggle defaults
@@ -24,10 +24,11 @@ export function orbitalView(containerId) {
     
     let directionalLight;
     let sphere; // Global reference to the sphere
+
     const earthRadiusKm = 6371; // Earth's radius in kilometers
     const sphereRadius = 1; // Earth’s radius as 1 unit in Three.js
     const scaleFactor = sphereRadius / earthRadiusKm; // Base scaling factor for consistency
-    // const altitudeScaleFactor = sphereRadius / earthRadiusKm; // Scale real-world distances to scene units
+    
     const earthRotationSpeed = (2 * Math.PI) / 86400; // Earth rotation speed in radians per second
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
 
@@ -69,11 +70,10 @@ export function orbitalView(containerId) {
 
         scene = new THREE.Scene();
     
-        camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.1, 300000);
 
 
         camera.position.set(0, 0, 800); // Start slightly above and in front of the Earth
-        camera.rotation.x = -earthTilt; // Tilt the camera to simulate the Earth's tilt
         camera.position.z = 66; // Adjust based on scene needs
     
         renderer = new THREE.WebGLRenderer({ alpha: true });
@@ -101,6 +101,8 @@ export function orbitalView(containerId) {
         setResponsiveCameraPosition();
     
         addSun();
+        updateSunDistance();
+
     
         // Initialize pivot group before adding the moon or other elements
         pivot = new THREE.Group();
@@ -133,45 +135,79 @@ export function orbitalView(containerId) {
 
         animate();
     }
-    
+
     function addSun() {
-        // Ambient light for general low-level lighting
+        // Ambient and directional lights (your existing code)
         const ambientLight = new THREE.AmbientLight(0x404040, 1);
         scene.add(ambientLight);
     
-        // Directional light acting as the Sun (Fixed, static position)
-        directionalLight = new THREE.DirectionalLight(0x8a8a8a, 100); // Intensity for sunlight effect
-        const sunDistance = 10; // Scaled down for diorama effect
-        directionalLight.position.set(sunDistance, 0, 0); // Sun position along x-axis
+        directionalLight = new THREE.DirectionalLight(0x8a8a8a, 100);
         directionalLight.castShadow = true;
         scene.add(directionalLight);
     
         const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5);
         scene.add(hemiLight);
     
-        // Scaled Sun object
-        const sunRadius = sphereRadius * 109 / 1000; // Approximate Sun diameter
-        const sunGeometry = new THREE.SphereGeometry(sunRadius, 64, 64);
+        // Sun object setup (your existing code)
+        const sunRadius = sphereRadius * 109 * distanceCompressionFactor;
+        const sunGeometry = new THREE.SphereGeometry(sunRadius, 48, 24);
         const sunMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffbb,    // Yellowish color for the sun
-            emissive: 0xffa500, // Orange-ish emissive color for glow
-            opacity: 0.8,
+            color: 0xffff00,
+            emissive: 0xffa500,
+            opacity: 0.25,
+            transparent: true,
+            wireframe: true,
             alphaHash: true,
-
         });
-        const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-        sunMesh.position.copy(directionalLight.position);
-        // scene.add(sunMesh);
+
+    
+        sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+        scene.add(sunMesh);
+    
+        // Sun pivot group to hold position
+        const sunPivot = new THREE.Group();
+        scene.add(sunPivot);
+        sunPivot.add(sunMesh);
+        sunPivot.add(directionalLight);
+
     }
     
+        // Function to update sun's distance based on current compression factor
+        function updateSunDistance() {
+            const sunDistanceFromEarth = 149.6e6 * scaleFactor * distanceCompressionFactor;
+            sunMesh.position.set(sunDistanceFromEarth, 0, 0);
+            directionalLight.position.copy(sunMesh.position);
+        }
+    
+    
+        // Initialize Simplex Noise for subtle rotation
+        const simplex = new createNoise2D();
+        let time = 0;
+        const noiseSpeed = 0.00005;
+        const noiseAmplitude = 0.002;
+    
+        function animateSunRotation() {
+            time += noiseSpeed;
+            const noiseX = simplex(time, 0) * noiseAmplitude;
+            const noiseY = simplex(0, time) * noiseAmplitude;
+            const noiseZ = simplex(time, time) * noiseAmplitude;
+    
+            sunMesh.rotation.x += noiseX;
+            sunMesh.rotation.y += noiseY;
+            sunMesh.rotation.z += noiseZ;
+        }     
+    
+            
     function addMoon() {
         const moonRadius = sphereRadius * 0.273; // Moon radius is about 27.3% of Earth's radius
         const moonMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffffff, 
+            color: 0x8a8a8a, 
             roughness: 1,
-            metalness: 0,
-            opacity: 0.5,
-            alphaHash: true,
+            metalness: 1.25,
+            // opacity: 0.8,
+            // transparent: true,
+            // alphaHash: true,
+            // depthTest: false,
         });
     
         const moonGeometry = new THREE.SphereGeometry(moonRadius, 32, 32);
@@ -180,32 +216,32 @@ export function orbitalView(containerId) {
     }
     
     function updateMoonPosition() {
-        if (!moonMesh) return; // Ensure moonMesh exists before updating
+        if (!moonMesh) return;
     
         const moonAverageAltitudeKm = 384400; // Average distance to Moon in kilometers
-        const moonDistanceFromEarth = moonAverageAltitudeKm * scaleFactor * distanceCompressionFactor; // Apply scaling factors
+        const moonDistanceFromEarth = moonAverageAltitudeKm * scaleFactor * distanceCompressionFactor;
     
-        // Calculate the moon's angle based on angular speed and centralized simulation time
-        const angle = moonAngularSpeed * (simulationTime.getTime() / 1000); // Convert simulation time to seconds
+        // Calculate Moon’s orbit position based on the proportional time relationship
+        const elapsedSeconds = simulationTime.getTime() / 1000; // Convert simulation time to seconds
+        const moonAngle = (elapsedSeconds * moonAngularSpeed) % (2 * Math.PI); // Moon's orbital angle
         const eccentricity = 0.0549; // Moon's orbital eccentricity
-        const x = moonDistanceFromEarth * (Math.cos(angle) - eccentricity);
-        const z = moonDistanceFromEarth * Math.sin(angle) * Math.sqrt(1 - eccentricity ** 2);
-        
-        // Set moon position in its orbit plane (inclined relative to Earth)
+    
+        const x = moonDistanceFromEarth * (Math.cos(moonAngle) - eccentricity);
+        const z = moonDistanceFromEarth * Math.sin(moonAngle) * Math.sqrt(1 - eccentricity ** 2);
+    
         let moonPosition = new THREE.Vector3(x, 0, z);
     
-        // Rotate the moon's orbit by its inclination (5.145 degrees) around Earth's x-axis
+        // Rotate the Moon's orbit by its inclination (5.145 degrees) around Earth's x-axis
         const inclination = 5.145 * (Math.PI / 180); // Convert to radians
         moonPosition.applyAxisAngle(new THREE.Vector3(1, 0, 0), inclination);
     
-        // Apply Earth's tilt to the moon's orbit
+        // Apply Earth's tilt to the Moon's orbit
         moonPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
     
         // Set the calculated position
         moonMesh.position.copy(moonPosition);
     }
         
-    
     // model planets
 
     const orbitScaleFactor = 20; // Adjust for more proportionate orbits
@@ -385,13 +421,14 @@ function updateSimulationTime() {
 // Adjust Earth rotation based on centralized simulation time
 function updateEarthRotation() {
     if (isRotationEnabled) {
-        pivot.rotation.y += earthRotationSpeed * (timeDelta / 1000) * timeMultiplier; // Convert timeDelta to seconds
+        const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
+        pivot.rotation.y = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
     }
 }
 
+
 // Function to update satellite positions with the current distanceCompressionFactor
 function updateSatellitePositions() {
-    updateSimulationTime(); // Update the simulation time at the start of each frame
 
     const gmst = satellite.gstime(simulationTime);
     const distanceToEarth = camera.position.length();
@@ -448,25 +485,28 @@ function animate(time) {
     stats.begin()
     animationFrameId = requestAnimationFrame(animate);
 
+    updateSimulationTime();
+
     // Update all elements using centralized simulation time
     adjustSatelliteVisibilityAndScale();
     updateSatellitePositions();
     updateEarthRotation();
     updateMoonPosition();
+    animateSunRotation();
+    updateSunDistance();
 
 
-    // planets moving
-    planets.forEach(({ name, mesh }) => {
-        const position = calculatePlanetPosition(name, time / 1000); // Scale time if needed
-        mesh.position.copy(position);
-    });
+    // // planets moving
+    // planets.forEach(({ name, mesh }) => {
+    //     const position = calculatePlanetPosition(name, time / 1000); // Scale time if needed
+    //     mesh.position.copy(position);
+    // });
 
 
     controls.update();
 
     renderer.render(scene, camera);
 
-    // Render the scene based on whether ASCII effect is enabled or not
     stats.end()
 }
 
@@ -487,7 +527,7 @@ function animate(time) {
         const geometry = new THREE.SphereGeometry(sphereRadius, 64, 64); 
         const material = new THREE.MeshStandardMaterial({
             color: 0x000000, //  Earth
-            opacity: .95,
+            opacity: 1,
             roughness: 2, // Higher roughness to reduce shininess
             metalness: 0.5, // Low metalness for a more diffuse surface
             emissive: 0x000000, // No self-illumination    
@@ -712,9 +752,9 @@ function animate(time) {
         const minp = 0;
         const maxp = 100;
       
-        // The result should be between 1x and 200x
+
         const minv = Math.log(1);     // Natural log of 1
-        const maxv = Math.log(10000);   // Natural log of 200
+        const maxv = Math.log(20000);   // Natural log of N
       
         // calculate adjustment factor
         const scale = (maxv - minv) / (maxp - minp);
@@ -730,14 +770,14 @@ function animate(time) {
     return ((logValue - minExp) / (maxExp - minExp)) * 100;
 }
 
-function mapSliderToExponential(value) {
-    const minExp = Math.log10(0.1);
-    const maxExp = Math.log10(25);
-    const scale = minExp + (value / 100) * (maxExp - minExp);
-    return Math.pow(10, scale);
-}
-    
-    
+    function mapSliderToExponential(value) {
+        const minExp = Math.log10(0.1);
+        const maxExp = Math.log10(25);
+        const scale = minExp + (value / 100) * (maxExp - minExp);
+        return Math.pow(10, scale);
+    }
+        
+        
       function initializeSlider() {
         // Distance exaggeration slider
         const exaggerationSlider = document.getElementById("exaggeration-slider");
