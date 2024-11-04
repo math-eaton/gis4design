@@ -705,6 +705,8 @@ function animate(time) {
         };
     }
 
+    // interactive response curves
+
     function logslider(position) {
         // position will be between 0 and 100
         const minp = 0;
@@ -720,26 +722,31 @@ function animate(time) {
         return Math.exp(minv + scale * (position - minp));
       }
       
+    // Function to map an exponential target value back to the slider's 0-100 range
+    function mapExponentialToSlider(value) {
+    const minExp = Math.log10(0.1);
+    const maxExp = Math.log10(25);
+    const logValue = Math.log10(value);
+    return ((logValue - minExp) / (maxExp - minExp)) * 100;
+}
+
+function mapSliderToExponential(value) {
+    const minExp = Math.log10(0.1);
+    const maxExp = Math.log10(25);
+    const scale = minExp + (value / 100) * (maxExp - minExp);
+    return Math.pow(10, scale);
+}
     
-    function initializeSlider() {
-        // v exaggeration slider
+    
+      function initializeSlider() {
+        // Distance exaggeration slider
         const exaggerationSlider = document.getElementById("exaggeration-slider");
         const exaggerationOutput = document.getElementById("exaggeration-value");
-    
-        function mapSliderToExponential(value, minExp, maxExp) {
-            const scale = minExp + (value / 100) * (maxExp - minExp);
-            return Math.pow(10, scale);
-        }
-    
-        function mapExponentialToSlider(value, minExp, maxExp) {
-            const logValue = Math.log10(value);
-            return ((logValue - minExp) / (maxExp - minExp)) * 100;
-        }
-    
-        // Initialize exaggeration slider
         const initialCompressionFactor = 1.0;
         const exaggerationMinExp = Math.log10(0.1); // Minimum of 0.1
         const exaggerationMaxExp = Math.log10(25);  // Maximum of 25
+    
+        // Set initial values for distance exaggeration
         exaggerationSlider.value = mapExponentialToSlider(initialCompressionFactor, exaggerationMinExp, exaggerationMaxExp);
         distanceCompressionFactor = initialCompressionFactor;
         exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
@@ -751,31 +758,38 @@ function animate(time) {
             debounce(updateSatellitePositions, 1)();
         });
     
-        // Simulation speed slider with a custom scaling for finer high-end control
+        // Simulation speed slider
         const speedSlider = document.getElementById("speed-slider");
         const speedOutput = document.getElementById("speed-value");
-
-
-        // Initialize speed display
-        timeMultiplier = 1;
-        speedOutput.textContent = timeMultiplier.toFixed(1) + "x";
+        const initialSpeedMultiplier = 1;
     
-        // Define the minimum and maximum speeds
-        const minSpeed = 1;  // 1x speed
-    
-        // Initialize speed slider with custom scaling
+        // Set initial values for simulation speed
         speedSlider.value = 0; // Default position at 1x speed
-        timeMultiplier = minSpeed;
+        timeMultiplier = initialSpeedMultiplier;
         speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
-       
+    
         speedSlider.addEventListener("input", (event) => {
             const sliderPosition = parseFloat(event.target.value);
             timeMultiplier = logslider(sliderPosition);
             speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
         });
+    
+        // Reset button functionality
+        const resetButton = document.getElementById("reset-button");
+        resetButton.addEventListener("click", () => {
+            // Reset exaggeration slider
+            exaggerationSlider.value = mapExponentialToSlider(initialCompressionFactor, exaggerationMinExp, exaggerationMaxExp);
+            distanceCompressionFactor = initialCompressionFactor;
+            exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
+            updateSatellitePositions();
+    
+            // Reset simulation speed slider
+            speedSlider.value = 0; // Position for 1x speed
+            timeMultiplier = initialSpeedMultiplier;
+            speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
+        });
     }
-            
-    function onWindowResize() {
+        function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
