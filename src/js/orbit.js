@@ -183,7 +183,7 @@ export function orbitalView(containerId) {
         if (!moonMesh) return; // Ensure moonMesh exists before updating
     
         const moonAverageAltitudeKm = 384400; // Average distance to Moon in kilometers
-        const moonDistanceFromEarth = moonAverageAltitudeKm * scaleFactor; // Scaled distance in scene units
+        const moonDistanceFromEarth = moonAverageAltitudeKm * scaleFactor * distanceCompressionFactor; // Apply scaling factors
     
         // Calculate the moon's angle based on angular speed and centralized simulation time
         const angle = moonAngularSpeed * (simulationTime.getTime() / 1000); // Convert simulation time to seconds
