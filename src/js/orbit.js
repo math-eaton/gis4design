@@ -375,7 +375,7 @@ function adjustSatelliteVisibilityAndScale() {
 
 let simulationTime = new Date(); // Starting time for the simulation
 const timeDelta = 1000 / 60; // 1-second increment per frame, adjustable
-const timeMultiplier = 1000; // Overall simulation speed multiplier
+let timeMultiplier = 1000; // Overall simulation speed multiplier
 
 // Update simulation time centrally
 function updateSimulationTime() {
@@ -704,48 +704,77 @@ function animate(time) {
             timer = setTimeout(() => func.apply(this, args), delay);
         };
     }
-    
 
-    function initializeSlider() {
-        const slider = document.getElementById("exaggeration-slider");
-        const output = document.getElementById("exaggeration-value");
+    function logslider(position) {
+        // position will be between 0 and 100
+        const minp = 0;
+        const maxp = 100;
+      
+        // The result should be between 1x and 200x
+        const minv = Math.log(1);     // Natural log of 1
+        const maxv = Math.log(10000);   // Natural log of 200
+      
+        // calculate adjustment factor
+        const scale = (maxv - minv) / (maxp - minp);
+      
+        return Math.exp(minv + scale * (position - minp));
+      }
+      
     
-        // Function to map slider's linear 0-100 value to an exponential scale between 0.1 and 20
-        function mapSliderToExponential(value) {
-            const minExp = Math.log10(0.1); // Equivalent to -1
-            const maxExp = Math.log10(25);  // Equivalent to about 1.3
-            const scale = minExp + (value / 100) * (maxExp - minExp); // Scale to logarithmic range
-            return Math.pow(10, scale); // Convert from log scale back to normal scale
+    function initializeSlider() {
+        // v exaggeration slider
+        const exaggerationSlider = document.getElementById("exaggeration-slider");
+        const exaggerationOutput = document.getElementById("exaggeration-value");
+    
+        function mapSliderToExponential(value, minExp, maxExp) {
+            const scale = minExp + (value / 100) * (maxExp - minExp);
+            return Math.pow(10, scale);
         }
     
-        // Function to map an exponential target value back to the slider's 0-100 range
-        function mapExponentialToSlider(value) {
-            const minExp = Math.log10(0.1);
-            const maxExp = Math.log10(25);
+        function mapExponentialToSlider(value, minExp, maxExp) {
             const logValue = Math.log10(value);
             return ((logValue - minExp) / (maxExp - minExp)) * 100;
         }
     
-        // Initialize the slider position to 1.0x on load
-        const initialCompressionFactor = 1.0; // Default 1.0x exaggeration
-        const initialSliderValue = mapExponentialToSlider(initialCompressionFactor);
-        slider.value = initialSliderValue;
+        // Initialize exaggeration slider
+        const initialCompressionFactor = 1.0;
+        const exaggerationMinExp = Math.log10(0.1); // Minimum of 0.1
+        const exaggerationMaxExp = Math.log10(25);  // Maximum of 25
+        exaggerationSlider.value = mapExponentialToSlider(initialCompressionFactor, exaggerationMinExp, exaggerationMaxExp);
         distanceCompressionFactor = initialCompressionFactor;
-        output.textContent = distanceCompressionFactor.toFixed(1) + "x";
+        exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
     
-        // Debounce the update function to prevent excessive calls
-        const debouncedUpdateSatellitePositions = debounce(updateSatellitePositions, 1);
+        exaggerationSlider.addEventListener("input", (event) => {
+            const rawValue = parseFloat(event.target.value);
+            distanceCompressionFactor = mapSliderToExponential(rawValue, exaggerationMinExp, exaggerationMaxExp);
+            exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
+            debounce(updateSatellitePositions, 1)();
+        });
     
-        // Update the compression factor dynamically on slider input
-        slider.addEventListener("input", (event) => {
-            const rawValue = parseFloat(event.target.value); // Value between 0 and 100 from slider
-            distanceCompressionFactor = mapSliderToExponential(rawValue); // Apply exponential mapping
-            output.textContent = distanceCompressionFactor.toFixed(1) + "x";
-            debouncedUpdateSatellitePositions(); // Call the debounced function
+        // Simulation speed slider with a custom scaling for finer high-end control
+        const speedSlider = document.getElementById("speed-slider");
+        const speedOutput = document.getElementById("speed-value");
+
+
+        // Initialize speed display
+        timeMultiplier = 1;
+        speedOutput.textContent = timeMultiplier.toFixed(1) + "x";
+    
+        // Define the minimum and maximum speeds
+        const minSpeed = 1;  // 1x speed
+    
+        // Initialize speed slider with custom scaling
+        speedSlider.value = 0; // Default position at 1x speed
+        timeMultiplier = minSpeed;
+        speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
+       
+        speedSlider.addEventListener("input", (event) => {
+            const sliderPosition = parseFloat(event.target.value);
+            timeMultiplier = logslider(sliderPosition);
+            speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
         });
     }
-         
-
+            
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();

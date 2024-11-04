@@ -149,18 +149,35 @@ button {
   font-size: 0.75em;
 }
 
-#exaggeration-slider{
+label{
+ 
+  /* text-align: center; */
+
+}
+
+.slider{
+  
+filter: invert();
+
+width: 15vw;
+height: 2vh;
+vertical-align: middle;
+
+}
+
+/* #exaggeration-slider{
 
   width: 15vw;
   height: 1vh;
 
-}
+} */
 
 #exaggeration-value{
 
   color: white;
   
 }
+
 
 
 #visible:hover, #refresh:hover, #colorwheel:hover{

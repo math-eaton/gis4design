@@ -10,12 +10,19 @@
 <body>
 
   <div class="figure interactive">
-    <div id="slider-container" style="">
-      <label for="exaggeration-slider" style="color: white;">vertical exaggeration:</label>
-      <input type="range" id="exaggeration-slider" min="0" max="100" step="1" value="1.0">
+    <div id="slider-container">
+    <div >
+      <label for="exaggeration-slider">Distance Exaggeration:</label>
+      <input type="range" class="slider" id="exaggeration-slider" min="0" max="100" step="1.0">
       <span id="exaggeration-value">1.0x</span>
   </div>
-  
+  <div >
+      <label for="speed-slider">Simulation Speed:</label>
+      <input type="range" class="slider" id="speed-slider" min="0" max="100">
+      <span id="speed-value">1x</span>
+  </div>
+</div>
+    
     <div id="threeContainer1" class="vis-container"></div>
   </div>
   </div>
