@@ -423,13 +423,14 @@ function adjustSatelliteVisibilityAndScale() {
 }
 
 let simulationTime = new Date('2024-11-01T00:00:00Z'); // Starting time for the simulation
-const timeDelta = 1000 / 60; // 1-second increment per frame, adjustable
+let timeDelta = 1000 / 24; // 1-second increment per frame @ N fps divisor
 let timeMultiplier = 1000; // Overall simulation speed multiplier
 
 // Update simulation time centrally
 function updateSimulationTime() {
     simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
-    document.getElementById("simulation-time").textContent = simulationTime.toUTCString();
+    let displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
+    document.getElementById("simulation-time").textContent = displayTime;
 }
 
 // Adjust Earth rotation based on centralized simulation time
@@ -495,35 +496,55 @@ function updateSatellitePositions() {
     }
 
 
+// lock framerate
+  let clock = new THREE.Clock();
+  let delta = 0;
+  // N fps
+  const framerate = 24;
+  let interval = 1 / framerate;
+
+
+
 function animate() {
-    stats.begin()
-    animationFrameId = requestAnimationFrame(animate);
 
-    updateSimulationTime();
+    delta += clock.getDelta();
 
-    // Update all elements using centralized simulation time
-    adjustSatelliteVisibilityAndScale();
-    updateSatellitePositions();
-    updateEarthRotation();
-    updateMoonPosition();
-    animateSunRotation();
-    updateSunDistance();
+    if (delta  > interval) {
 
-    // updateScaleBar(camera, pivot, earthRadiusKm, scaleBarElements);
-    
-    // // planets moving
-    // planets.forEach(({ name, mesh }) => {
-    //     const position = calculatePlanetPosition(name, time / 1000); // Scale time if needed
-    //     mesh.position.copy(position);
-    // });
+            stats.begin()
+            animationFrameId = requestAnimationFrame(animate);
+
+            updateSimulationTime();
+
+            // Update all elements using centralized simulation time
+            adjustSatelliteVisibilityAndScale();
+            updateSatellitePositions();
+            updateEarthRotation();
+            updateMoonPosition();
+            animateSunRotation();
+            updateSunDistance();
+
+            // updateScaleBar(camera, pivot, earthRadiusKm, scaleBarElements);
+            
+            // // planets moving
+            // planets.forEach(({ name, mesh }) => {
+            //     const position = calculatePlanetPosition(name, time / 1000); // Scale time if needed
+            //     mesh.position.copy(position);
+            // });
 
 
-    controls.update();
+            controls.update();
 
-    renderer.render(scene, camera);
+            renderer.render(scene, camera);
 
-    stats.end()
-}
+            stats.end()
+
+            delta = delta % interval;
+
+        }
+        requestAnimationFrame(animate);
+    }
+
 
     // Convert geographic coordinates (lat, lon) to 3D cartesian coordinates
     function latLonToVector3(lat, lon, radius) {
@@ -824,12 +845,17 @@ function animate() {
         speedSlider.value = 0; // Default position at 1x speed
         timeMultiplier = initialSpeedMultiplier;
         speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
-    
+            
+        // Initial display
+        document.getElementById("simulation-time").textContent = simulationTime.toUTCString().replace("GMT", "UTC");
+
+        // Ensure the slider for timeMultiplier also affects the displayed time
         speedSlider.addEventListener("input", (event) => {
             const sliderPosition = parseFloat(event.target.value);
             timeMultiplier = logslider(sliderPosition);
             speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
-            document.getElementById("simulation-time").textContent = simulationTime.toUTCString();
+            let displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
+            document.getElementById("simulation-time").textContent = displayTime;
         });
             
         // Reset button functionality
