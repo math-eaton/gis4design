@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
+// import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
 import * as satellite from 'satellite.js';
 import Stats from 'stats.js'
 import { createNoise2D } from 'simplex-noise';
+// import { Earcut } from 'three/src/extras/Earcut.js';
 
 //
 
@@ -14,9 +15,17 @@ export function orbitalView(containerId) {
     let scene, camera, renderer, controls, pivot, sunMesh;
     let animationFrameId;
 
+    let scaleBar;
+    // const scaleBarElements = createScaleBar();
+
+
     // toggle defaults
     let isRotationEnabled = true;
     let wireframe = false;
+
+    // const raycaster = new THREE.Raycaster();
+    // const cameraDirection = new THREE.Vector3();
+
 
     // responsive stuff
     const baseZ = 66; // default z-position value for desktop
@@ -28,6 +37,8 @@ export function orbitalView(containerId) {
     const earthRadiusKm = 6371; // Earth's radius in kilometers
     const sphereRadius = 1; // Earth’s radius as 1 unit in Three.js
     const scaleFactor = sphereRadius / earthRadiusKm; // Base scaling factor for consistency
+    // const scaleBarLengthKm = sphereRadius * earthRadiusKm;
+
     
     const earthRotationSpeed = (2 * Math.PI) / 86400; // Earth rotation speed in radians per second
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
@@ -99,6 +110,7 @@ export function orbitalView(containerId) {
 
         // Responsive z-position initialization
         setResponsiveCameraPosition();
+
     
         addSun();
         updateSunDistance();
@@ -128,6 +140,9 @@ export function orbitalView(containerId) {
         loadAllData();
 
         initializeSlider();
+
+        scaleBar = createScaleBar();
+
 
     
         window.addEventListener('resize', onWindowResize, false);
@@ -311,8 +326,6 @@ let satelliteMeshes = []; // Store satellite mesh references
 
 // Visualize satellites with TLE data from cache
 function visualizeSatellites(tleArray) {
-    const now = new Date();
-    const gmst = satellite.gstime(now);
 
     tleArray.forEach((sat, index) => {
         const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
@@ -406,16 +419,17 @@ function adjustSatelliteVisibilityAndScale() {
         mesh.scale.set(satelliteScaleFactor, satelliteScaleFactor, satelliteScaleFactor); // Apply scale factor
     });
 
-    console.log(`Visible satellites: ${visibleCount} of ${satelliteMeshes.length}`);
+    // console.log(`Visible satellites: ${visibleCount} of ${satelliteMeshes.length}`);
 }
 
-let simulationTime = new Date(); // Starting time for the simulation
+let simulationTime = new Date('2024-11-01T00:00:00Z'); // Starting time for the simulation
 const timeDelta = 1000 / 60; // 1-second increment per frame, adjustable
 let timeMultiplier = 1000; // Overall simulation speed multiplier
 
 // Update simulation time centrally
 function updateSimulationTime() {
     simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
+    document.getElementById("simulation-time").textContent = simulationTime.toUTCString();
 }
 
 // Adjust Earth rotation based on centralized simulation time
@@ -481,7 +495,7 @@ function updateSatellitePositions() {
     }
 
 
-function animate(time) {
+function animate() {
     stats.begin()
     animationFrameId = requestAnimationFrame(animate);
 
@@ -495,7 +509,8 @@ function animate(time) {
     animateSunRotation();
     updateSunDistance();
 
-
+    // updateScaleBar(camera, pivot, earthRadiusKm, scaleBarElements);
+    
     // // planets moving
     // planets.forEach(({ name, mesh }) => {
     //     const position = calculatePlanetPosition(name, time / 1000); // Scale time if needed
@@ -558,7 +573,7 @@ function animate(time) {
     };
 
 
-        /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     // FETCH EXTERNAL DATA /////////////////////////////
 
     async function loadAllData() {
@@ -570,6 +585,7 @@ function animate(time) {
             'data/ne_110m_graticules_10.geojson',
             'data/ne_110m_land.geojson',
             'data/ne_110m_ocean.geojson',
+            'data/ne_50m_ocean.geojson'
 
         ];
 
@@ -617,13 +633,13 @@ function animate(time) {
 
             case 'data/ne_110m_land.geojson':
                 // Example: Handle contour line GeoJSON
-                console.log("loaded land:", data);
+                // console.log("loaded land:", data);
                 // addLandToScene(data);
                 break;
 
-            case 'data/ne_110m_ocean.geojson':
+            case 'data/ne_50m_ocean.geojson':
                 // Example: Handle contour line GeoJSON
-                console.log("loaded land:", data);
+                console.log("loaded ocean:", data);
                 // addOceanToScene(data);
                 break;
     
@@ -721,8 +737,9 @@ function animate(time) {
 
     // polygon data rendering ////////////
 
-    
 
+    // Function to add ocean polygons to the scene
+        
     // Convert geographic coordinates (lat, lon) to 3D cartesian coordinates
     function latLonToVector3(lat, lon, radius) {
         const phi = (90 - lat) * (Math.PI / 180); // Convert latitude to radians
@@ -795,7 +812,7 @@ function animate(time) {
             const rawValue = parseFloat(event.target.value);
             distanceCompressionFactor = mapSliderToExponential(rawValue, exaggerationMinExp, exaggerationMaxExp);
             exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
-            debounce(updateSatellitePositions, 1)();
+            debounce(updateSatellitePositions, 5)();
         });
     
         // Simulation speed slider
@@ -812,8 +829,9 @@ function animate(time) {
             const sliderPosition = parseFloat(event.target.value);
             timeMultiplier = logslider(sliderPosition);
             speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
+            document.getElementById("simulation-time").textContent = simulationTime.toUTCString();
         });
-    
+            
         // Reset button functionality
         const resetButton = document.getElementById("reset-button");
         resetButton.addEventListener("click", () => {
@@ -829,6 +847,100 @@ function animate(time) {
             speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
         });
     }
+
+
+
+    // scale bar
+    function createScaleBar() {
+        const scaleBar = document.createElement("div");
+        scaleBar.id = "scale-bar";
+        scaleBar.style.position = "absolute";
+        scaleBar.style.height = "20px"; // Thickness of the scale bar
+        scaleBar.style.backgroundColor = "#ffd700"; // Gold color
+        document.body.appendChild(scaleBar);
+    
+        // Optional label for the scale bar
+        const scaleBarLabel = document.createElement("div");
+        scaleBarLabel.id = "scale-bar-label";
+        scaleBarLabel.style.position = "absolute";
+        scaleBarLabel.style.color = "#ffd700";
+        scaleBarLabel.style.fontSize = "12px";
+        scaleBarLabel.style.fontFamily = "Arial, sans-serif";
+        document.body.appendChild(scaleBarLabel);
+    
+        return { scaleBar, scaleBarLabel };
+    }
+    
+    // Calculate the screen-space radius of Earth and update the scale bar position and length
+    function updateScaleBar(camera, pivot, sphereRadiusKm, scaleBarElements) {
+        const { scaleBar, scaleBarLabel } = scaleBarElements;
+    
+        // Project Earth's center to screen space
+        const earthCenter = new THREE.Vector3(0, 0, 0).applyMatrix4(pivot.matrixWorld).project(camera);
+        const screenCenterX = (earthCenter.x * 0.5 + 0.5) * window.innerWidth;
+        const screenCenterY = (1 - (earthCenter.y * 0.5 + 0.5)) * window.innerHeight;
+    
+        // Define a 3D point on Earth's surface along the x-axis
+        const surfacePoint = new THREE.Vector3(sphereRadiusKm, 0, 0).applyMatrix4(pivot.matrixWorld).project(camera);
+        const surfacePointX = (surfacePoint.x * 0.5 + 0.5) * window.innerWidth;
+        const surfacePointY = (1 - (surfacePoint.y * 0.5 + 0.5)) * window.innerHeight;
+    
+        // Calculate the screen-space radius of Earth
+        const earthRadiusScreen = Math.sqrt(
+            Math.pow(screenCenterX - surfacePointX, 2) +
+            Math.pow(screenCenterY - surfacePointY, 2)
+        );
+    
+        // Calculate the position at 315 degrees from the Earth's center in screen space
+        const angleRadians = (315 * Math.PI) / 180;
+        const scaleBarX = screenCenterX + earthRadiusScreen * Math.cos(angleRadians);
+        const scaleBarY = screenCenterY + earthRadiusScreen * Math.sin(angleRadians);
+    
+        // Update scale bar length based on the screen-space Earth radius
+        const scaleBarLengthPx = earthRadiusScreen / 100; // Adjust scale bar length proportionally
+    
+        // Set scale bar styles for position and length
+        scaleBar.style.width = `${scaleBarLengthPx}px`;
+        // scaleBar.style.left = `${scaleBarX}px`;
+        // scaleBar.style.top = `${scaleBarY}px`;
+        // scaleBar.style.transform = `translate(-50%, -50%) rotate(-45deg)`; // Rotate to 315 degrees
+    
+        // Update scale bar label
+        // scaleBarLabel.style.left = `${scaleBarX + scaleBarLengthPx / 2}px`;
+        // scaleBarLabel.style.top = `${scaleBarY}px`;
+        // scaleBarLabel.innerHTML = `${(scaleBarLengthPx * (sphereRadiusKm / earthRadiusScreen)).toFixed(0)} km`; // Approximate real-world length
+    }
+    
+                
+    function createScaleBarLabel(scaleBarLengthKm) {
+        const scaleBarLabel = document.createElement("div");
+        scaleBarLabel.id = "scale-bar-label";
+        scaleBarLabel.style.position = "absolute";
+        scaleBarLabel.style.color = "#ffd700";
+        scaleBarLabel.style.fontSize = "12px";
+        scaleBarLabel.style.fontFamily = "Arial, sans-serif";
+        scaleBarLabel.innerHTML = `${scaleBarLengthKm.toFixed(0)} km`; // Label showing "6371 km"
+        document.body.appendChild(scaleBarLabel);
+    }
+    
+    function updateScaleBarLabelPosition(scaleBarLengthKm) {
+        const scaleBarLabel = document.getElementById("scale-bar-label");
+        if (!scaleBarLabel) return;
+    
+        const scaleBarPosition = new THREE.Vector3(scaleBarLengthKm / earthRadiusKm / 2, 0, 0);
+        scaleBarPosition.applyMatrix4(pivot.matrixWorld); // Get world position of the scale bar end
+        const projectedPosition = scaleBarPosition.project(camera);
+    
+        // Convert to screen space
+        const screenX = (projectedPosition.x * 0.5 + 0.5) * window.innerWidth;
+        const screenY = (1 - (projectedPosition.y * 0.5 + 0.5)) * window.innerHeight;
+    
+        // Update label position
+        scaleBarLabel.style.left = `${screenX}px`;
+        scaleBarLabel.style.top = `${screenY}px`;
+    }
+    
+    
         function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
