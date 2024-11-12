@@ -309,7 +309,8 @@ export function orbitalView(containerId) {
 
 // Load TLE data from cached JSON file
 function loadTLEData() {
-    fetch('cachedSatellites.json')
+    // fetch('cachedSatellites.json')
+    fetch('https://orbital-bbfd.onrender.com/satellites')
         .then(response => {
             if (!response.ok) throw new Error('Failed to load cached TLE data');
             return response.json();
@@ -318,7 +319,22 @@ function loadTLEData() {
             visualizeSatellites(tleArray);
         })
         .catch(error => {
-            console.error('Error loading TLE data:', error);
+            console.warn('Error fetching TLE data from server:', error);
+            console.log('Attempting to load data from local static file...');
+
+            // Fallback to local file if the server request fails
+            fetch('data/cachedSatellites.json')
+                .then(localResponse => {
+                    if (!localResponse.ok) throw new Error('Local file fetch failed');
+                    return localResponse.json();
+                })
+                .then(tleArray => {
+                    console.log('Loaded TLE data from local static file.');
+                    visualizeSatellites(tleArray);
+                })
+                .catch(localError => {
+                    console.error('Failed to load TLE data from both server and local file:', localError);
+                });
         });
 }
 
