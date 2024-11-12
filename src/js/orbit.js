@@ -12,7 +12,7 @@ import { createNoise2D } from 'simplex-noise';
 // 'R' key toggles rotation
 
 export function orbitalView(containerId, onTLELoadComplete) {
-    let scene, camera, renderer, controls, pivot, sunMesh;
+    let scene, camera, renderer, controls, pivot, moonPivot, sunMesh;
     let animationFrameId;
 
     let scaleBar;
@@ -29,6 +29,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
 
     // responsive stuff
     const baseZ = 66; // default z-position value for desktop
+
     const mobileScaleFactor = 2; // responsive camera
     
     let directionalLight;
@@ -85,7 +86,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
 
 
         camera.position.set(0, 0, 800); // Start slightly above and in front of the Earth
-        camera.position.z = 66; // Adjust based on scene needs
+        camera.position.z = 66; // init
     
         renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -122,8 +123,11 @@ export function orbitalView(containerId, onTLELoadComplete) {
         pivot = new THREE.Group();
         pivot.rotation.z = earthTilt; // Tilt the entire Earth system by 23.4 degrees on the Z-axis
         scene.add(pivot);
+
+        moonPivot = new THREE.Group();
+        scene.add(moonPivot)
     
-        addMoon(); // Now add the moon after pivot is defined
+        addMoon(); 
     
         // Add planets to the scene
         addPlanet("Mercury", 0xbebebe, 2439.7); // Mercury radius in km
@@ -146,9 +150,11 @@ export function orbitalView(containerId, onTLELoadComplete) {
         scaleBar = createScaleBar();
 
 
-    
         window.addEventListener('resize', onWindowResize, false);
         onWindowResize(); // run once
+
+        // camera.rotation.set(-earthTilt);
+
 
         animate();
     }
@@ -229,7 +235,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
     
         const moonGeometry = new THREE.SphereGeometry(moonRadius, 32, 32);
         moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
-        pivot.add(moonMesh); // Add moon mesh to the pivot so it orbits with Earth
+        moonPivot.add(moonMesh); // Add moon mesh to the pivot so it orbits with Earth
     }
     
     function updateMoonPosition() {
@@ -392,6 +398,7 @@ let MAX_SCALE = 1.25; // Maximum size when zoomed out
 function setResponsiveCameraPosition() {
     const isMobile = window.innerWidth <= 768;
     camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
+    camera.position.y = earthTilt;
 
     // Set zoom limits based on device type
     if (isMobile) {
@@ -827,6 +834,7 @@ function animate() {
 
     // interactive response curves
 
+    // log for sim speed
     function logslider(position) {
         // position will be between 0 and 100
         const minp = 0;
@@ -842,7 +850,8 @@ function animate() {
         return Math.exp(minv + scale * (position - minp));
       }
       
-    // Function to map an exponential target value back to the slider's 0-100 range
+    // exp for vertical exaggeration
+    // map exponential target value back to the slider's 0-100 range
     function mapExponentialToSlider(value) {
     const minExp = Math.log10(0.1);
     const maxExp = Math.log10(25);

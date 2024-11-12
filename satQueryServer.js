@@ -26,9 +26,13 @@ const timeFilePath = path.join(__dirname, 'lastCacheTime.json');
 
 // Function to fetch TLE data from Celestrak
 async function fetchTLEData() {
-    const response = await axios.get(TLE_URL);
-    const data = response.data;
-    return parseTLEData(data);
+    try {
+        const response = await axios.get(TLE_URL);
+        return parseTLEData(response.data);
+    } catch (error) {
+        console.error('Error fetching TLE data:', error);
+        throw error; // Rethrow to catch it in the calling function
+    }
 }
 
 // Function to parse TLE data
