@@ -111,6 +111,8 @@ export function orbitalView(containerId) {
         // Responsive z-position initialization
         setResponsiveCameraPosition();
 
+        initializeSimulationTime();
+
     
         addSun();
         updateSunDistance();
@@ -291,7 +293,7 @@ export function orbitalView(containerId) {
     }
             
 
-    const sizeScaleFactor = 0.5;
+    // const sizeScaleFactor = 0.5;
 
     function addPlanet(planetName, color, relativeRadius) {
         const planetRadius = sphereRadius * (relativeRadius / earthRadiusKm) * scaleFactor;
@@ -307,7 +309,7 @@ export function orbitalView(containerId) {
 
 // Load TLE data from cached JSON file
 function loadTLEData() {
-    fetch('data/cachedSatellites.json')
+    fetch('cachedSatellites.json')
         .then(response => {
             if (!response.ok) throw new Error('Failed to load cached TLE data');
             return response.json();
@@ -420,18 +422,39 @@ function adjustSatelliteVisibilityAndScale() {
     });
 
     // console.log(`Visible satellites: ${visibleCount} of ${satelliteMeshes.length}`);
-}
+    }
+    let simulationTime; // Starting time for the simulation
+    const timeDelta = 1000 / 24; // 1-second increment per frame @ N fps divisor
+    let timeMultiplier = 1000; // Overall simulation speed multiplier
 
-let simulationTime = new Date('2024-11-01T00:00:00Z'); // Starting time for the simulation
-let timeDelta = 1000 / 24; // 1-second increment per frame @ N fps divisor
-let timeMultiplier = 1000; // Overall simulation speed multiplier
+    // Function to fetch and set initial simulation time
+    function initializeSimulationTime() {
+        fetch('lastCacheTime.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch last cache time");
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Set simulationTime to the cached timestamp
+                simulationTime = new Date(data.timestamp);
+                document.getElementById("simulation-time").textContent = simulationTime.toUTCString().replace("GMT", "UTC");
+            })
+            .catch(error => {
+                console.error("Error loading cache time:", error);
+                // Fallback to a default date if fetch fails
+                simulationTime = new Date('2024-11-01T00:00:00Z');
+            });
+    }
 
-// Update simulation time centrally
-function updateSimulationTime() {
-    simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
-    let displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
-    document.getElementById("simulation-time").textContent = displayTime;
-}
+    // Update simulation time centrally
+    function updateSimulationTime() {
+        simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
+        let displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
+        document.getElementById("simulation-time").textContent = displayTime;
+    }
+
 
 // Adjust Earth rotation based on centralized simulation time
 function updateEarthRotation() {
@@ -846,8 +869,6 @@ function animate() {
         timeMultiplier = initialSpeedMultiplier;
         speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
             
-        // Initial display
-        document.getElementById("simulation-time").textContent = simulationTime.toUTCString().replace("GMT", "UTC");
 
         // Ensure the slider for timeMultiplier also affects the displayed time
         speedSlider.addEventListener("input", (event) => {
@@ -856,6 +877,10 @@ function animate() {
             speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
             let displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
             document.getElementById("simulation-time").textContent = displayTime;
+
+        // Initial display
+        document.getElementById("simulation-time").textContent = simulationTime.toUTCString().replace("GMT", "UTC");
+
         });
             
         // Reset button functionality

@@ -136,6 +136,22 @@ button {
 
 }
 
+#time-display{
+
+  position: absolute;
+  right: 2vw;
+  bottom: 1vh;
+  z-index: 1;
+  padding: 2vw;
+  font-size: 1em;
+  display: flex; 
+  flex-direction: column;
+  gap: 1em;
+  text-align: left;
+
+
+}
+
 /* label{
  
   text-align: center;
@@ -170,6 +186,7 @@ label{
 
 #reset-button{
   width: fit-content;
+  font-size: small;
 }
 
 
@@ -352,6 +369,14 @@ label{
 
   }   
 
+
+  #time-display{
+
+    padding-bottom: 3vh;
+
+  }
+
+
   .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -432,7 +457,7 @@ label{
 
   
   }
-  
+
 
 
   #links {
