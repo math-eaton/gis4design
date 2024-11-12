@@ -79,6 +79,7 @@ button {
 }
 
 
+
 .vis-container {
   position: fixed;
   top: 0;
@@ -91,6 +92,29 @@ button {
   /* filter: contrast(0.45) brightness(1.5) drop-shadow(16px 16px 20px blue); */
   filter: drop-shadow(0px 0px 66px rgba(127, 127, 127, 0.5));
   image-rendering: pixelated;
+}
+
+#loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1em;
+  z-index: 9999;
+  overflow: hidden; 
+}
+
+#loadingText {
+  text-align: center;
+  white-space: pre-wrap; /* Allows ellipses to wrap onto a new line */
+  word-wrap: break-word; /* Breaks text to prevent overflow */
+  max-width: 90vw; /* Limits width to 90% of viewport to keep content readable */
 }
 
 
@@ -331,25 +355,9 @@ label{
 
   }
 
-  .section {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1vh;
-    margin-top: 0.5em;
-    padding: 0.5em;
-  }
-
-  .pointer {
-    width: 100%;
-    padding: 1.5em;
-    text-align: center;
-  }
-
-  #name {
-    margin-top: -5em;
-    padding: 1.5em;
-    z-index: 666;
-  }
+  #loadingText {
+    font-size: 0.75em;
+}
 
   .vis-container {
     width: 100vw;

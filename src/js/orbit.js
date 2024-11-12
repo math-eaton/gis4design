@@ -11,7 +11,7 @@ import { createNoise2D } from 'simplex-noise';
 // 'W' key toggles wireframe
 // 'R' key toggles rotation
 
-export function orbitalView(containerId) {
+export function orbitalView(containerId, onTLELoadComplete) {
     let scene, camera, renderer, controls, pivot, sunMesh;
     let animationFrameId;
 
@@ -308,8 +308,9 @@ export function orbitalView(containerId) {
     // irl satellite stuff
 
 // Load TLE data from cached JSON file
+// with loading screen
+// todo: separate loading screen to main.js config
 function loadTLEData() {
-    // fetch('cachedSatellites.json')
     fetch('https://orbital-bbfd.onrender.com/satellites')
         .then(response => {
             if (!response.ok) throw new Error('Failed to load cached TLE data');
@@ -317,12 +318,12 @@ function loadTLEData() {
         })
         .then(tleArray => {
             visualizeSatellites(tleArray);
+            onTLELoadComplete(); // Call the callback when TLE data is loaded
         })
         .catch(error => {
             console.warn('Error fetching TLE data from server:', error);
             console.log('Attempting to load data from local static file...');
 
-            // Fallback to local file if the server request fails
             fetch('data/cachedSatellites.json')
                 .then(localResponse => {
                     if (!localResponse.ok) throw new Error('Local file fetch failed');
@@ -331,9 +332,11 @@ function loadTLEData() {
                 .then(tleArray => {
                     console.log('Loaded TLE data from local static file.');
                     visualizeSatellites(tleArray);
+                    onTLELoadComplete(); // Call the callback when local data is loaded
                 })
                 .catch(localError => {
                     console.error('Failed to load TLE data from both server and local file:', localError);
+                    onTLELoadComplete(); // Still trigger the callback if loading fails
                 });
         });
 }
