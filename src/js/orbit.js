@@ -445,7 +445,7 @@ function adjustSatelliteVisibilityAndScale() {
 
     // Function to fetch and set initial simulation time
     function initializeSimulationTime() {
-        fetch('lastCacheTime.json')
+        fetch(`${import.meta.env.BASE_URL}lastCacheTime.json`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error("Failed to fetch last cache time");
@@ -463,7 +463,7 @@ function adjustSatelliteVisibilityAndScale() {
                 simulationTime = new Date('2024-11-01T00:00:00Z');
             });
     }
-
+    
     // Update simulation time centrally
     function updateSimulationTime() {
         simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
