@@ -445,7 +445,7 @@ function adjustSatelliteVisibilityAndScale() {
 
     // Function to fetch and set initial simulation time
     function initializeSimulationTime() {
-        fetch(`${import.meta.env.BASE_URL}lastCacheTime.json`)
+        fetch('https://orbital-bbfd.onrender.com/satellites') // Fetch from render server
             .then(response => {
                 if (!response.ok) {
                     throw new Error("Failed to fetch last cache time");
@@ -453,7 +453,7 @@ function adjustSatelliteVisibilityAndScale() {
                 return response.json();
             })
             .then(data => {
-                // Set simulationTime to the cached timestamp
+                // Set simulationTime to cached timestamp from the server response
                 simulationTime = new Date(data.timestamp);
                 document.getElementById("simulation-time").textContent = simulationTime.toUTCString().replace("GMT", "UTC");
             })
@@ -463,7 +463,7 @@ function adjustSatelliteVisibilityAndScale() {
                 simulationTime = new Date('2024-11-01T00:00:00Z');
             });
     }
-    
+        
     // Update simulation time centrally
     function updateSimulationTime() {
         simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);

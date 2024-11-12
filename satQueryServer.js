@@ -74,8 +74,13 @@ app.get('/satellites', async (req, res) => {
         }
 
         // Read from the cache
-        const cachedData = fs.readFileSync(cacheFilePath, 'utf-8');
-        res.json(JSON.parse(cachedData));
+        const cachedData = JSON.parse(fs.readFileSync(cacheFilePath, 'utf-8'));
+
+        // Get the last cache time
+        const lastCacheTime = JSON.parse(fs.readFileSync(timeFilePath, 'utf-8')).timestamp;
+
+        // Respond with TLE data and timestamp
+        res.json({ timestamp: lastCacheTime, satellites: cachedData });
     } catch (error) {
         console.error('Error fetching or caching TLE data:', error);
         res.status(500).send('Error fetching or caching TLE data');
