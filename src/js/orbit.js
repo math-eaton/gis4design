@@ -57,7 +57,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
     const stats = new Stats()
     stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
     // document.body.appendChild(stats.dom)
-
+    stats.dom.id = 'statistics';
 
     window.addEventListener('keydown', (event) => {
         if (event.key === 'R' || event.key === 'r') {
@@ -402,8 +402,8 @@ function setResponsiveCameraPosition() {
 
     // Set zoom limits based on device type
     if (isMobile) {
-        controls.minDistance = 10; // Set closer min zoom for mobile
-        controls.maxDistance = 500; // Set restricted max zoom for mobile
+        controls.minDistance = 50; // can't zoom in as far on mobile
+        controls.maxDistance = 500; // can zoom out further tho
 
         // Adjust visibility percentage and scaling for mobile
         MIN_VISIBLE_PERCENTAGE = 0.15; // Show 15% of satellites at max zoom out
@@ -411,8 +411,8 @@ function setResponsiveCameraPosition() {
         MIN_SCALE = 0.75; 
         MAX_SCALE = 1.3; 
     } else {
-        controls.minDistance = 10; // Original min zoom for desktop
-        controls.maxDistance = 100; // Original max zoom for desktop
+        controls.minDistance = 10;
+        controls.maxDistance = 100; 
 
         // Adjust visibility percentage and scaling for desktop
         MIN_VISIBLE_PERCENTAGE = 0.3; // Show 30% of satellites at max zoom out
@@ -450,7 +450,7 @@ function adjustSatelliteVisibilityAndScale() {
     // console.log(`Visible satellites: ${visibleCount} of ${satelliteMeshes.length}`);
     }
     let simulationTime; // Starting time for the simulation
-    const timeDelta = 1000 / 24; // 1-second increment per frame @ N fps divisor
+    const timeDelta = 1000 / 20; // 1-second increment per frame @ N fps divisor
     let timeMultiplier = 1000; // Overall simulation speed multiplier
 
     // Function to fetch and set initial simulation time
@@ -486,7 +486,12 @@ function adjustSatelliteVisibilityAndScale() {
 function updateEarthRotation() {
     if (isRotationEnabled) {
         const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
-        pivot.rotation.y = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
+        const rotationAngle = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
+
+        // Reset pivot rotation to apply combined tilt and rotation
+        pivot.rotation.set(0, 0, 0); // reset rotations
+        pivot.rotateZ(earthTilt); //  tilt 
+        pivot.rotateY(rotationAngle); // rotation around  tilted axis
     }
 }
 
@@ -549,7 +554,7 @@ function updateSatellitePositions() {
   let clock = new THREE.Clock();
   let delta = 0;
   // N fps
-  const framerate = 24;
+  const framerate = 20;
   let interval = 1 / framerate;
 
 
