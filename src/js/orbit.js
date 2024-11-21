@@ -22,6 +22,8 @@ export function orbitalView(containerId, onTLELoadComplete) {
     // toggle defaults
     let isRotationEnabled = true;
     let wireframe = false;
+    let trailsEnabled = false;
+
 
     // const raycaster = new THREE.Raycaster();
     // const cameraDirection = new THREE.Vector3();
@@ -53,10 +55,13 @@ export function orbitalView(containerId, onTLELoadComplete) {
 
     let moonMesh;
 
+    const maxTrailLength = 5; // Maximum number of historical points per satellite
+    const satelliteTrails = new Map(); // Map satellite ID to trail positions
+
     // stats
     const stats = new Stats()
     stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
-    // document.body.appendChild(stats.dom)
+    document.body.appendChild(stats.dom)
     stats.dom.id = 'statistics';
 
     window.addEventListener('keydown', (event) => {
@@ -324,6 +329,7 @@ function loadTLEData() {
         })
         .then(tleArray => {
             visualizeSatellites(tleArray);
+            initializeSatelliteTrails();
             onTLELoadComplete(); // Call the callback when TLE data is loaded
         })
         .catch(error => {
@@ -338,6 +344,7 @@ function loadTLEData() {
                 .then(tleArray => {
                     console.log('Loaded TLE data from local static file.');
                     visualizeSatellites(tleArray);
+                    initializeSatelliteTrails();
                     onTLELoadComplete(); // Call the callback when local data is loaded
                 })
                 .catch(localError => {
@@ -393,6 +400,33 @@ let MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
 // vars for satellite size scaling
 let MIN_SCALE = 0.75; // Minimum size when zoomed in
 let MAX_SCALE = 1.25; // Maximum size when zoomed out
+
+
+function initializeSatelliteTrails() {
+    if (!trailsEnabled) return;
+
+    satelliteMeshes.forEach((mesh, index) => {
+        if (!satelliteTrails.has(index)) {
+            satelliteTrails.set(index, {
+                positions: [],
+                lineMesh: null,
+            });
+        }
+    });
+}
+
+document.getElementById('toggle-trails-checkbox').addEventListener('change', (event) => {
+    trailsEnabled = event.target.checked;
+
+    if (trailsEnabled) {
+        console.log('Trails enabled');
+        initializeSatelliteTrails();
+    } else {
+        console.log('Trails disabled');
+        clearSatelliteTrails();
+    }
+});
+
 
 // Adjust visibility percentages and scaling based on device type
 function setResponsiveCameraPosition() {
@@ -496,49 +530,78 @@ function updateEarthRotation() {
 }
 
 
-// Function to update satellite positions with the current distanceCompressionFactor
-function updateSatellitePositions() {
+    // Function to update satellite positions with the current distanceCompressionFactor
+    const frameInterval = 2; // Adjust as needed
+    let frameCount = 0;
 
-    const gmst = satellite.gstime(simulationTime);
-    const distanceToEarth = camera.position.length();
+    function updateSatellitePositions() {
+        const gmst = satellite.gstime(simulationTime);
 
-    // Determine LOD visibility percentage based on camera distance
-    const visiblePercentage = THREE.MathUtils.clamp(
-        ((MAX_DISTANCE - distanceToEarth) / (MAX_DISTANCE - MIN_DISTANCE)) * (MAX_VISIBLE_PERCENTAGE - MIN_VISIBLE_PERCENTAGE) + MIN_VISIBLE_PERCENTAGE,
-        MIN_VISIBLE_PERCENTAGE,
-        MAX_VISIBLE_PERCENTAGE
-    );
+        satelliteMeshes.forEach((mesh, index) => {
+            if (!mesh.visible) return;
 
-    const visibleCount = Math.floor(satelliteMeshes.length * visiblePercentage);
+            const { satrec } = mesh.userData;
+            const positionAndVelocity = satellite.propagate(satrec, simulationTime);
+            if (!positionAndVelocity.position) return;
 
-    satelliteMeshes.forEach((mesh, index) => {
-        if (index >= visibleCount) {
-            mesh.visible = false;
-            return;
-        }
-        mesh.visible = true;
+            const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+            const compressedAltitude = positionGd.height * scaleFactor * distanceCompressionFactor;
+            const currentPosition = latLonToVector3(
+                satellite.degreesLat(positionGd.latitude),
+                satellite.degreesLong(positionGd.longitude),
+                sphereRadius + compressedAltitude
+            );
 
-        const { satrec } = mesh.userData;
-        const positionAndVelocity = satellite.propagate(satrec, simulationTime);
-        if (!positionAndVelocity.position) return;
+            mesh.position.copy(currentPosition);
 
-        const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+            if (trailsEnabled) {
+                const trail = satelliteTrails.get(index);
+                if (trail) {
+                    trail.positions.push(currentPosition.clone());
+                    if (trail.positions.length > maxTrailLength) {
+                        trail.positions.shift();
+                    }
+                    updateTrailGeometry(trail);
+                }
+            }
+        });
+    }
 
-        // Altitude with compression factor
-        const compressedAltitude = positionGd.height * scaleFactor * distanceCompressionFactor;
-        const position = latLonToVector3(
-            satellite.degreesLat(positionGd.latitude),
-            satellite.degreesLong(positionGd.longitude),
-            sphereRadius + compressedAltitude
-        );
+function updateTrailGeometry(trail) {
+    if (!trail.positions.length) return;
 
-        mesh.position.copy(position);
+    if (!trail.lineMesh) {
+        const geometry = new THREE.BufferGeometry();
+        const material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 0.333, transparent: true, alphaHash: true });
+        trail.lineMesh = new THREE.Line(geometry, material);
+        scene.add(trail.lineMesh);
+            }
 
-        // Adjust size based on camera distance
-        const satelliteScaleFactor = THREE.MathUtils.lerp(MIN_SCALE, MAX_SCALE, (distanceToEarth - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE));
-        mesh.scale.set(satelliteScaleFactor, satelliteScaleFactor, satelliteScaleFactor);
+    const positionsArray = new Float32Array(trail.positions.length * 3);
+    trail.positions.forEach((pos, i) => {
+        positionsArray[i * 3] = pos.x;
+        positionsArray[i * 3 + 1] = pos.y;
+        positionsArray[i * 3 + 2] = pos.z;
     });
+
+    trail.lineMesh.geometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
+    trail.lineMesh.geometry.setDrawRange(0, trail.positions.length);
+    trail.lineMesh.geometry.attributes.position.needsUpdate = true;
 }
+
+
+    function clearSatelliteTrails() {
+        satelliteTrails.forEach((trail) => {
+            if (trail.lineMesh) {
+                scene.remove(trail.lineMesh);
+                trail.lineMesh.geometry.dispose();
+                trail.lineMesh.material.dispose();
+            }
+        });
+        satelliteTrails.clear(); // Reset trail data
+    }
+
+
 
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
