@@ -329,6 +329,9 @@ export function orbitalView(containerId, onTLELoadComplete) {
 // Load TLE data from cached JSON file
 // with loading screen
 // todo: separate loading screen to main.js config
+
+let satelliteMesh;
+
 function loadTLEData() {
     fetch('https://orbital-bbfd.onrender.com/satellites')
         .then(response => {
@@ -336,8 +339,8 @@ function loadTLEData() {
             return response.json();
         })
         .then(tleArray => {
-            visualizeSatellites(tleArray);
-            onTLELoadComplete(); // Call the callback when TLE data is loaded
+            satelliteMesh = visualizeSatellites(tleArray);
+            onTLELoadComplete(); // callback on load
         })
         .catch(error => {
             console.warn('Error fetching TLE data from server:', error);
@@ -350,7 +353,7 @@ function loadTLEData() {
                 })
                 .then(tleArray => {
                     console.log('Loaded TLE data from local static file.');
-                    visualizeSatellites(tleArray);
+                    satelliteMesh = visualizeSatellites(tleArray);
                     onTLELoadComplete(); // Call the callback when local data is loaded
                 })
                 .catch(localError => {
@@ -366,35 +369,44 @@ let satelliteMeshes = []; // Store satellite mesh references
 
 // Visualize satellites with TLE data from cache
 function visualizeSatellites(tleArray) {
+    const instanceCount = tleArray.length;
+
+    // Geometry and material for the satellites
+    const satelliteGeometry = new THREE.SphereGeometry(0.003, 4, 4); // Simplified geometry
+    const satelliteMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff0000,
+        metalness: 1,
+        roughness: 0.2,
+        wireframe: true,
+        transparent: true,
+        alphaHash: true,
+        opacity: 0.8,
+    });
+
+    // Create an InstancedMesh
+    const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, instanceCount);
+
+    // Dummy object for matrix transformations
+    const dummy = new THREE.Object3D();
 
     tleArray.forEach((sat, index) => {
         const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
 
-        // Calculate orbital parameters from TLE
-        const orbitalParams = {
-            period: satrec.no ? (2 * Math.PI / satrec.no) * 60 : 1440, // Period in minutes
-            inclination: satrec.inclo * (180 / Math.PI), // Inclination in degrees
-            eccentricity: satrec.ecco,
-            apogee: satrec.apogee,
-            perigee: satrec.perigee,
-        };
+        // Store satellite data in userData
+        instancedMesh.userData[index] = { satrec };
 
-        const satelliteGeometry = new THREE.SphereGeometry(0.004, 1, 1);
-        const satelliteMaterial = new THREE.MeshStandardMaterial({
-            color: 0xff0000,
-            wireframe: true,
-            opacity: 1,
-            alphaHash: true,
-            depthTest: true,
-            metalness: 1.0,
-        });
-
-        const satelliteMesh = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
-        satelliteMesh.userData = { satrec, orbitalParams, index }; // Store parameters for updates
-
-        pivot.add(satelliteMesh);
-        satelliteMeshes.push(satelliteMesh); // Add mesh to array for easy updates
+        // Set initial positions for the instances
+        const initialPosition = latLonToVector3(0, 0, sphereRadius); // Default position
+        dummy.position.copy(initialPosition);
+        dummy.updateMatrix();
+        instancedMesh.setMatrixAt(index, dummy.matrix);
     });
+
+    // Add the instanced mesh to the pivot group
+    pivot.add(instancedMesh);
+
+    // Return the instanced mesh for updates
+    return instancedMesh;
 }
 
 // vars for LOD levels
@@ -404,7 +416,7 @@ let MIN_VISIBLE_PERCENTAGE = 0.3; // N% of satellites visible at low detail
 let MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
 
 // vars for satellite size scaling
-let MIN_SCALE = 0.5; // Minimum size when zoomed in
+let MIN_SCALE = 0.15; // Minimum size when zoomed in
 let MAX_SCALE = 1.25; // Maximum size when zoomed out
 
 
@@ -450,32 +462,32 @@ function setResponsiveCameraPosition() {
 }
 
 // Function to adjust satellite visibility and scale based on camera distance
-function adjustSatelliteVisibilityAndScale() {
+function adjustSatelliteVisibilityAndScale(instancedMesh) {
+    if (!instancedMesh) return;
+
     const distanceToEarth = camera.position.length();
 
-    // Calculate visible percentage based on distance
-    const visiblePercentage = THREE.MathUtils.clamp(
-        ((MAX_DISTANCE - distanceToEarth) / (MAX_DISTANCE - MIN_DISTANCE)) * (MAX_VISIBLE_PERCENTAGE - MIN_VISIBLE_PERCENTAGE) + MIN_VISIBLE_PERCENTAGE,
-        MIN_VISIBLE_PERCENTAGE,
-        MAX_VISIBLE_PERCENTAGE
+    // Calculate scale factor based on distance
+    const satelliteScaleFactor = THREE.MathUtils.lerp(
+        MIN_SCALE,
+        MAX_SCALE,
+        (distanceToEarth - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE)
     );
 
-    const visibleCount = Math.floor(satelliteMeshes.length * visiblePercentage);
+    const dummy = new THREE.Object3D();
 
-    satelliteMeshes.forEach((mesh, index) => {
-        if (!mesh) {
-            console.warn(`Skipping undefined satellite mesh at index ${index}`);
-            return;
-        }
-        mesh.visible = index < visibleCount;
-
-        // Calculate scale factor based on distance
-        const satelliteScaleFactor = THREE.MathUtils.lerp(MIN_SCALE, MAX_SCALE, (distanceToEarth - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE));
-        mesh.scale.set(satelliteScaleFactor, satelliteScaleFactor, satelliteScaleFactor); // Apply scale factor
-    });
-
-    // console.log(`Visible satellites: ${visibleCount} of ${satelliteMeshes.length}`);
+    // Update scale for each instance
+    for (let i = 0; i < instancedMesh.count; i++) {
+        instancedMesh.getMatrixAt(i, dummy.matrix); // Get the existing matrix
+        dummy.matrix.decompose(dummy.position, dummy.quaternion, dummy.scale); // Decompose matrix
+        dummy.scale.setScalar(satelliteScaleFactor); // Apply uniform scaling
+        dummy.updateMatrix(); // Recompute the matrix
+        instancedMesh.setMatrixAt(i, dummy.matrix); // Update the instance matrix
     }
+
+    instancedMesh.instanceMatrix.needsUpdate = true; // Notify Three.js of updates
+}
+    
     let simulationTime; // Starting time for the simulation
     const timeDelta = 1000 / 20; // 1-second increment per frame @ N fps divisor
     let timeMultiplier = 1000; // Overall simulation speed multiplier
@@ -526,16 +538,15 @@ function updateEarthRotation() {
     const frameInterval = 20; 
     let frameCount = 0;
 
-    function updateSatellitePositions() {
+    function updateSatellitePositions(instancedMesh) {
         const gmst = satellite.gstime(simulationTime);
-
-        satelliteMeshes.forEach((mesh, index) => {
-            if (!mesh.visible) return;
-
-            const { satrec } = mesh.userData;
+        const dummy = new THREE.Object3D();
+    
+        for (let i = 0; i < instancedMesh.count; i++) {
+            const { satrec } = instancedMesh.userData[i];
             const positionAndVelocity = satellite.propagate(satrec, simulationTime);
-            if (!positionAndVelocity.position) return;
-
+            if (!positionAndVelocity.position) continue;
+    
             const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
             const compressedAltitude = positionGd.height * scaleFactor * distanceCompressionFactor;
             const currentPosition = latLonToVector3(
@@ -543,22 +554,15 @@ function updateEarthRotation() {
                 satellite.degreesLong(positionGd.longitude),
                 sphereRadius + compressedAltitude
             );
-
-            mesh.position.copy(currentPosition);
-
-            if (trailsEnabled && (frameCount % frameInterval === 0)) {
-                const trail = satelliteTrails.get(index);
-                if (trail) {
-                    trail.positions.push(currentPosition.clone());
-                    if (trail.positions.length > maxTrailLength) {
-                        trail.positions.shift();
-                    }
-                    updateTrailGeometry(trail);
-                }
-            }
-        });
+    
+            dummy.position.copy(currentPosition);
+            dummy.updateMatrix();
+            instancedMesh.setMatrixAt(i, dummy.matrix);
+        }
+    
+        instancedMesh.instanceMatrix.needsUpdate = true; // Notify Three.js of updates
     }
-
+    
 function updateTrailGeometry(trail) {
     if (!trail.positions.length) return;
 
@@ -633,8 +637,8 @@ function animate() {
 
             updateSimulationTime();
 
-            adjustSatelliteVisibilityAndScale();
-            updateSatellitePositions();
+            // adjustSatelliteVisibilityAndScale();
+            if (satelliteMesh) updateSatellitePositions(satelliteMesh); // Update instanced mesh positions
             updateEarthRotation();
             updateMoonPosition();
             animateSunRotation();
@@ -1148,15 +1152,19 @@ function animate() {
         const resetButton = document.getElementById("reset-button");
         resetButton.addEventListener("click", () => {
             // Reset exaggeration slider
-            exaggerationSlider.value = mapExponentialToSlider(initialCompressionFactor, exaggerationMinExp, exaggerationMaxExp);
+            exaggerationSlider.value = mapExponentialToSlider(initialCompressionFactor);
             distanceCompressionFactor = initialCompressionFactor;
             exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
-            updateSatellitePositions();
-    
+        
             // Reset simulation speed slider
             speedSlider.value = 0; // Position for 1x speed
             timeMultiplier = initialSpeedMultiplier;
             speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
+        
+            // Update satellite positions only if the satelliteMesh is defined
+            if (satelliteMesh) {
+                updateSatellitePositions(satelliteMesh);
+            }
         });
     }
 
