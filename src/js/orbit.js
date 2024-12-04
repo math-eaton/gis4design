@@ -48,6 +48,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
     
     const earthRotationSpeed = (2 * Math.PI) / 86400; // Earth rotation speed in radians per second
     const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
+    // const earthTilt = 0; // troubleshooting
 
     const moonOrbitalPeriodInSeconds = 27.32 * 24 * 3600; // 27.32 days in seconds
     const moonAngularSpeed = (2 * Math.PI) / moonOrbitalPeriodInSeconds; // Moon orbit speed in radians per second
@@ -58,7 +59,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
 
     let moonMesh;
 
-    const maxTrailLength = 2; // Maximum number of historical points per satellite
+    const maxTrailLength = 0; // Maximum number of historical points per satellite
     const satelliteTrails = new Map(); // Map satellite ID to trail positions
 
     // stats
@@ -138,14 +139,14 @@ export function orbitalView(containerId, onTLELoadComplete) {
         addMoon(); 
     
         // Add planets to the scene
-        addPlanet("Mercury", 0xbebebe, 2439.7); // Mercury radius in km
-        addPlanet("Venus", 0xffdd44, 6051.8);   // Venus radius in km
-        addPlanet("Earth", 0x2266ff, 6371);     // Earth radius in km
-        addPlanet("Mars", 0xff4422, 3389.5);    // Mars radius in km
-        addPlanet("Jupiter", 0xddddaa, 69911);  // Jupiter radius in km
-        addPlanet("Saturn", 0xeeddbb, 58232);   // Saturn radius in km
-        addPlanet("Uranus", 0xaaffff, 25362);   // Uranus radius in km
-        addPlanet("Neptune", 0x4466ff, 24622);  // Neptune radius in km
+        // addPlanet("Mercury", 0xbebebe, 2439.7); // Mercury radius in km
+        // addPlanet("Venus", 0xffdd44, 6051.8);   // Venus radius in km
+        // addPlanet("Earth", 0x2266ff, 6371);     // Earth radius in km
+        // addPlanet("Mars", 0xff4422, 3389.5);    // Mars radius in km
+        // addPlanet("Jupiter", 0xddddaa, 69911);  // Jupiter radius in km
+        // addPlanet("Saturn", 0xeeddbb, 58232);   // Saturn radius in km
+        // addPlanet("Uranus", 0xaaffff, 25362);   // Uranus radius in km
+        // addPlanet("Neptune", 0x4466ff, 24622);  // Neptune radius in km
     
         addEarthSphere();
 
@@ -279,48 +280,48 @@ export function orbitalView(containerId, onTLELoadComplete) {
         
     // model planets
 
-    const orbitScaleFactor = 20; // Adjust for more proportionate orbits
+    // const orbitScaleFactor = 20; // Adjust for more proportionate orbits
 
-    const distanceScaleFactor = 0.05;
+    // const distanceScaleFactor = 0.05;
 
-    function calculatePlanetPosition(planet, time) {
-        const orbitalParams = {
-            Mercury: { a: 57.91e6 * distanceScaleFactor, e: 0.205, i: 7.0, T: 0.24 },
-            Venus: { a: 108.2e6 * distanceScaleFactor, e: 0.007, i: 3.4, T: 0.62 },
-            Earth: { a: 149.6e6 * distanceScaleFactor, e: 0.017, i: 0.0, T: 1.0 },
-            Mars: { a: 227.9e6 * distanceScaleFactor, e: 0.093, i: 1.85, T: 1.88 },
-            Jupiter: { a: 778.5e6 * distanceScaleFactor, e: 0.049, i: 1.3, T: 11.86 },
-            Saturn: { a: 1.429e9 * distanceScaleFactor, e: 0.056, i: 2.49, T: 29.46 },
-            Uranus: { a: 2.871e9 * distanceScaleFactor, e: 0.046, i: 0.77, T: 84.01 },
-            Neptune: { a: 4.495e9 * distanceScaleFactor, e: 0.009, i: 1.77, T: 164.8 }
-        };
+    // function calculatePlanetPosition(planet, time) {
+    //     const orbitalParams = {
+    //         Mercury: { a: 57.91e6 * distanceScaleFactor, e: 0.205, i: 7.0, T: 0.24 },
+    //         Venus: { a: 108.2e6 * distanceScaleFactor, e: 0.007, i: 3.4, T: 0.62 },
+    //         Earth: { a: 149.6e6 * distanceScaleFactor, e: 0.017, i: 0.0, T: 1.0 },
+    //         Mars: { a: 227.9e6 * distanceScaleFactor, e: 0.093, i: 1.85, T: 1.88 },
+    //         Jupiter: { a: 778.5e6 * distanceScaleFactor, e: 0.049, i: 1.3, T: 11.86 },
+    //         Saturn: { a: 1.429e9 * distanceScaleFactor, e: 0.056, i: 2.49, T: 29.46 },
+    //         Uranus: { a: 2.871e9 * distanceScaleFactor, e: 0.046, i: 0.77, T: 84.01 },
+    //         Neptune: { a: 4.495e9 * distanceScaleFactor, e: 0.009, i: 1.77, T: 164.8 }
+    //     };
     
-        const { a, e, i, T } = orbitalParams[planet];
+    //     const { a, e, i, T } = orbitalParams[planet];
     
-        const angle = (2 * Math.PI * time) / T;
-        const x = a * (Math.cos(angle) - e) * scaleFactor * distanceCompressionFactor;
-        const z = a * Math.sin(angle) * Math.sqrt(1 - e ** 2) * scaleFactor * distanceCompressionFactor;
+    //     const angle = (2 * Math.PI * time) / T;
+    //     const x = a * (Math.cos(angle) - e) * scaleFactor * distanceCompressionFactor;
+    //     const z = a * Math.sin(angle) * Math.sqrt(1 - e ** 2) * scaleFactor * distanceCompressionFactor;
             
-        const cosInclination = Math.cos(i * (Math.PI / 180));
-        const sinInclination = Math.sin(i * (Math.PI / 180));
-        const adjustedY = 0 * cosInclination - z * sinInclination;
-        const adjustedZ = 0 * sinInclination + z * cosInclination;
+    //     const cosInclination = Math.cos(i * (Math.PI / 180));
+    //     const sinInclination = Math.sin(i * (Math.PI / 180));
+    //     const adjustedY = 0 * cosInclination - z * sinInclination;
+    //     const adjustedZ = 0 * sinInclination + z * cosInclination;
     
-        const sunPosition = directionalLight.position;
-        return new THREE.Vector3(x + sunPosition.x, adjustedY + sunPosition.y, adjustedZ + sunPosition.z);
-    }
+    //     const sunPosition = directionalLight.position;
+    //     return new THREE.Vector3(x + sunPosition.x, adjustedY + sunPosition.y, adjustedZ + sunPosition.z);
+    // }
             
 
     // const sizeScaleFactor = 0.5;
 
-    function addPlanet(planetName, color, relativeRadius) {
-        const planetRadius = sphereRadius * (relativeRadius / earthRadiusKm) * scaleFactor;
-        const geometry = new THREE.SphereGeometry(planetRadius, 32, 32);
-        const material = new THREE.MeshStandardMaterial({ color });
-        const planetMesh = new THREE.Mesh(geometry, material);
-        scene.add(planetMesh);
-        planets.push({ name: planetName, mesh: planetMesh });
-    }
+    // function addPlanet(planetName, color, relativeRadius) {
+    //     const planetRadius = sphereRadius * (relativeRadius / earthRadiusKm) * scaleFactor;
+    //     const geometry = new THREE.SphereGeometry(planetRadius, 32, 32);
+    //     const material = new THREE.MeshStandardMaterial({ color });
+    //     const planetMesh = new THREE.Mesh(geometry, material);
+    //     scene.add(planetMesh);
+    //     planets.push({ name: planetName, mesh: planetMesh });
+    // }
     
     
     // irl satellite stuff
@@ -382,7 +383,7 @@ function visualizeSatellites(tleArray) {
         const satelliteMaterial = new THREE.MeshStandardMaterial({
             color: 0xff0000,
             wireframe: true,
-            opacity: 0.75,
+            opacity: 1,
             alphaHash: true,
             depthTest: true,
             metalness: 1.0,
@@ -403,7 +404,7 @@ let MIN_VISIBLE_PERCENTAGE = 0.3; // N% of satellites visible at low detail
 let MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
 
 // vars for satellite size scaling
-let MIN_SCALE = 0.75; // Minimum size when zoomed in
+let MIN_SCALE = 0.5; // Minimum size when zoomed in
 let MAX_SCALE = 1.25; // Maximum size when zoomed out
 
 
@@ -425,7 +426,7 @@ document.getElementById('toggle-trails-checkbox').addEventListener('change', (ev
 
     if (trailsEnabled) {
         console.log('Trails enabled');
-        // initializeSatelliteTrails();
+        initializeSatelliteTrails();
     } else {
         console.log('Trails disabled');
         clearSatelliteTrails();
@@ -522,7 +523,7 @@ function updateEarthRotation() {
 }
 
     // Function to update satellite positions with the current distanceCompressionFactor
-    const frameInterval = 15; 
+    const frameInterval = 20; 
     let frameCount = 0;
 
     function updateSatellitePositions() {
@@ -616,9 +617,14 @@ function updateTrailGeometry(trail) {
 
 
 
+
 function animate() {
 
     delta += clock.getDelta();
+
+    let lastLat = null;
+    let lastLon = null;
+      
 
     if (delta  > interval) {
 
@@ -635,12 +641,16 @@ function animate() {
             updateSunDistance();
             
 
+            // Dynamically switch to fixed views based on the current city
             if (currentChapter === 'fixed') {
-                switchToFixedView(40.7128, -74.0060); // Example: New York City
-                console.log('NYC Vector:', latLonToVector3(40.7128, -74.0060, sphereRadius + 0.1)); // New York City
-                console.log('Equator (0, 0):', latLonToVector3(0, 0, sphereRadius));
-                console.log('North Pole:', latLonToVector3(90, 0, sphereRadius));
+                const { lat, lon } = chapterConfig.fixed.coordinates[selectedCity];
+                if (lat !== lastLat || lon !== lastLon) { // Prevent redundant calls
+                    switchToFixedView(lat, lon);
+                    lastLat = lat;
+                    lastLon = lon;
 
+                    // console.log(lat,lon)
+                }
             }
 
             // updateScaleBar(camera, pivot, earthRadiusKm, scaleBarElements);
@@ -678,18 +688,31 @@ function animate() {
         return new THREE.Vector3(x, y, z);
     }
     
-    function setupChapterControls() {
-        document.getElementById('chapter-fixed').addEventListener('click', () => {
-            currentChapter = 'fixed';
-            switchToFixedView(40.7128, -74.0060); // Example: New York City coordinates
-        });
+    let selectedCity = 'newYork'; // Default city
 
+
+    function setupChapterControls() {
         document.getElementById('chapter-sandbox').addEventListener('click', () => {
             currentChapter = 'sandbox';
             switchToSandboxView();
         });
+    
+        document.getElementById('chapter-newYork').addEventListener('click', () => {
+            currentChapter = 'fixed';
+            selectedCity = 'newYork'; // Switch to New York
+        });
+    
+        document.getElementById('chapter-paris').addEventListener('click', () => {
+            currentChapter = 'fixed';
+            selectedCity = 'paris'; // Switch to Paris
+        });
+    
+        document.getElementById('chapter-tokyo').addEventListener('click', () => {
+            currentChapter = 'fixed';
+            selectedCity = 'tokyo'; // Switch to Tokyo
+        });
     }
-
+        
     const chapterConfig = {
         sandbox: {
             controls: {
@@ -701,16 +724,21 @@ function animate() {
             },
         },
         fixed: {
+            coordinates: {
+                newYork: { lat: 40.7128, lon: -74.0060 },
+                paris: { lat: 48.8566, lon: 2.3522 },
+                tokyo: { lat: 35.6895, lon: 139.6917 },
+            },
             controls: {
-                // minDistance: .5, // Adjust zoom levels for the fixed chapter
-                // maxDistance: .5,
-                // enablePan: false, // Disable panning for fixed view
-                // // zoomSpeed: 0.5,
-                // rotateSpeed: 0.1,
+                minDistance: 3, // Adjust zoom levels for the fixed chapter
+                maxDistance: 3,
+                enablePan: false, // Disable panning for fixed view
+                zoomSpeed: 0,
+                rotateSpeed: 0,
             },
         },
     };
-    
+
     function applyChapterConfig(chapter) {
         const config = chapterConfig[chapter];
         if (!config) return;
@@ -728,7 +756,10 @@ function animate() {
     
 
     function switchToFixedView(lat, lon) {
-        controls.enabled = false; // Disable free camera movement
+        // controls.enabled = false; // Disable free camera movement
+
+        applyChapterConfig('fixed'); // Apply chapter config
+
     
         const radius = sphereRadius; // Slightly above Earth's surface
         const fixedPointLocal = latLonToVector3(lat, lon, radius); // Fixed point in local space
@@ -740,20 +771,16 @@ function animate() {
     
             // Reset pivot rotation and apply tilt and rotation
             pivot.rotation.set(0, 0, 0); // Reset previous rotations
-            pivot.rotateY(rotationAngle); // Apply Earth's rotation
             pivot.rotateZ(earthTilt); // Apply Earth's axial tilt
+            pivot.rotateY(rotationAngle); // Apply Earth's rotation
     
             // Transform the fixed point using the pivot's world matrix
             const fixedPointWorld = fixedPointLocal.clone().applyMatrix4(pivot.matrixWorld);
-    
-            // Define a camera offset in local space relative to the fixed point
-            const cameraOffset = new THREE.Vector3(radius, radius * 2, radius * 3); // Offset for a good viewing angle
-    
-            // Transform the offset to world space using the pivot's rotation
-            const transformedOffset = cameraOffset.applyMatrix4(pivot.matrixWorld);
+
+            console.log('Fixed Point World:', fixedPointWorld);
     
             // Calculate the final camera position
-            const cameraPositionWorld = fixedPointWorld.clone().add(transformedOffset);
+            const cameraPositionWorld = fixedPointWorld.clone();
     
             // Update the camera's position
             camera.position.copy(cameraPositionWorld);
@@ -761,8 +788,9 @@ function animate() {
             // Ensure the camera looks directly at the fixed point on the sphere
             camera.lookAt(fixedPointWorld);
 
+
             // const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            // const markerGeometry = new THREE.SphereGeometry(0.01, 16, 16);
+            // const markerGeometry = new THREE.SphereGeometry(0.1, 16, 16);
             // const marker = new THREE.Mesh(markerGeometry, markerMaterial);
             // marker.position.copy(fixedPointWorld);
             // scene.add(marker);
@@ -777,6 +805,7 @@ function animate() {
         }
     
         animateFixedView();
+
     }
                                     
     function switchToSandboxView() {
@@ -807,6 +836,12 @@ function animate() {
         sphere.receiveShadow = true; // Enable receiving shadows    
         pivot.add(sphere); // Add the sphere to the pivot group, so it rotates with the graticules        
         
+            
+        // Add markers for debugging
+        // addLocationMarker(40.7128, -74.0060, 0xff0000); // NYC (red)
+        // addLocationMarker(48.8566, 2.3522, 0x00ff00); // Paris (green)
+        // addLocationMarker(35.6895, 139.6917, 0x0000ff); // Tokyo (blue)
+
 
     }
     
@@ -970,6 +1005,15 @@ function animate() {
         });
     }
 
+    function addLocationMarker(lat, lon, color) {
+        const markerMaterial = new THREE.MeshBasicMaterial({ color });
+        const markerGeometry = new THREE.SphereGeometry(0.01, 16, 16); // Tiny marker
+        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+        marker.position.copy(latLonToVector3(lat, lon, sphereRadius)); // Position marker on the sphere
+        pivot.add(marker); // Add marker to the rotating Earth
+    }
+    
+
     // Helper function to create THREE.BufferGeometry from GeoJSON coordinates
     function createLineGeometryFromCoordinates(coordinates, radius) {
         const geometry = new THREE.BufferGeometry();
@@ -1067,7 +1111,7 @@ function animate() {
             const rawValue = parseFloat(event.target.value);
             distanceCompressionFactor = mapSliderToExponential(rawValue, exaggerationMinExp, exaggerationMaxExp);
             exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
-            debounce(updateSatellitePositions, 5)();
+            debounce(updateSatellitePositions, 50)();
         });
     
         // Simulation speed slider
@@ -1082,7 +1126,7 @@ function animate() {
 
         // Function to get the maximum speed ceiling based on the chapter
         function getMaxSpeedForChapter() {
-            return currentChapter === 'sandbox' ? 20000 : 200; // 20,000 for sandbox, 200 for other chapters
+            return currentChapter === 'sandbox' ? 20000 : 500; // 20,000 for sandbox, XYZ for other chapters (no change yet)
         }
             
 
