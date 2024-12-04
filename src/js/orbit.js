@@ -14,6 +14,7 @@ import { createNoise2D } from 'simplex-noise';
 export function orbitalView(containerId, onTLELoadComplete) {
     let scene, camera, renderer, controls, pivot, moonPivot, sunMesh;
     let animationFrameId;
+    let tleArray;
 
     let currentChapter = 'sandbox'; // Default chapter
 
@@ -54,18 +55,15 @@ export function orbitalView(containerId, onTLELoadComplete) {
     const moonAngularSpeed = (2 * Math.PI) / moonOrbitalPeriodInSeconds; // Moon orbit speed in radians per second
     
 
-    const planets = [];
+    // const planets = [];
     let distanceCompressionFactor = 1; // Initial v exaggeration factor
 
     let moonMesh;
 
-    const maxTrailLength = 0; // Maximum number of historical points per satellite
-    const satelliteTrails = new Map(); // Map satellite ID to trail positions
-
     // stats
     const stats = new Stats()
     stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
-    document.body.appendChild(stats.dom)
+    // document.body.appendChild(stats.dom)
     stats.dom.id = 'statistics';
 
     window.addEventListener('keydown', (event) => {
@@ -331,6 +329,8 @@ export function orbitalView(containerId, onTLELoadComplete) {
 // todo: separate loading screen to main.js config
 
 let satelliteMesh;
+let sandboxInstancedMesh, fixedInstancedMesh;
+
 
 function loadTLEData() {
     fetch('https://orbital-bbfd.onrender.com/satellites')
@@ -339,41 +339,163 @@ function loadTLEData() {
             return response.json();
         })
         .then(tleArray => {
-            satelliteMesh = visualizeSatellites(tleArray);
-            onTLELoadComplete(); // callback on load
+            if (!Array.isArray(tleArray)) throw new Error('Invalid TLE data format: Expected an array');
+
+            // Create instanced meshes for both sandbox and fixed views
+            sandboxInstancedMesh = createSatelliteInstancedMesh(tleArray, false);
+            fixedInstancedMesh = createSatelliteInstancedMesh(tleArray, true);
+
+            // Start with the sandbox view
+            scene.add(sandboxInstancedMesh);
+            satelliteMesh = sandboxInstancedMesh;
+
+            onTLELoadComplete(); // Callback when TLE data is successfully loaded
         })
         .catch(error => {
             console.warn('Error fetching TLE data from server:', error);
             console.log('Attempting to load data from local static file...');
 
+            // Fallback to local file if the server fetch fails
             fetch('data/cachedSatellites.json')
                 .then(localResponse => {
                     if (!localResponse.ok) throw new Error('Local file fetch failed');
                     return localResponse.json();
                 })
                 .then(tleArray => {
+                    if (!Array.isArray(tleArray)) throw new Error('Invalid local TLE data format: Expected an array');
+                    
                     console.log('Loaded TLE data from local static file.');
-                    satelliteMesh = visualizeSatellites(tleArray);
-                    onTLELoadComplete(); // Call the callback when local data is loaded
+
+                    // Create instanced meshes for both sandbox and fixed views
+                    sandboxInstancedMesh = createSatelliteInstancedMesh(tleArray, false);
+                    fixedInstancedMesh = createSatelliteInstancedMesh(tleArray, true);
+
+                    // Start with the sandbox view
+                    scene.add(sandboxInstancedMesh);
+                    satelliteMesh = sandboxInstancedMesh;
+
+                    onTLELoadComplete(); // Callback when local data is successfully loaded
                 })
                 .catch(localError => {
                     console.error('Failed to load TLE data from both server and local file:', localError);
-                    onTLELoadComplete(); // Still trigger the callback if loading fails
+                    onTLELoadComplete(); // Trigger callback even if loading fails
                 });
         });
 }
-
 
 let satelliteMeshes = []; // Store satellite mesh references
 
 
 // Visualize satellites with TLE data from cache
-function visualizeSatellites(tleArray) {
-    const instanceCount = tleArray.length;
+// function visualizeSatellites(tleArray) {
+//     const instanceCount = tleArray.length;
 
-    // Geometry and material for the satellites
-    const satelliteGeometry = new THREE.SphereGeometry(0.003, 4, 4); // Simplified geometry
-    const satelliteMaterial = new THREE.MeshStandardMaterial({
+//     // Geometry and material for the satellites
+//     const satelliteGeometry = new THREE.SphereGeometry(0.003, 4, 4); // Simplified geometry
+//     const satelliteMaterial = new THREE.MeshStandardMaterial({
+//         color: 0xff0000,
+//         metalness: 1,
+//         roughness: 0.2,
+//         wireframe: true,
+//         transparent: true,
+//         alphaHash: true,
+//         opacity: 0.8,
+//     });
+
+//     // Create an InstancedMesh
+//     const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, instanceCount);
+
+//     // Dummy object for matrix transformations
+//     const dummy = new THREE.Object3D();
+
+//     tleArray.forEach((sat, index) => {
+//         const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
+
+//         // Store satellite data in userData
+//         instancedMesh.userData[index] = { satrec };
+
+//         // Set initial positions for the instances
+//         const initialPosition = latLonToVector3(0, 0, sphereRadius); // Default position
+//         dummy.position.copy(initialPosition);
+//         dummy.updateMatrix();
+//         instancedMesh.setMatrixAt(index, dummy.matrix);
+//     });
+
+//     // Add the instanced mesh to the pivot group
+//     pivot.add(instancedMesh);
+
+//     // Return the instanced mesh for updates
+//     return instancedMesh;
+// }
+
+// vars for LOD levels
+const MIN_DISTANCE = 8; // Minimum distance to start high LOD visibility
+const MAX_DISTANCE = 40; // Maximum distance for low LOD visibility
+// let MIN_VISIBLE_PERCENTAGE = 0.3; // N% of satellites visible at low detail
+// let MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
+
+// vars for satellite size scaling
+let MIN_SCALE = 0.15; // Minimum size when zoomed in
+let MAX_SCALE = 1.25; // Maximum size when zoomed out
+
+
+const satelliteTrails = new Map(); // Map satellite index to trail data
+const maxTrailLength = 10; // Maximum number of points per trail
+
+
+const frustum = new THREE.Frustum();
+const cameraViewProjectionMatrix = new THREE.Matrix4();
+
+function isSatelliteVisible(position) {
+    camera.updateMatrixWorld(); // Ensure camera matrix is up-to-date
+    cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
+
+    return frustum.containsPoint(position);
+}
+
+
+// function initializeSatelliteTrails(instancedMesh) {
+//     if (!trailsEnabled || !instancedMesh) return;
+
+//     const trailMaterial = new THREE.LineBasicMaterial({
+//         color: 0xff0000,
+//         opacity: 1,
+//         // transparent: true,
+//     });
+
+//     for (let i = 0; i < instancedMesh.count; i++) {
+//         const trailGeometry = new THREE.BufferGeometry();
+//         const positions = new Float32Array(maxTrailLength * 3); // Each point has x, y, z
+//         trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+//         const line = new THREE.Line(trailGeometry, trailMaterial);
+//         scene.add(line);
+
+//         satelliteTrails.set(i, { positions, line, index: 0 }); // Initialize trail data
+//     }
+// }
+
+
+function createSatelliteInstancedMesh(tleArray, isFixedView = false) {
+    const instanceCount = tleArray.length;
+    const satelliteGeometry = isFixedView
+        ? new THREE.SphereGeometry(0.002, 16, 16) // Smaller, high-resolution for fixed view
+        : new THREE.SphereGeometry(0.003, 2, 3); // Larger, low-resolution for sandbox view
+
+    const satelliteMaterial = isFixedView
+    // fixed view
+    ? new THREE.MeshStandardMaterial({
+        color: 0xff0000,
+        metalness: 2,
+        roughness: 0.2,
+        wireframe: false,
+        // transparent: true,
+        alphaHash: true,
+        // opacity: 0.8,
+    })
+    // sandbox view
+    : new THREE.MeshStandardMaterial({
         color: 0xff0000,
         metalness: 1,
         roughness: 0.2,
@@ -383,67 +505,76 @@ function visualizeSatellites(tleArray) {
         opacity: 0.8,
     });
 
-    // Create an InstancedMesh
-    const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, instanceCount);
 
-    // Dummy object for matrix transformations
+    const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, instanceCount);
     const dummy = new THREE.Object3D();
 
-    tleArray.forEach((sat, index) => {
+    tleArray.forEach((sat, i) => {
         const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
+        instancedMesh.userData[i] = { satrec };
 
-        // Store satellite data in userData
-        instancedMesh.userData[index] = { satrec };
-
-        // Set initial positions for the instances
-        const initialPosition = latLonToVector3(0, 0, sphereRadius); // Default position
-        dummy.position.copy(initialPosition);
+        // Initial positioning
+        dummy.position.set(0, 0, 0); // Replace with calculated position if needed
         dummy.updateMatrix();
-        instancedMesh.setMatrixAt(index, dummy.matrix);
+        instancedMesh.setMatrixAt(i, dummy.matrix);
     });
 
-    // Add the instanced mesh to the pivot group
-    pivot.add(instancedMesh);
-
-    // Return the instanced mesh for updates
     return instancedMesh;
 }
 
-// vars for LOD levels
-const MIN_DISTANCE = 8; // Minimum distance to start high LOD visibility
-const MAX_DISTANCE = 40; // Maximum distance for low LOD visibility
-let MIN_VISIBLE_PERCENTAGE = 0.3; // N% of satellites visible at low detail
-let MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
-
-// vars for satellite size scaling
-let MIN_SCALE = 0.15; // Minimum size when zoomed in
-let MAX_SCALE = 1.25; // Maximum size when zoomed out
 
 
-function initializeSatelliteTrails() {
-    if (!trailsEnabled) return;
+function updateSatelliteTrails(instancedMesh) {
+    if (!trailsEnabled || !instancedMesh) return;
 
-    satelliteMeshes.forEach((mesh, index) => {
-        if (!satelliteTrails.has(index)) {
-            satelliteTrails.set(index, {
-                positions: [],
-                lineMesh: null,
-            });
-        }
+    const gmst = satellite.gstime(simulationTime);
+
+    satelliteTrails.forEach((trail, index) => {
+        const dummy = new THREE.Object3D();
+        instancedMesh.getMatrixAt(index, dummy.matrix); // Get satellite's current matrix
+        dummy.matrix.decompose(dummy.position, dummy.quaternion, dummy.scale);
+
+        // Skip updating if satellite is not visible
+        if (!isSatelliteVisible(dummy.position)) return;
+
+        const positions = trail.positions;
+        const currentIndex = trail.index;
+
+        // Add current position to trail
+        positions[currentIndex * 3] = dummy.position.x;
+        positions[currentIndex * 3 + 1] = dummy.position.y;
+        positions[currentIndex * 3 + 2] = dummy.position.z;
+
+        // Increment index and wrap around if necessary
+        trail.index = (currentIndex + 1) % maxTrailLength;
+
+        // Update the geometry with new trail positions
+        const trailGeometry = trail.line.geometry;
+        trailGeometry.attributes.position.needsUpdate = true;
+
+        // Set the draw range to create a connected trail
+        trailGeometry.setDrawRange(0, Math.min(maxTrailLength, currentIndex + 1));
     });
 }
 
-document.getElementById('toggle-trails-checkbox').addEventListener('change', (event) => {
-    trailsEnabled = event.target.checked;
+// document.getElementById('toggle-trails-checkbox').addEventListener('change', (event) => {
+//     trailsEnabled = event.target.checked;
 
-    if (trailsEnabled) {
-        console.log('Trails enabled');
-        initializeSatelliteTrails();
-    } else {
-        console.log('Trails disabled');
-        clearSatelliteTrails();
-    }
-});
+//     if (trailsEnabled) {
+//         initializeSatelliteTrails(satelliteMesh);
+//     } else {
+//         clearSatelliteTrails();
+//     }
+// });
+
+function clearSatelliteTrails() {
+    satelliteTrails.forEach((trail) => {
+        scene.remove(trail.line);
+        trail.line.geometry.dispose();
+        trail.line.material.dispose();
+    });
+    satelliteTrails.clear();
+}
 
 
 // Adjust visibility percentages and scaling based on device type
@@ -460,6 +591,27 @@ function setResponsiveCameraPosition() {
         controls.maxDistance = isMobile ? 40 : 50;
     }
 }
+
+function switchChapterMesh(tleArray, isFixedView) {
+    // Remove the current mesh from the scene
+    if (satelliteMesh) scene.remove(satelliteMesh);
+
+    // Select the correct mesh
+    satelliteMesh = isFixedView ? fixedInstancedMesh : sandboxInstancedMesh;
+    scene.add(satelliteMesh);
+
+    // Update positions with last known positions if available
+    const oldMesh = isFixedView ? sandboxInstancedMesh : fixedInstancedMesh;
+    if (oldMesh) {
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < oldMesh.count; i++) {
+            oldMesh.getMatrixAt(i, dummy.matrix);
+            satelliteMesh.setMatrixAt(i, dummy.matrix);
+        }
+        satelliteMesh.instanceMatrix.needsUpdate = true;
+    }
+}
+
 
 // Function to adjust satellite visibility and scale based on camera distance
 function adjustSatelliteVisibilityAndScale(instancedMesh) {
@@ -548,12 +700,15 @@ function updateEarthRotation() {
             if (!positionAndVelocity.position) continue;
     
             const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-            const compressedAltitude = positionGd.height * scaleFactor * distanceCompressionFactor;
+            const altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
             const currentPosition = latLonToVector3(
                 satellite.degreesLat(positionGd.latitude),
                 satellite.degreesLong(positionGd.longitude),
-                sphereRadius + compressedAltitude
+                sphereRadius + altitude
             );
+    
+            // Apply Earth's tilt
+            currentPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
     
             dummy.position.copy(currentPosition);
             dummy.updateMatrix();
@@ -562,43 +717,30 @@ function updateEarthRotation() {
     
         instancedMesh.instanceMatrix.needsUpdate = true; // Notify Three.js of updates
     }
-    
-function updateTrailGeometry(trail) {
-    if (!trail.positions.length) return;
+            
+// function updateTrailGeometry(trail) {
+//     if (!trail.positions.length) return;
 
-    if (!trail.lineMesh) {
-        const geometry = new THREE.BufferGeometry();
-        const material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 0.5, transparent: true, alphaHash: true, premultipliedAlpha: true,
-        });
-        trail.lineMesh = new THREE.Line(geometry, material);
-        scene.add(trail.lineMesh);
-        }
+//     if (!trail.lineMesh) {
+//         const geometry = new THREE.BufferGeometry();
+//         const material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 0.5, transparent: true, alphaHash: true, premultipliedAlpha: true,
+//         });
+//         trail.lineMesh = new THREE.Line(geometry, material);
+//         scene.add(trail.lineMesh);
+//         }
 
-    const positionsArray = new Float32Array(trail.positions.length * 3);
-    trail.positions.forEach((pos, i) => {
-        positionsArray[i * 3] = pos.x;
-        positionsArray[i * 3 + 1] = pos.y;
-        positionsArray[i * 3 + 2] = pos.z;
-    });
+//     const positionsArray = new Float32Array(trail.positions.length * 3);
+//     trail.positions.forEach((pos, i) => {
+//         positionsArray[i * 3] = pos.x;
+//         positionsArray[i * 3 + 1] = pos.y;
+//         positionsArray[i * 3 + 2] = pos.z;
+//     });
 
-    trail.lineMesh.geometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
-    trail.lineMesh.geometry.setDrawRange(0, trail.positions.length);
-    trail.lineMesh.geometry.attributes.position.needsUpdate = true;
-}
+//     trail.lineMesh.geometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
+//     trail.lineMesh.geometry.setDrawRange(0, trail.positions.length);
+//     trail.lineMesh.geometry.attributes.position.needsUpdate = true;
+// }
 
-
-    function clearSatelliteTrails() {
-        satelliteTrails.forEach((trail) => {
-            trail.positions = []; // Reset positions
-        });
-
-        if (trailLine) {
-            scene.remove(trailLine);
-            trailLine.geometry.dispose();
-            trailLine.material.dispose();
-            trailLine = null;
-        }
-    }
 
 
 
@@ -638,7 +780,9 @@ function animate() {
             updateSimulationTime();
 
             // adjustSatelliteVisibilityAndScale();
-            if (satelliteMesh) updateSatellitePositions(satelliteMesh); // Update instanced mesh positions
+            if (satelliteMesh) {
+                updateSatellitePositions(satelliteMesh);
+            }
             updateEarthRotation();
             updateMoonPosition();
             animateSunRotation();
@@ -699,24 +843,31 @@ function animate() {
         document.getElementById('chapter-sandbox').addEventListener('click', () => {
             currentChapter = 'sandbox';
             switchToSandboxView();
+            switchChapterMesh(tleArray, false); // Switch to sandbox mesh
         });
     
         document.getElementById('chapter-newYork').addEventListener('click', () => {
             currentChapter = 'fixed';
-            selectedCity = 'newYork'; // Switch to New York
+            selectedCity = 'newYork';
+            switchToFixedView(chapterConfig.fixed.coordinates.newYork.lat, chapterConfig.fixed.coordinates.newYork.lon);
+            switchChapterMesh(tleArray, true); // Switch to fixed mesh
         });
     
         document.getElementById('chapter-paris').addEventListener('click', () => {
             currentChapter = 'fixed';
-            selectedCity = 'paris'; // Switch to Paris
+            selectedCity = 'paris';
+            switchToFixedView(chapterConfig.fixed.coordinates.paris.lat, chapterConfig.fixed.coordinates.paris.lon);
+            switchChapterMesh(tleArray, true); // Switch to fixed mesh
         });
     
         document.getElementById('chapter-tokyo').addEventListener('click', () => {
             currentChapter = 'fixed';
-            selectedCity = 'tokyo'; // Switch to Tokyo
+            selectedCity = 'tokyo';
+            switchToFixedView(chapterConfig.fixed.coordinates.tokyo.lat, chapterConfig.fixed.coordinates.tokyo.lon);
+            switchChapterMesh(tleArray, true); // Switch to fixed mesh
         });
     }
-        
+                
     const chapterConfig = {
         sandbox: {
             controls: {
@@ -1083,38 +1234,44 @@ function animate() {
         
     // exp for vertical exaggeration
     // map exponential target value back to the slider's 0-100 range
-    function mapExponentialToSlider(value) {
-    const minExp = Math.log10(0.1);
-    const maxExp = Math.log10(25);
-    const logValue = Math.log10(value);
-    return ((logValue - minExp) / (maxExp - minExp)) * 100;
-}
-
-    function mapSliderToExponential(value) {
-        const minExp = Math.log10(0.1);
-        const maxExp = Math.log10(25);
+    function mapExponentialToSlider(value, minExp, maxExp) {
+        const logValue = Math.log10(value);
+        return ((logValue - minExp) / (maxExp - minExp)) * 100;
+    }
+    
+    function mapSliderToExponential(value, minExp, maxExp) {
         const scale = minExp + (value / 100) * (maxExp - minExp);
         return Math.pow(10, scale);
     }
-        
-        
-      function initializeSlider() {
+            
+    function initializeSlider() {
+
         // Distance exaggeration slider
         const exaggerationSlider = document.getElementById("exaggeration-slider");
         const exaggerationOutput = document.getElementById("exaggeration-value");
         const initialCompressionFactor = 1.0;
-        const exaggerationMinExp = Math.log10(0.1); // Minimum of 0.1
-        const exaggerationMaxExp = Math.log10(25);  // Maximum of 25
+    
+        // Function to get min and max for vertical exaggeration based on the chapter
+        function getExaggerationRange() {
+            if (currentChapter === 'fixed') {
+                return { minExp: Math.log10(0.05), maxExp: Math.log10(1) }; // Fixed chapter range
+            } else {
+                return { minExp: Math.log10(0.1), maxExp: Math.log10(25) }; // Sandbox chapter range
+            }
+        }
     
         // Set initial values for distance exaggeration
-        exaggerationSlider.value = mapExponentialToSlider(initialCompressionFactor, exaggerationMinExp, exaggerationMaxExp);
+        let { minExp, maxExp } = getExaggerationRange();
+        exaggerationSlider.value = mapExponentialToSlider(initialCompressionFactor, minExp, maxExp);
         distanceCompressionFactor = initialCompressionFactor;
-        exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
+        exaggerationOutput.textContent = distanceCompressionFactor.toFixed(2) + "x";
     
+        // Update slider behavior dynamically on input
         exaggerationSlider.addEventListener("input", (event) => {
             const rawValue = parseFloat(event.target.value);
-            distanceCompressionFactor = mapSliderToExponential(rawValue, exaggerationMinExp, exaggerationMaxExp);
-            exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
+            ({ minExp, maxExp } = getExaggerationRange()); // Dynamically get range based on chapter
+            distanceCompressionFactor = mapSliderToExponential(rawValue, minExp, maxExp);
+            exaggerationOutput.textContent = distanceCompressionFactor.toFixed(2) + "x";
             debounce(updateSatellitePositions, 50)();
         });
     
@@ -1122,19 +1279,18 @@ function animate() {
         const speedSlider = document.getElementById("speed-slider");
         const speedOutput = document.getElementById("speed-value");
         const initialSpeedMultiplier = 1;
-
+    
         // Set initial values for simulation speed
         speedSlider.value = 0; // Default position at 1x speed
         timeMultiplier = initialSpeedMultiplier;
         speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
-
+    
         // Function to get the maximum speed ceiling based on the chapter
         function getMaxSpeedForChapter() {
-            return currentChapter === 'sandbox' ? 20000 : 500; // 20,000 for sandbox, XYZ for other chapters (no change yet)
+            return currentChapter === 'sandbox' ? 20000 : 500; // 20,000 for sandbox, 500 for fixed
         }
-            
-
-        // Ensure the slider for timeMultiplier also affects the displayed time
+    
+        // Update speed slider dynamically on input
         speedSlider.addEventListener("input", (event) => {
             const sliderPosition = parseFloat(event.target.value);
             const maxSpeed = getMaxSpeedForChapter(); // Get dynamic ceiling
@@ -1142,32 +1298,32 @@ function animate() {
             speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
             let displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
             document.getElementById("simulation-time").textContent = displayTime;
-
-        // Initial display
-        document.getElementById("simulation-time").textContent = simulationTime.toUTCString().replace("GMT", "UTC");
-
+    
+            // Initial display
+            document.getElementById("simulation-time").textContent = simulationTime.toUTCString().replace("GMT", "UTC");
         });
-            
+    
         // Reset button functionality
         const resetButton = document.getElementById("reset-button");
         resetButton.addEventListener("click", () => {
             // Reset exaggeration slider
-            exaggerationSlider.value = mapExponentialToSlider(initialCompressionFactor);
+            ({ minExp, maxExp } = getExaggerationRange()); // Dynamically get range for reset
+            exaggerationSlider.value = mapExponentialToSlider(initialCompressionFactor, minExp, maxExp);
             distanceCompressionFactor = initialCompressionFactor;
-            exaggerationOutput.textContent = distanceCompressionFactor.toFixed(1) + "x";
-        
+            exaggerationOutput.textContent = distanceCompressionFactor.toFixed(2) + "x";
+    
             // Reset simulation speed slider
             speedSlider.value = 0; // Position for 1x speed
             timeMultiplier = initialSpeedMultiplier;
             speedOutput.textContent = timeMultiplier.toFixed(0) + "x";
-        
+    
             // Update satellite positions only if the satelliteMesh is defined
             if (satelliteMesh) {
                 updateSatellitePositions(satelliteMesh);
             }
         });
     }
-
+    
 
     // scale bar
     // function createScaleBar() {
