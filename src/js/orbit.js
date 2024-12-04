@@ -596,11 +596,16 @@ function switchChapterMesh(tleArray, isFixedView) {
     // Remove the current mesh from the scene
     if (satelliteMesh) scene.remove(satelliteMesh);
 
-    // Select the correct mesh
+    // Clear satellite lines if leaving fixed view
+    if (!isFixedView) {
+        clearSatelliteLines();
+    }
+
+    // Switch the active mesh
     satelliteMesh = isFixedView ? fixedInstancedMesh : sandboxInstancedMesh;
     scene.add(satelliteMesh);
 
-    // Update positions with last known positions if available
+    // Update positions from the previous mesh
     const oldMesh = isFixedView ? sandboxInstancedMesh : fixedInstancedMesh;
     if (oldMesh) {
         const dummy = new THREE.Object3D();
@@ -687,12 +692,15 @@ function updateEarthRotation() {
 }
 
     // Function to update satellite positions with the current distanceCompressionFactor
-    const frameInterval = 20; 
-    let frameCount = 0;
+    // const frameInterval = 20; 
+    // let frameCount = 0;
+
+    const satelliteLines = new Map(); // Map satellite index to its line
 
     function updateSatellitePositions(instancedMesh) {
         const gmst = satellite.gstime(simulationTime);
         const dummy = new THREE.Object3D();
+        const earthCenter = new THREE.Vector3(0, 0, 0); // Earth's center
     
         for (let i = 0; i < instancedMesh.count; i++) {
             const { satrec } = instancedMesh.userData[i];
@@ -710,14 +718,66 @@ function updateEarthRotation() {
             // Apply Earth's tilt
             currentPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
     
+            // Update satellite position in the mesh
             dummy.position.copy(currentPosition);
             dummy.updateMatrix();
             instancedMesh.setMatrixAt(i, dummy.matrix);
+    
+            // Draw or update the line to the Earth's center if in fixed view
+            if (currentChapter === 'fixed') {
+                if (!isSatelliteVisible(currentPosition)) {
+                    // Remove line if it exists but the satellite is not visible
+                    if (satelliteLines.has(i)) {
+                        const line = satelliteLines.get(i);
+                        scene.remove(line);
+                        line.geometry.dispose();
+                        line.material.dispose();
+                        satelliteLines.delete(i);
+                    }
+                    continue;
+                }
+    
+                if (!satelliteLines.has(i)) {
+                    const satLineGeometry = new THREE.BufferGeometry();
+                    const positions = new Float32Array(6); // Two points (start and end)
+                    satLineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    const satLineMaterial = new THREE.LineBasicMaterial({ 
+                        color: 0xffffff, 
+                        transparent: true, 
+                        alphaHash: true,
+                        opacity: 0.6 
+                    });
+                    const line = new THREE.Line(satLineGeometry, satLineMaterial);
+                    scene.add(line);
+                    satelliteLines.set(i, line);
+                }
+    
+                // Update the line's geometry
+                const line = satelliteLines.get(i);
+                const positions = line.geometry.attributes.position.array;
+                positions[0] = earthCenter.x;
+                positions[1] = earthCenter.y;
+                positions[2] = earthCenter.z;
+                positions[3] = currentPosition.x;
+                positions[4] = currentPosition.y;
+                positions[5] = currentPosition.z;
+                line.geometry.attributes.position.needsUpdate = true;
+            }
         }
     
         instancedMesh.instanceMatrix.needsUpdate = true; // Notify Three.js of updates
     }
-            
+
+    function clearSatelliteLines() {
+        satelliteLines.forEach((line, index) => {
+            scene.remove(line);
+            line.geometry.dispose();
+            line.material.dispose();
+        });
+        satelliteLines.clear();
+    }
+    
+                
 // function updateTrailGeometry(trail) {
 //     if (!trail.positions.length) return;
 
