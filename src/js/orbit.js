@@ -649,7 +649,9 @@ function updateEarthRotation() {
         const dummy = new THREE.Object3D();
         const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
         const rotationAngle = isGeostationary ? (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI) : 0; // Rotation for geostationary satellites
+
         const earthCenter = new THREE.Vector3(0, 0, 0); // Earth's center
+        const tiltedYAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt); // Earth's tilted Y-axis
     
         for (let i = 0; i < instancedMesh.count; i++) {
             const { satrec } = instancedMesh.userData[i];
@@ -670,7 +672,7 @@ function updateEarthRotation() {
     
             // Apply Earth's rotation if geostationary
             if (isGeostationary) {
-                currentPosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle); // Rotate around Y-axis
+                currentPosition.applyAxisAngle(tiltedYAxis, rotationAngle); // Rotate around Earth's tilted axis
             }
     
             // Update satellite position in the instanced mesh
@@ -679,51 +681,51 @@ function updateEarthRotation() {
             instancedMesh.setMatrixAt(i, dummy.matrix);
 
 
-                        // Draw or update the line to the Earth's center if in fixed view
-                        if (currentChapter === 'fixed') {
-                            if (!isSatelliteVisible(currentPosition)) {
-                                // Remove line if it exists but the satellite is not visible
-                                if (satelliteLines.has(i)) {
-                                    const line = satelliteLines.get(i);
-                                    scene.remove(line);
-                                    line.geometry.dispose();
-                                    line.material.dispose();
-                                    satelliteLines.delete(i);
-                                }
-                                continue;
-                            }
-                
-                            if (!satelliteLines.has(i)) {
-                                const satLineGeometry = new THREE.BufferGeometry();
-                                const positions = new Float32Array(6); // Two points (start and end)
-                                satLineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                                const satLineMaterial = new THREE.LineBasicMaterial({ 
-                                    color: 0xffffff, 
-                                    transparent: true, 
-                                    alphaHash: true,
-                                    opacity: 0.6 
-                                });
-                                const line = new THREE.Line(satLineGeometry, satLineMaterial);
-                                scene.add(line);
-                                satelliteLines.set(i, line);
-                            }
-                
-                            // Update the line's geometry
+                // Draw or update the line to the Earth's center if in fixed view
+                if (currentChapter === 'fixed') {
+                    if (!isSatelliteVisible(currentPosition)) {
+                        // Remove line if it exists but the satellite is not visible
+                        if (satelliteLines.has(i)) {
                             const line = satelliteLines.get(i);
-                            const positions = line.geometry.attributes.position.array;
-                            positions[0] = earthCenter.x;
-                            positions[1] = earthCenter.y;
-                            positions[2] = earthCenter.z;
-                            positions[3] = currentPosition.x;
-                            positions[4] = currentPosition.y;
-                            positions[5] = currentPosition.z;
-                            line.geometry.attributes.position.needsUpdate = true;
+                            scene.remove(line);
+                            line.geometry.dispose();
+                            line.material.dispose();
+                            satelliteLines.delete(i);
                         }
-            
+                        continue;
+                    }
+        
+                    if (!satelliteLines.has(i)) {
+                        const satLineGeometry = new THREE.BufferGeometry();
+                        const positions = new Float32Array(6); // Two points (start and end)
+                        satLineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                        const satLineMaterial = new THREE.LineBasicMaterial({ 
+                            color: 0xffffff, 
+                            transparent: true, 
+                            alphaHash: true,
+                            opacity: 0.6 
+                        });
+                        const line = new THREE.Line(satLineGeometry, satLineMaterial);
+                        scene.add(line);
+                        satelliteLines.set(i, line);
+                    }
+        
+                    // Update the line's geometry
+                    const line = satelliteLines.get(i);
+                    const positions = line.geometry.attributes.position.array;
+                    positions[0] = earthCenter.x;
+                    positions[1] = earthCenter.y;
+                    positions[2] = earthCenter.z;
+                    positions[3] = currentPosition.x;
+                    positions[4] = currentPosition.y;
+                    positions[5] = currentPosition.z;
+                    line.geometry.attributes.position.needsUpdate = true;
+                }
+                
 
-        }
-    
-        instancedMesh.instanceMatrix.needsUpdate = true; // Notify Three.js of updates
+            }
+
+        instancedMesh.instanceMatrix.needsUpdate = true; 
     }
                                     
     function clearSatelliteLines() {
