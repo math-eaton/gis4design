@@ -366,14 +366,7 @@ function loadTLEData() {
             console.log("Geostationary TLEs:", geostationaryTLEs.length);
             console.log("Non-Geostationary TLEs:", nonGeostationaryTLEs.length);
 
-            // Create instanced meshes for geostationary and non-geostationary satellites
-            geostationaryInstancedMesh = createSatelliteInstancedMesh(geostationaryTLEs, false);
-            sandboxInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, false);
-            fixedInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, true);
-
-            // Add sandbox view as default
-            scene.add(sandboxInstancedMesh);
-            satelliteMesh = sandboxInstancedMesh;
+            createSatelliteMeshes(geostationaryTLEs, nonGeostationaryTLEs);
 
             onTLELoadComplete(); // Callback when TLE data is successfully loaded
         })
@@ -383,8 +376,41 @@ function loadTLEData() {
         });
 }
 
-let satelliteMeshes = []; // Store satellite mesh references
+function createSatelliteMeshes(geostationaryTLEs, nonGeostationaryTLEs) {
+    // Define materials
+    const geostationaryMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff, 
+        metalness: 1,
+        roughness: 0.2,
+        wireframe: true,
+        transparent: true, 
+        opacity: 0.8,
+        alphaHash: true,
+    });
 
+    const nonGeostationaryMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff0000, 
+        metalness: 1,
+        roughness: 0.2,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.8,
+        alphaHash: true,
+        // visible: false, 
+    });
+
+    // Create instanced meshes for geostationary and non-geostationary satellites
+    geostationaryInstancedMesh = createSatelliteInstancedMesh(geostationaryTLEs, geostationaryMaterial, false, true); // Geostationary satellites with rotation
+    sandboxInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, nonGeostationaryMaterial, false, false); // Non-geostationary satellites without rotation
+    fixedInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, nonGeostationaryMaterial, true, false); // Fixed non-geostationary satellites
+
+    // Add sandbox view as default
+    scene.add(sandboxInstancedMesh);
+    scene.add(geostationaryInstancedMesh); // Ensure geostationary satellites are added to the scene
+    satelliteMesh = sandboxInstancedMesh;
+
+    console.log("Satellite meshes created and added to scene.");
+}
 
 // Visualize satellites with TLE data from cache
 // function visualizeSatellites(tleArray) {
@@ -478,23 +504,16 @@ function isSatelliteVisible(position) {
 
 
 // create satellite instances (scale dependent appearance)
-function createSatelliteInstancedMesh(tleArray, isFixedView = false) {
+function createSatelliteInstancedMesh(tleArray, material, isFixedView = false, isGeostationary = false) {
     const instanceCount = tleArray.length;
     const satelliteGeometry = isFixedView
         ? new THREE.SphereGeometry(0.002, 16, 16) // Smaller, high-resolution for fixed large-scale view
         : new THREE.SphereGeometry(0.003, 2, 3); // Larger, low-resolution for sandbox small-scale view
 
-    const satelliteMaterial = new THREE.MeshStandardMaterial({
-        color: isFixedView ? 0x0000ff : 0xff0000, // Distinct colors for fixed and sandbox views
-        metalness: 1,
-        roughness: 0.2,
-        wireframe: !isFixedView,
-        transparent: true,
-        opacity: 0.8,
-    });
-
-    const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, instanceCount);
+    const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, material, instanceCount);
     const dummy = new THREE.Object3D();
+    const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
+    const rotationAngle = isGeostationary ? (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI) : 0; // Rotation for geostationary satellites
     const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
 
     tleArray.forEach((sat, i) => {
@@ -517,8 +536,11 @@ function createSatelliteInstancedMesh(tleArray, isFixedView = false) {
         // Calculate 3D position
         const currentPosition = latLonToVector3(latitude, longitude, sphereRadius + altitude);
 
-        // Apply Earth's axial tilt
-        currentPosition.applyAxisAngle(new THREE.Vector3(1, 0, 0), earthTilt);
+
+        // Apply Earth's rotation if geostationary
+        if (isGeostationary) {
+            currentPosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle); // Rotate along the Y-axis
+        }
 
         // Set the position in the instanced mesh
         dummy.position.copy(currentPosition);
@@ -625,9 +647,9 @@ function updateEarthRotation() {
     function updateSatellitePositions(instancedMesh, isGeostationary = false) {
         const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
         const dummy = new THREE.Object3D();
-        const earthCenter = new THREE.Vector3(0, 0, 0); // Earth's center
         const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
         const rotationAngle = isGeostationary ? (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI) : 0; // Rotation for geostationary satellites
+        const earthCenter = new THREE.Vector3(0, 0, 0); // Earth's center
     
         for (let i = 0; i < instancedMesh.count; i++) {
             const { satrec } = instancedMesh.userData[i];
@@ -643,18 +665,19 @@ function updateEarthRotation() {
             // Calculate 3D position
             const currentPosition = latLonToVector3(latitude, longitude, sphereRadius + altitude);
     
-            // Apply Earth's axial tilt (adjusted to Z-axis)
-            currentPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt); // Tilt along the Z-axis
+            // Apply Earth's axial tilt (align with equatorial plane)
+            currentPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
     
             // Apply Earth's rotation if geostationary
             if (isGeostationary) {
-                currentPosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle); // Rotate along the Y-axis
+                currentPosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle); // Rotate around Y-axis
             }
     
             // Update satellite position in the instanced mesh
             dummy.position.copy(currentPosition);
             dummy.updateMatrix();
             instancedMesh.setMatrixAt(i, dummy.matrix);
+
 
                         // Draw or update the line to the Earth's center if in fixed view
                         if (currentChapter === 'fixed') {
@@ -697,11 +720,12 @@ function updateEarthRotation() {
                             line.geometry.attributes.position.needsUpdate = true;
                         }
             
+
         }
     
         instancedMesh.instanceMatrix.needsUpdate = true; // Notify Three.js of updates
     }
-                                
+                                    
     function clearSatelliteLines() {
         satelliteLines.forEach((line, index) => {
             scene.remove(line);
@@ -775,10 +799,15 @@ function animate() {
 
             updateEarthRotation();
 
-                // adjustSatelliteVisibilityAndScale();
-                if (satelliteMesh) {
-                    updateSatellitePositions(satelliteMesh);
-                }
+            // Update positions for non-geostationary satellites
+            if (satelliteMesh) {
+                updateSatellitePositions(satelliteMesh, false);
+            }
+
+            // Update positions for geostationary satellites
+            if (geostationaryInstancedMesh) {
+                updateSatellitePositions(geostationaryInstancedMesh, true);
+            }
         
             updateMoonPosition();
             animateSunRotation();
