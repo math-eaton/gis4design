@@ -15,7 +15,6 @@ export function orbitalView(containerId, onTLELoadComplete) {
     let scene, camera, renderer, controls, pivot, moonPivot, sunMesh;
     let animationFrameId;
     let tleArray;
-    let geostationaryInstancedMesh;
 
     let currentChapter = 'sandbox'; // Default chapter
 
@@ -330,7 +329,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
 // todo: separate loading screen to main.js config
 
 let satelliteMesh;
-let sandboxInstancedMesh, fixedInstancedMesh;
+let sandboxInstancedMesh, fixedInstancedMesh, geosynchronousInstancedMesh, geostationaryInstancedMesh, sunSynchronousInstancedMesh;
 
 
 function loadTLEData() {
@@ -346,16 +345,34 @@ function loadTLEData() {
             if (!Array.isArray(tleArray)) throw new Error('Invalid TLE data format: Expected an array');
 
             const geostationaryTLEs = [];
+            const geosynchronousTLEs = [];
+            const sunSynchronousTLEs = [];
             const nonGeostationaryTLEs = [];
 
-            // Classify satellites into geostationary and non-geostationary
+            // Classify satellites into geostationary, geosynchronous, and non-geostationary
             tleArray.forEach((sat, i) => {
                 try {
                     const satrec = satellite.twoline2satrec(sat.tleLine1.trim(), sat.tleLine2.trim());
                     const inclination = satrec.inclo * (180 / Math.PI); // Convert inclination to degrees
-                    if (Math.abs(inclination) < 1.0) { // Near-equatorial orbit
+                    const eccentricity = satrec.ecco; // Orbital eccentricity
+                    const period = (2 * Math.PI) / satrec.no; // Orbital period in minutes
+
+                    if (
+                        Math.abs(inclination) < 0.1 && // Near-zero inclination (equatorial orbit)
+                        Math.abs(period - 1436) < 1 // Orbital period close to 1436 minutes
+                    ) {
                         geostationaryTLEs.push(sat);
+                    } else if (Math.abs(period - 1436) < 10) {
+                        // Geosynchronous classification
+                        geosynchronousTLEs.push(sat);
+                    } else if (
+                        Math.abs(inclination - 98) < 2 && // Near 98° inclination
+                        Math.abs(period - 100) < 5 // Orbital period close to 100 minutes
+                    ) {
+                        // Sun-synchronous classification
+                        sunSynchronousTLEs.push(sat);
                     } else {
+                        // Non-geostationary satellites
                         nonGeostationaryTLEs.push(sat);
                     }
                 } catch (error) {
@@ -364,9 +381,11 @@ function loadTLEData() {
             });
 
             console.log("Geostationary TLEs:", geostationaryTLEs.length);
+            console.log("Geosynchronous TLEs:", geosynchronousTLEs.length);
+            console.log("Sun-Synchronous TLEs:", sunSynchronousTLEs.length);
             console.log("Non-Geostationary TLEs:", nonGeostationaryTLEs.length);
 
-            createSatelliteMeshes(geostationaryTLEs, nonGeostationaryTLEs);
+            createSatelliteMeshes(geostationaryTLEs, geosynchronousTLEs, sunSynchronousTLEs, nonGeostationaryTLEs);
 
             onTLELoadComplete(); // Callback when TLE data is successfully loaded
         })
@@ -376,83 +395,66 @@ function loadTLEData() {
         });
 }
 
-function createSatelliteMeshes(geostationaryTLEs, nonGeostationaryTLEs) {
+function createSatelliteMeshes(geostationaryTLEs, geosynchronousTLEs, sunSynchronousTLEs, nonGeostationaryTLEs) {
     // Define materials
     const geostationaryMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff, 
+        color: 0xffffff, // Green for geostationary satellites
         metalness: 1,
         roughness: 0.2,
-        wireframe: true,
-        transparent: true, 
+        wireframe: false,
+        transparent: true,
         opacity: 0.8,
-        alphaHash: true,
+        // visible: false,
+
+    });
+
+    const geosynchronousMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff, // Blue for geosynchronous satellites
+        metalness: 1,
+        roughness: 0.2,
+        wireframe: false,
+        transparent: true,
+        opacity: 0.5,
+        // visible: false,
+    });
+
+    const sunSynchronousMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffff00, // Yellow for sun-synchronous satellites
+        metalness: 1,
+        roughness: 0.2,
+        wireframe: false,
+        transparent: true,
+        opacity: 0.8,
+        // visible: false,
     });
 
     const nonGeostationaryMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff0000, 
+        color: 0xff0000, // Red for non-geostationary satellites
         metalness: 1,
         roughness: 0.2,
         wireframe: true,
         transparent: true,
-        opacity: 0.8,
-        alphaHash: true,
-        // visible: false, 
+        opacity: 0.6,
+        // visible: false,
+
     });
 
-    // Create instanced meshes for geostationary and non-geostationary satellites
-    geostationaryInstancedMesh = createSatelliteInstancedMesh(geostationaryTLEs, geostationaryMaterial, false, true); // Geostationary satellites with rotation
-    sandboxInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, nonGeostationaryMaterial, false, false); // Non-geostationary satellites without rotation
-    fixedInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, nonGeostationaryMaterial, true, false); // Fixed non-geostationary satellites
+    // Create instanced meshes for geostationary, geosynchronous, and non-geostationary satellites
+    geostationaryInstancedMesh = createSatelliteInstancedMesh(geostationaryTLEs, geostationaryMaterial, false, true);
+    geosynchronousInstancedMesh = createSatelliteInstancedMesh(geosynchronousTLEs, geosynchronousMaterial, false, true);
+    sunSynchronousInstancedMesh = createSatelliteInstancedMesh(sunSynchronousTLEs, sunSynchronousMaterial, false, false);
+    sandboxInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, nonGeostationaryMaterial, false, false);
+    fixedInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, nonGeostationaryMaterial, true, false);
 
     // Add sandbox view as default
     scene.add(sandboxInstancedMesh);
-    scene.add(geostationaryInstancedMesh); // Ensure geostationary satellites are added to the scene
+    scene.add(geostationaryInstancedMesh);
+    scene.add(geosynchronousInstancedMesh);
+    scene.add(sunSynchronousInstancedMesh); // Add sun-synchronous satellites to the scene
     satelliteMesh = sandboxInstancedMesh;
 
     console.log("Satellite meshes created and added to scene.");
 }
-
-// Visualize satellites with TLE data from cache
-// function visualizeSatellites(tleArray) {
-//     const instanceCount = tleArray.length;
-
-//     // Geometry and material for the satellites
-//     const satelliteGeometry = new THREE.SphereGeometry(0.003, 4, 4); // Simplified geometry
-//     const satelliteMaterial = new THREE.MeshStandardMaterial({
-//         color: 0xff0000,
-//         metalness: 1,
-//         roughness: 0.2,
-//         wireframe: true,
-//         transparent: true,
-//         alphaHash: true,
-//         opacity: 0.8,
-//     });
-
-//     // Create an InstancedMesh
-//     const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, satelliteMaterial, instanceCount);
-
-//     // Dummy object for matrix transformations
-//     const dummy = new THREE.Object3D();
-
-//     tleArray.forEach((sat, index) => {
-//         const satrec = satellite.twoline2satrec(sat.tleLine1, sat.tleLine2);
-
-//         // Store satellite data in userData
-//         instancedMesh.userData[index] = { satrec };
-
-//         // Set initial positions for the instances
-//         const initialPosition = latLonToVector3(0, 0, sphereRadius); // Default position
-//         dummy.position.copy(initialPosition);
-//         dummy.updateMatrix();
-//         instancedMesh.setMatrixAt(index, dummy.matrix);
-//     });
-
-//     // Add the instanced mesh to the pivot group
-//     pivot.add(instancedMesh);
-
-//     // Return the instanced mesh for updates
-//     return instancedMesh;
-// }
 
 // vars for LOD levels
 const MIN_DISTANCE = 8; // Minimum distance to start high LOD visibility
@@ -809,6 +811,15 @@ function animate() {
             // Update positions for geostationary satellites
             if (geostationaryInstancedMesh) {
                 updateSatellitePositions(geostationaryInstancedMesh, true);
+            }
+
+            // Update positions for geosynchronous satellites
+            if (geosynchronousInstancedMesh) {
+                updateSatellitePositions(geosynchronousInstancedMesh, true);
+            }
+
+            if (sunSynchronousInstancedMesh) {
+                updateSatellitePositions(sunSynchronousInstancedMesh, true);
             }
         
             updateMoonPosition();
