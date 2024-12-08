@@ -63,7 +63,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
     // stats
     const stats = new Stats()
     stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
-    document.body.appendChild(stats.dom)
+    // document.body.appendChild(stats.dom)
     stats.dom.id = 'statistics';
 
     window.addEventListener('keydown', (event) => {
@@ -175,9 +175,10 @@ export function orbitalView(containerId, onTLELoadComplete) {
         const ambientLight = new THREE.AmbientLight(0x404040, 1);
         scene.add(ambientLight);
     
-        directionalLight = new THREE.DirectionalLight(0x8a8a8a, 100);
+        directionalLight = new THREE.DirectionalLight(0x5b5b5b, 100);
         directionalLight.castShadow = true;
         scene.add(directionalLight);
+
     
         const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5);
         scene.add(hemiLight);
@@ -398,7 +399,7 @@ function loadTLEData() {
 function createSatelliteMeshes(geostationaryTLEs, geosynchronousTLEs, sunSynchronousTLEs, nonGeostationaryTLEs) {
     // Define materials
     const geostationaryMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff, // Green for geostationary satellites
+        color: 0xffffff,
         metalness: 1,
         roughness: 0.2,
         wireframe: false,
@@ -409,17 +410,17 @@ function createSatelliteMeshes(geostationaryTLEs, geosynchronousTLEs, sunSynchro
     });
 
     const geosynchronousMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff, // Blue for geosynchronous satellites
+        color: 0xffffff,
         metalness: 1,
         roughness: 0.2,
         wireframe: false,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.75,
         // visible: false,
     });
 
-    const sunSynchronousMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffff00, // Yellow for sun-synchronous satellites
+    const sunSynchronousMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffff00, 
         metalness: 1,
         roughness: 0.2,
         wireframe: false,
@@ -429,12 +430,12 @@ function createSatelliteMeshes(geostationaryTLEs, geosynchronousTLEs, sunSynchro
     });
 
     const nonGeostationaryMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff0000, // Red for non-geostationary satellites
+        color: 0xff0000, 
         metalness: 1,
         roughness: 0.2,
         wireframe: true,
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.4,
         // visible: false,
 
     });
@@ -456,20 +457,6 @@ function createSatelliteMeshes(geostationaryTLEs, geosynchronousTLEs, sunSynchro
     console.log("Satellite meshes created and added to scene.");
 }
 
-// vars for LOD levels
-const MIN_DISTANCE = 8; // Minimum distance to start high LOD visibility
-const MAX_DISTANCE = 40; // Maximum distance for low LOD visibility
-// let MIN_VISIBLE_PERCENTAGE = 0.3; // N% of satellites visible at low detail
-// let MAX_VISIBLE_PERCENTAGE = 1.0; // 100% of satellites visible at high detail
-
-// vars for satellite size scaling
-let MIN_SCALE = 0.15; // Minimum size when zoomed in
-let MAX_SCALE = 1.25; // Maximum size when zoomed out
-
-
-const satelliteTrails = new Map(); // Map satellite index to trail data
-const maxTrailLength = 10; // Maximum number of points per trail
-
 
 const frustum = new THREE.Frustum();
 const cameraViewProjectionMatrix = new THREE.Matrix4();
@@ -481,28 +468,6 @@ function isSatelliteVisible(position) {
 
     return frustum.containsPoint(position);
 }
-
-
-// function initializeSatelliteTrails(instancedMesh) {
-//     if (!trailsEnabled || !instancedMesh) return;
-
-//     const trailMaterial = new THREE.LineBasicMaterial({
-//         color: 0xff0000,
-//         opacity: 1,
-//         // transparent: true,
-//     });
-
-//     for (let i = 0; i < instancedMesh.count; i++) {
-//         const trailGeometry = new THREE.BufferGeometry();
-//         const positions = new Float32Array(maxTrailLength * 3); // Each point has x, y, z
-//         trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-//         const line = new THREE.Line(trailGeometry, trailMaterial);
-//         scene.add(line);
-
-//         satelliteTrails.set(i, { positions, line, index: 0 }); // Initialize trail data
-//     }
-// }
 
 
 // create satellite instances (scale dependent appearance)
@@ -553,19 +518,104 @@ function createSatelliteInstancedMesh(tleArray, material, isFixedView = false, i
     return instancedMesh;
 }
 
-function setResponsiveCameraPosition() {
-    const isMobile = window.innerWidth <= 768;
 
-    if (currentChapter === 'sandbox') {
-        camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
-        controls.minDistance = isMobile ? 50 : 10;
-        controls.maxDistance = isMobile ? 500 : 100;
-    } else if (currentChapter === 'fixed') {
-        camera.position.z = isMobile ? 40 : 30; // Example fixed zoom for mobile
-        controls.minDistance = isMobile ? 20 : 30;
-        controls.maxDistance = isMobile ? 40 : 50;
-    }
+
+const satelliteLines = new Map(); // Map satellite index to its line
+
+function updateSatellitePositions(instancedMesh, isGeostationary = false) {
+    const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
+    const dummy = new THREE.Object3D();
+    const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
+    const rotationAngle = isGeostationary ? (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI) : 0; // Rotation for geostationary satellites
+
+    const earthCenter = new THREE.Vector3(0, 0, 0); // Earth's center
+    const tiltedYAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt); // Earth's tilted Y-axis
+
+    for (let i = 0; i < instancedMesh.count; i++) {
+        const { satrec } = instancedMesh.userData[i];
+        const positionAndVelocity = satellite.propagate(satrec, simulationTime);
+        if (!positionAndVelocity.position) continue;
+
+        // Convert ECI to geodetic
+        const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+        const altitude = positionGd.height * scaleFactor * distanceCompressionFactor; // Dynamically apply vertical exaggeration
+        const latitude = satellite.degreesLat(positionGd.latitude);
+        const longitude = satellite.degreesLong(positionGd.longitude);
+
+        // Calculate 3D position
+        const currentPosition = latLonToVector3(latitude, longitude, sphereRadius + altitude);
+
+        // Apply Earth's axial tilt (align with equatorial plane)
+        currentPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
+
+        // Apply Earth's rotation if geostationary
+        if (isGeostationary) {
+            currentPosition.applyAxisAngle(tiltedYAxis, rotationAngle); // Rotate around Earth's tilted axis
+        }
+
+        // Update satellite position in the instanced mesh
+        dummy.position.copy(currentPosition);
+        dummy.updateMatrix();
+        instancedMesh.setMatrixAt(i, dummy.matrix);
+
+
+            // Draw or update the line to the Earth's center if in fixed view
+            if (currentChapter === 'fixed') {
+                if (!isSatelliteVisible(currentPosition)) {
+                    // Remove line if it exists but the satellite is not visible
+                    if (satelliteLines.has(i)) {
+                        const line = satelliteLines.get(i);
+                        scene.remove(line);
+                        line.geometry.dispose();
+                        line.material.dispose();
+                        satelliteLines.delete(i);
+                    }
+                    continue;
+                }
+    
+                if (!satelliteLines.has(i)) {
+                    const satLineGeometry = new THREE.BufferGeometry();
+                    const positions = new Float32Array(6); // Two points (start and end)
+                    satLineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    const satLineMaterial = new THREE.LineBasicMaterial({ 
+                        color: 0xffffff, 
+                        transparent: true, 
+                        alphaHash: true,
+                        opacity: 0.6 
+                    });
+                    const line = new THREE.Line(satLineGeometry, satLineMaterial);
+                    scene.add(line);
+                    satelliteLines.set(i, line);
+                }
+    
+                // Update the line's geometry
+                const line = satelliteLines.get(i);
+                const positions = line.geometry.attributes.position.array;
+                positions[0] = earthCenter.x;
+                positions[1] = earthCenter.y;
+                positions[2] = earthCenter.z;
+                positions[3] = currentPosition.x;
+                positions[4] = currentPosition.y;
+                positions[5] = currentPosition.z;
+                line.geometry.attributes.position.needsUpdate = true;
+            }
+            
+
+        }
+
+    instancedMesh.instanceMatrix.needsUpdate = true; 
 }
+                                
+function clearSatelliteLines() {
+    satelliteLines.forEach((line, index) => {
+        scene.remove(line);
+        line.geometry.dispose();
+        line.material.dispose();
+    });
+    satelliteLines.clear();
+}
+
+            
 
 function switchChapterMesh(tleArray, isFixedView) {
     // Remove the current mesh from the scene
@@ -589,6 +639,21 @@ function switchChapterMesh(tleArray, isFixedView) {
             satelliteMesh.setMatrixAt(i, dummy.matrix);
         }
         satelliteMesh.instanceMatrix.needsUpdate = true;
+    }
+}
+
+
+function setResponsiveCameraPosition() {
+    const isMobile = window.innerWidth <= 768;
+
+    if (currentChapter === 'sandbox') {
+        camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
+        controls.minDistance = isMobile ? 50 : 10;
+        controls.maxDistance = isMobile ? 500 : 100;
+    } else if (currentChapter === 'fixed') {
+        camera.position.z = isMobile ? 40 : 30; // Example fixed zoom for mobile
+        controls.minDistance = isMobile ? 20 : 30;
+        controls.maxDistance = isMobile ? 40 : 50;
     }
 }
 
@@ -640,106 +705,6 @@ function updateEarthRotation() {
     }
 }
 
-    // Function to update satellite positions with the current distanceCompressionFactor
-    // const frameInterval = 20; 
-    // let frameCount = 0;
-
-    const satelliteLines = new Map(); // Map satellite index to its line
-
-    function updateSatellitePositions(instancedMesh, isGeostationary = false) {
-        const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
-        const dummy = new THREE.Object3D();
-        const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
-        const rotationAngle = isGeostationary ? (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI) : 0; // Rotation for geostationary satellites
-
-        const earthCenter = new THREE.Vector3(0, 0, 0); // Earth's center
-        const tiltedYAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt); // Earth's tilted Y-axis
-    
-        for (let i = 0; i < instancedMesh.count; i++) {
-            const { satrec } = instancedMesh.userData[i];
-            const positionAndVelocity = satellite.propagate(satrec, simulationTime);
-            if (!positionAndVelocity.position) continue;
-    
-            // Convert ECI to geodetic
-            const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-            const altitude = positionGd.height * scaleFactor * distanceCompressionFactor; // Dynamically apply vertical exaggeration
-            const latitude = satellite.degreesLat(positionGd.latitude);
-            const longitude = satellite.degreesLong(positionGd.longitude);
-    
-            // Calculate 3D position
-            const currentPosition = latLonToVector3(latitude, longitude, sphereRadius + altitude);
-    
-            // Apply Earth's axial tilt (align with equatorial plane)
-            currentPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
-    
-            // Apply Earth's rotation if geostationary
-            if (isGeostationary) {
-                currentPosition.applyAxisAngle(tiltedYAxis, rotationAngle); // Rotate around Earth's tilted axis
-            }
-    
-            // Update satellite position in the instanced mesh
-            dummy.position.copy(currentPosition);
-            dummy.updateMatrix();
-            instancedMesh.setMatrixAt(i, dummy.matrix);
-
-
-                // Draw or update the line to the Earth's center if in fixed view
-                if (currentChapter === 'fixed') {
-                    if (!isSatelliteVisible(currentPosition)) {
-                        // Remove line if it exists but the satellite is not visible
-                        if (satelliteLines.has(i)) {
-                            const line = satelliteLines.get(i);
-                            scene.remove(line);
-                            line.geometry.dispose();
-                            line.material.dispose();
-                            satelliteLines.delete(i);
-                        }
-                        continue;
-                    }
-        
-                    if (!satelliteLines.has(i)) {
-                        const satLineGeometry = new THREE.BufferGeometry();
-                        const positions = new Float32Array(6); // Two points (start and end)
-                        satLineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                        const satLineMaterial = new THREE.LineBasicMaterial({ 
-                            color: 0xffffff, 
-                            transparent: true, 
-                            alphaHash: true,
-                            opacity: 0.6 
-                        });
-                        const line = new THREE.Line(satLineGeometry, satLineMaterial);
-                        scene.add(line);
-                        satelliteLines.set(i, line);
-                    }
-        
-                    // Update the line's geometry
-                    const line = satelliteLines.get(i);
-                    const positions = line.geometry.attributes.position.array;
-                    positions[0] = earthCenter.x;
-                    positions[1] = earthCenter.y;
-                    positions[2] = earthCenter.z;
-                    positions[3] = currentPosition.x;
-                    positions[4] = currentPosition.y;
-                    positions[5] = currentPosition.z;
-                    line.geometry.attributes.position.needsUpdate = true;
-                }
-                
-
-            }
-
-        instancedMesh.instanceMatrix.needsUpdate = true; 
-    }
-                                    
-    function clearSatelliteLines() {
-        satelliteLines.forEach((line, index) => {
-            scene.remove(line);
-            line.geometry.dispose();
-            line.material.dispose();
-        });
-        satelliteLines.clear();
-    }
-    
-                
 // function updateTrailGeometry(trail) {
 //     if (!trail.positions.length) return;
 
@@ -1062,6 +1027,7 @@ function animate() {
         const geoJsonUrls = [
             'data/ne_110m_coastline.geojson',
             'data/ne_110m_graticules_10.geojson',
+            'data/ne_110m_graticules_5.geojson',
             'data/ne_110m_land.geojson',
             'data/ne_110m_ocean.geojson',
             'data/ne_50m_ocean.geojson'
@@ -1098,7 +1064,7 @@ function animate() {
     function handleGeoJSONData(url, data) {
         switch (url) {
 
-            case 'data/ne_110m_graticules_10.geojson':
+            case 'data/ne_110m_graticules_5.geojson':
                 console.log("Loaded graticules:", data);
                 addGraticulesToScene(data);
                 break;
@@ -1170,13 +1136,14 @@ function animate() {
     // Add graticules to the scene
     function addGraticulesToScene(data) {
         const lineMaterial = new THREE.LineBasicMaterial({ 
-                color: 0xaaaaaa, 
-                opacity: 0.35,
+                // color: 0xaaaaaa, 
+                color: 0x696969,
+                opacity: 0.5,
+                transparent: true,
                 alphaHash: true,
-                linewidth: 1 
+                visible: true
             }); 
 
-  
 
         const radius = sphereRadius; // Make sure the radius matches the sphere's radius
 
@@ -1310,7 +1277,7 @@ function animate() {
             distanceCompressionFactor = mapSliderToExponential(rawValue, minExp, maxExp);
             exaggerationOutput.textContent = distanceCompressionFactor.toFixed(2) + "x";
         
-            console.log("Distance Compression Factor:", distanceCompressionFactor);
+            // console.log("Distance Compression Factor:", distanceCompressionFactor);
         
             // Update positions dynamically
             if (satelliteMesh) updateSatellitePositions(satelliteMesh, false);

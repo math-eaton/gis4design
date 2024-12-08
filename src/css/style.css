@@ -134,6 +134,14 @@ button {
 
 }
 
+#button-container{
+  display: flex;
+  flex-direction:row;
+  gap: 0.5em;
+  font-size: small;
+
+}
+
 
 #visible, #refresh, #colorwheel{
   mix-blend-mode:darken;
@@ -216,11 +224,11 @@ label{
 
 
 }
-
+/* 
 #reset-button{
   width: fit-content;
   font-size: small;
-}
+} */
 
 
 /* 
@@ -385,12 +393,15 @@ label{
     width: 66%;
 
   }   
+/* 
+  #button-container{
+    padding-bottom: 5vh;
 
-
+  } */
 
   #time-display{
 
-    padding-bottom: 3vh;
+    top: 0vh;
 
   }
 
