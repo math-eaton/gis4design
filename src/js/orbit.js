@@ -610,7 +610,7 @@ function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
 
     // Geometry scaling based on view type
     const satelliteGeometry = isFixedView
-        ? new THREE.SphereGeometry(0.002, 16, 16) // Smaller, higher resolution for fixed view
+        ? new THREE.SphereGeometry(0.002, 8, 8) // Smaller, higher resolution for fixed view
         : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for sandbox view
 
     const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, material, instanceCount);
@@ -747,7 +747,7 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
 
         const lineMaterial = new THREE.LineBasicMaterial({
             color: satelliteColor, // Set the line's initial color
-            transparent: true,
+            transparent: false,
             opacity: .33,
             // alphaHash: true,
         });
@@ -794,7 +794,7 @@ function switchChapterMesh(tleArray, isFixedView) {
     const material = new THREE.MeshStandardMaterial({
         metalness: 1,
         roughness: 0.2,
-        transparent: true,
+        transparent: false,
         opacity: 0.8,
         alphaHash: true,
     });
@@ -1018,7 +1018,7 @@ function updateEarthRotation() {
             controls: {
                 minDistance: 10,
                 maxDistance: 100,
-                enablePan: true,
+                enablePan: false,
                 zoomSpeed: 0.666,
                 rotateSpeed: 0.25,
             },
@@ -1432,8 +1432,8 @@ function updateEarthRotation() {
             // console.log("Distance Compression Factor:", distanceCompressionFactor);
         
             // Update positions dynamically
-            if (satelliteMesh) updateSatellitePositions(satelliteMesh, false);
-            if (geostationaryInstancedMesh) updateSatellitePositions(geostationaryInstancedMesh, true);
+            if (satelliteMesh) debounce(updateSatellitePositions(satelliteMesh, false),50);
+            if (geostationaryInstancedMesh) debounce(updateSatellitePositions(geostationaryInstancedMesh, true),50);
         });
         
         // Simulation speed slider
@@ -1480,7 +1480,8 @@ function updateEarthRotation() {
     
             // Update satellite positions only if the satelliteMesh is defined
             if (satelliteMesh) {
-                updateSatellitePositions(satelliteMesh);
+                debounce(updateSatellitePositions(satelliteMesh),50);
+            
             }
         });
     }
