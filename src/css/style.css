@@ -134,6 +134,10 @@ button {
 
 }
 
+#legend{
+  z-index: 999;
+}
+
 #button-container{
   display: flex;
   flex-direction:row;

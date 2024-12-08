@@ -14,10 +14,12 @@ import { createNoise2D } from 'simplex-noise';
 export function orbitalView(containerId, onTLELoadComplete) {
     let scene, camera, renderer, controls, pivot, moonPivot, sunMesh;
     let animationFrameId;
-    let tleArray;
+    let tleArray = [];
+    let instancedMesh;
+    let sunLine;
 
     let currentChapter = 'sandbox'; // Default chapter
-
+    let lastLat, lastLon;
 
     let scaleBar;
     // const scaleBarElements = createScaleBar();
@@ -84,23 +86,19 @@ export function orbitalView(containerId, onTLELoadComplete) {
         }
     });
 
-
-    function init() {
-
+    async function init() {
         scene = new THREE.Scene();
-    
         camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.1, 300000);
-
-
-        camera.position.set(0, 0, 800); // Start slightly above and in front of the Earth
-        camera.position.z = 66; // init
+    
+        camera.position.set(0, 0, 800);
+        camera.position.z = 66;
     
         renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setClearColor(0xC0C0C0, 0);
     
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Higher quality shadows
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
         document.getElementById(containerId).appendChild(renderer.domElement);
     
@@ -115,61 +113,39 @@ export function orbitalView(containerId, onTLELoadComplete) {
     
         controls.minDistance = 10;
         controls.maxDistance = 100;
-
+    
         // Responsive z-position initialization
         setResponsiveCameraPosition();
-
-        initializeSimulationTime();
-
+    
+        // Wait for simulation time to be initialized
+        await initializeSimulationTime();
     
         addSun();
         updateSunDistance();
-
+        updateSunPosition(simulationTime, scaleFactor); // Update Sun position
     
-        // Initialize pivot group before adding the moon or other elements
         pivot = new THREE.Group();
         pivot.rotation.z = earthTilt; // Tilt the entire Earth system by 23.4 degrees on the Z-axis
         scene.add(pivot);
-
+    
         moonPivot = new THREE.Group();
-        scene.add(moonPivot)
-    
-        addMoon(); 
-    
-        // Add planets to the scene
-        // addPlanet("Mercury", 0xbebebe, 2439.7); // Mercury radius in km
-        // addPlanet("Venus", 0xffdd44, 6051.8);   // Venus radius in km
-        // addPlanet("Earth", 0x2266ff, 6371);     // Earth radius in km
-        // addPlanet("Mars", 0xff4422, 3389.5);    // Mars radius in km
-        // addPlanet("Jupiter", 0xddddaa, 69911);  // Jupiter radius in km
-        // addPlanet("Saturn", 0xeeddbb, 58232);   // Saturn radius in km
-        // addPlanet("Uranus", 0xaaffff, 25362);   // Uranus radius in km
-        // addPlanet("Neptune", 0x4466ff, 24622);  // Neptune radius in km
+        scene.add(moonPivot);
     
         addEarthSphere();
-
-        // scrollytelling controls
-        setupChapterControls();
-
-        loadTLEData(); // Fetch and visualize the TLE data from node server
+        // updateSunLine(); // Sync Sun line position
     
-        // Load and visualize the graticules
+        addMoon();
+        setupChapterControls();
+        loadTLEData();
         loadAllData();
-
         initializeSlider();
-
-        // scaleBar = createScaleBar();
-
-
-        window.addEventListener('resize', onWindowResize, false);
-        onWindowResize(); // run once
-
-        // camera.rotation.set(-earthTilt);
-
-
+    
+        window.addEventListener("resize", onWindowResize, false);
+        onWindowResize();
+    
         animate();
     }
-
+    
     function addSun() {
         // Ambient and directional lights (your existing code)
         const ambientLight = new THREE.AmbientLight(0x404040, 1);
@@ -206,6 +182,46 @@ export function orbitalView(containerId, onTLELoadComplete) {
         sunPivot.add(directionalLight);
 
     }
+
+        // Calculate Julian Date
+    function getJulianDate(date) {
+        return date.getTime() / 86400000 + 2440587.5; // Convert milliseconds to days
+    }
+
+    // Update the Sun's position based on simulation time
+    function updateSunPosition(simulationTime, scaleFactor) {
+        const julianDate = getJulianDate(simulationTime);
+        const T = (julianDate - 2451545.0) / 36525; // Centuries since J2000
+
+        // Sun's orbital parameters
+        const L0 = 280.46646 + T * (36000.76983 + T * 0.0003032); // Mean longitude (degrees)
+        const M = 357.52911 + T * (35999.05029 - 0.0001537 * T); // Mean anomaly (degrees)
+        const C = (1.914602 - T * (0.004817 + 0.000014 * T)) * Math.sin(M * (Math.PI / 180))
+                + (0.019993 - 0.000101 * T) * Math.sin(2 * M * (Math.PI / 180))
+                + 0.000289 * Math.sin(3 * M * (Math.PI / 180)); // Sun's equation of center
+        const trueLongitude = L0 + C; // True longitude of the Sun (degrees)
+
+        // Sun's position in Earth-centered coordinates
+        const eclipticObliquity = 23.44 * (Math.PI / 180); // Axial tilt in radians
+        const sunEclipticX = Math.cos(trueLongitude * (Math.PI / 180));
+        const sunEclipticY = Math.cos(eclipticObliquity) * Math.sin(trueLongitude * (Math.PI / 180));
+        const sunEclipticZ = Math.sin(eclipticObliquity) * Math.sin(trueLongitude * (Math.PI / 180));
+
+        // Scale Sun to a realistic distance
+        const sunDistanceAU = 1; // 1 Astronomical Unit
+        const sunPosition = new THREE.Vector3(
+            sunEclipticX * sunDistanceAU,
+            sunEclipticZ * sunDistanceAU, 
+            -sunEclipticY * sunDistanceAU 
+        ).multiplyScalar(scaleFactor * 149.6e6);
+        
+        // Update Sun's position and light in the scene
+        sunMesh.position.copy(sunPosition);
+        directionalLight.position.copy(sunPosition);
+        directionalLight.target.position.set(0, 0, 0); // Point light at Earth's center
+        directionalLight.target.updateMatrixWorld();
+    }
+
     
         // Function to update sun's distance based on current compression factor
         function updateSunDistance() {
@@ -214,6 +230,20 @@ export function orbitalView(containerId, onTLELoadComplete) {
             directionalLight.position.copy(sunMesh.position);
         }
     
+        // debugging
+        function updateSunLine() {
+            const positions = sunLine.geometry.attributes.position.array;
+            positions[0] = 0; // Earth's center
+            positions[1] = 0;
+            positions[2] = 0;
+        
+            positions[3] = sunMesh.position.x;
+            positions[4] = sunMesh.position.y;
+            positions[5] = sunMesh.position.z;
+        
+            sunLine.geometry.attributes.position.needsUpdate = true;
+        }
+        
     
         // Initialize Simplex Noise for subtle rotation
         const simplex = new createNoise2D();
@@ -330,8 +360,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
 // todo: separate loading screen to main.js config
 
 let satelliteMesh;
-let sandboxInstancedMesh, fixedInstancedMesh, geosynchronousInstancedMesh, geostationaryInstancedMesh, sunSynchronousInstancedMesh;
-
+let geostationaryInstancedMesh;
 
 function loadTLEData() {
     fetch('https://orbital-bbfd.onrender.com/satellites')
@@ -339,122 +368,205 @@ function loadTLEData() {
             if (!response.ok) throw new Error('Failed to load cached TLE data');
             return response.json();
         })
-        .then(tleData => {
-            const tleArray = tleData.satellites; // Extract satellites array
-            console.log("Fetched TLE Data:", tleArray);
-
-            if (!Array.isArray(tleArray)) throw new Error('Invalid TLE data format: Expected an array');
-
-            const geostationaryTLEs = [];
-            const geosynchronousTLEs = [];
-            const sunSynchronousTLEs = [];
-            const nonGeostationaryTLEs = [];
-
-            // Classify satellites into geostationary, geosynchronous, and non-geostationary
-            tleArray.forEach((sat, i) => {
-                try {
-                    const satrec = satellite.twoline2satrec(sat.tleLine1.trim(), sat.tleLine2.trim());
-                    const inclination = satrec.inclo * (180 / Math.PI); // Convert inclination to degrees
-                    const eccentricity = satrec.ecco; // Orbital eccentricity
-                    const period = (2 * Math.PI) / satrec.no; // Orbital period in minutes
-
-                    if (
-                        Math.abs(inclination) < 0.1 && // Near-zero inclination (equatorial orbit)
-                        Math.abs(period - 1436) < 1 // Orbital period close to 1436 minutes
-                    ) {
-                        geostationaryTLEs.push(sat);
-                    } else if (Math.abs(period - 1436) < 10) {
-                        // Geosynchronous classification
-                        geosynchronousTLEs.push(sat);
-                    } else if (
-                        Math.abs(inclination - 98) < 2 && // Near 98° inclination
-                        Math.abs(period - 100) < 5 // Orbital period close to 100 minutes
-                    ) {
-                        // Sun-synchronous classification
-                        sunSynchronousTLEs.push(sat);
-                    } else {
-                        // Non-geostationary satellites
-                        nonGeostationaryTLEs.push(sat);
-                    }
-                } catch (error) {
-                    console.error(`Error parsing TLE at index ${i}:`, sat, error);
-                }
-            });
-
-            console.log("Geostationary TLEs:", geostationaryTLEs.length);
-            console.log("Geosynchronous TLEs:", geosynchronousTLEs.length);
-            console.log("Sun-Synchronous TLEs:", sunSynchronousTLEs.length);
-            console.log("Non-Geostationary TLEs:", nonGeostationaryTLEs.length);
-
-            createSatelliteMeshes(geostationaryTLEs, geosynchronousTLEs, sunSynchronousTLEs, nonGeostationaryTLEs);
-
-            onTLELoadComplete(); // Callback when TLE data is successfully loaded
-        })
+        .then(tleData => processTLEData(tleData))
         .catch(error => {
-            console.error('Failed to load TLE data:', error);
-            onTLELoadComplete(); // Trigger callback even if loading fails
+            console.warn('Error fetching TLE data from server:', error);
+            console.log('Attempting to load data from local static file...');
+
+            fetch('cachedSatellites.json')
+                .then(localResponse => {
+                    if (!localResponse.ok) throw new Error('Local file fetch failed');
+                    return localResponse.json();
+                })
+                .then(tleData => processTLEData(tleData))
+                .catch(localError => {
+                    console.error('Failed to load TLE data from both server and local file:', localError);
+                    onTLELoadComplete(); // Still trigger the callback if loading fails
+                });
         });
 }
 
-function createSatelliteMeshes(geostationaryTLEs, geosynchronousTLEs, sunSynchronousTLEs, nonGeostationaryTLEs) {
-    // Define materials
-    const geostationaryMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
+function processTLEData(tleData) {
+    // Check if the data is an array or has a `satellites` key
+    tleArray = Array.isArray(tleData) ? tleData : tleData.satellites;
+
+    if (!Array.isArray(tleArray)) {
+        throw new Error('Invalid TLE data format: Expected an array');
+    }
+
+    // Add metadata for classification
+    tleArray.forEach((sat) => {
+        sat.metadata = {
+            orbitClass: determineOrbitClass(sat),
+            ownerCountry: sat.owner || 'Unknown', // Example: Add owner metadata
+            satelliteType: sat.type || 'Unknown', // Example: Add type metadata
+        };
+    });
+
+    console.log("TLE Data with Metadata:", tleArray);
+
+    // Pass the entire array for mesh creation
+    createSatelliteMeshes(tleArray);
+
+    onTLELoadComplete(); // Callback when TLE data is successfully loaded
+}
+
+// Helper function to classify orbit type
+function determineOrbitClass(sat) {
+    try {
+        const satrec = satellite.twoline2satrec(
+            sat.tleLine1.trim(),
+            sat.tleLine2.trim()
+        );
+        const inclination = satrec.inclo * (180 / Math.PI); // Convert inclination to degrees
+        const period = (2 * Math.PI) / satrec.no; // Orbital period in minutes
+
+        if (Math.abs(inclination) < 0.1 && Math.abs(period - 1436) < 1) return 'geostationary';
+        if (Math.abs(period - 1436) < 10) return 'geosynchronous';
+        if (Math.abs(inclination - 98) < 2 && Math.abs(period - 100) < 5) return 'sunSynchronous';
+        return 'nonGeostationary';
+    } catch (err) {
+        console.error('Failed to determine orbit class for satellite:', sat.name, err);
+        return 'unknown';
+    }
+}
+
+const classificationSchemes = {
+    orbitClass: {
+        getClass: (sat) => sat.orbitClass, 
+        colors: { 
+            geostationary: 0xffffff, 
+            sunSynchronous: 0xffff00, 
+            nonGeostationary: 0xff0000,
+            unknown: 0xff00ff
+        },
+    },
+    ownerCountry: {
+        getClass: (sat) => sat.ownerCountry, // Example: "USA", "China", "Others"
+        colors: { 
+            USA: 0x0000ff, 
+            China: 0xff0000, 
+            Unknown: 0x00ff00 
+        },
+    },
+    satelliteType: {
+        getClass: (sat) => sat.satelliteType, // Example: "GPS", "Weather", "Debris"
+        colors: { 
+            GPS: 0x00ff00, 
+            Weather: 0x0088ff, 
+            Debris: 0xff8800 },
+    },
+};
+
+// Helper to determine color based on scheme
+function getColorByScheme(scheme, sat) {
+    const { getClass, colors } = classificationSchemes[scheme];
+    const category = getClass(sat);
+    return colors[category] || 0xff0000; // Default to white if no color is defined
+}
+
+function applyClassification(instancedMesh, scheme, tleArray) {
+    const dummy = new THREE.Object3D();
+    const colors = new Float32Array(instancedMesh.count * 3); // RGB for each instance
+
+    tleArray.forEach((sat, i) => {
+        const colorHex = getColorByScheme(scheme, sat);
+        const color = new THREE.Color(colorHex);
+
+        dummy.matrix = instancedMesh.getMatrixAt(i); // Fetch existing transformation
+        dummy.updateMatrix();
+
+        instancedMesh.setMatrixAt(i, dummy.matrix); // Retain position
+        colors.set(color.toArray(), i * 3); // Set color
+    });
+
+    instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
+    instancedMesh.instanceMatrix.needsUpdate = true;
+}
+
+let activeScheme = 'orbitClass'; // Default scheme
+
+document.getElementById('orbit-class').addEventListener('click', () => {
+    switchClassification('orbitClass');
+});
+
+document.getElementById('owner-country').addEventListener('click', () => {
+    switchClassification('ownerCountry');
+});
+
+document.getElementById('satellite-type').addEventListener('click', () => {
+    switchClassification('satelliteType');
+});
+
+
+
+function switchClassification(newScheme) {
+    activeScheme = newScheme;
+    applyClassification(satelliteMesh, activeScheme, tleArray);
+    updateLegend();
+}
+
+function updateLegend() {
+    const legendContainer = document.getElementById('category-toggles');
+    legendContainer.innerHTML = '';
+
+    const { colors } = classificationSchemes[activeScheme];
+    for (const [category, colorHex] of Object.entries(colors)) {
+        const button = document.createElement('button');
+        button.style.background = `#${colorHex.toString(16)}`;
+        button.style.color = 'white';
+        button.textContent = category;
+        button.onclick = () => toggleCategoryVisibility(category);
+        legendContainer.appendChild(button);
+    }
+}
+
+function toggleCategoryVisibility(category) {
+    // Implement logic to toggle visibility of specific categories
+    console.log(`Toggling visibility for ${category}`);
+}
+
+
+
+
+function createSatelliteMeshes(tleArray) {
+    const material = new THREE.MeshStandardMaterial({
         metalness: 1,
         roughness: 0.2,
-        wireframe: false,
         transparent: true,
         opacity: 0.8,
-        // visible: false,
-
     });
 
-    const geosynchronousMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        metalness: 1,
-        roughness: 0.2,
-        wireframe: false,
-        transparent: true,
-        opacity: 0.75,
-        // visible: false,
-    });
+    // Create a single instanced mesh for all satellites
+    satelliteMesh = createSatelliteInstancedMesh(tleArray, material, currentChapter === 'fixed');
 
-    const sunSynchronousMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffff00, 
-        metalness: 1,
-        roughness: 0.2,
-        wireframe: false,
-        transparent: true,
-        opacity: 0.8,
-        // visible: false,
-    });
+    // Add the consolidated mesh to the scene
+    scene.add(satelliteMesh);
 
-    const nonGeostationaryMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff0000, 
-        metalness: 1,
-        roughness: 0.2,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.4,
-        // visible: false,
+    console.log("Consolidated satellite mesh created and added to the scene.");
+}
 
-    });
+// Propagate position helper
+function propagateSatellitePosition(satrec) {
+    const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
+    const positionAndVelocity = satellite.propagate(satrec, simulationTime);
 
-    // Create instanced meshes for geostationary, geosynchronous, and non-geostationary satellites
-    geostationaryInstancedMesh = createSatelliteInstancedMesh(geostationaryTLEs, geostationaryMaterial, false, true);
-    geosynchronousInstancedMesh = createSatelliteInstancedMesh(geosynchronousTLEs, geosynchronousMaterial, false, true);
-    sunSynchronousInstancedMesh = createSatelliteInstancedMesh(sunSynchronousTLEs, sunSynchronousMaterial, false, false);
-    sandboxInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, nonGeostationaryMaterial, false, false);
-    fixedInstancedMesh = createSatelliteInstancedMesh(nonGeostationaryTLEs, nonGeostationaryMaterial, true, false);
+    if (positionAndVelocity.position) {
+        const positionEci = positionAndVelocity.position;
+        const positionEcef = satellite.eciToEcf(positionEci, gmst);
 
-    // Add sandbox view as default
-    scene.add(sandboxInstancedMesh);
-    scene.add(geostationaryInstancedMesh);
-    scene.add(geosynchronousInstancedMesh);
-    scene.add(sunSynchronousInstancedMesh); // Add sun-synchronous satellites to the scene
-    satelliteMesh = sandboxInstancedMesh;
+        const altitude = positionEcef.height * scaleFactor * distanceCompressionFactor;
+        const latitude = satellite.degreesLat(positionEcef.latitude);
+        const longitude = satellite.degreesLong(positionEcef.longitude);
 
-    console.log("Satellite meshes created and added to scene.");
+        // Convert to Earth-fixed coordinates with pivot rotation applied
+        const position = latLonToVector3(latitude, longitude, sphereRadius + altitude);
+        position.applyMatrix4(pivot.matrixWorld); // Apply Earth's rotation (pivot)
+
+        return position;
+    }
+
+    return null;
 }
 
 
@@ -469,141 +581,195 @@ function isSatelliteVisible(position) {
     return frustum.containsPoint(position);
 }
 
+function checkCameraDistance() {
+    const cameraDistance = camera.position.length(); // Distance from camera to (0, 0, 0)
+    const threshold = sphereRadius * 10; // Example threshold to switch modes
+
+    if (!tleArray || tleArray.length === 0) {
+        console.error("TLE array is not available for view switching.");
+        return;
+    }
+
+    if (cameraDistance < threshold && currentChapter !== 'fixed') {
+        currentChapter = 'fixed';
+        switchChapterMesh(tleArray, true); // Switch to fixed view
+    } else if (cameraDistance >= threshold && currentChapter !== 'sandbox') {
+        currentChapter = 'sandbox';
+        switchChapterMesh(tleArray, false); // Switch to sandbox view
+    }
+}
+
 
 // create satellite instances (scale dependent appearance)
-function createSatelliteInstancedMesh(tleArray, material, isFixedView = false, isGeostationary = false) {
+function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
+    if (!tleArray || !Array.isArray(tleArray) || tleArray.length === 0) {
+        throw new Error("Invalid TLE array passed to createSatelliteInstancedMesh.");
+    }
+
     const instanceCount = tleArray.length;
+
+    // Geometry scaling based on view type
     const satelliteGeometry = isFixedView
-        ? new THREE.SphereGeometry(0.002, 16, 16) // Smaller, high-resolution for fixed large-scale view
-        : new THREE.SphereGeometry(0.003, 2, 3); // Larger, low-resolution for sandbox small-scale view
+        ? new THREE.SphereGeometry(0.002, 16, 16) // Smaller, higher resolution for fixed view
+        : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for sandbox view
 
     const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, material, instanceCount);
+    const colors = new Float32Array(instanceCount * 3); // Color buffer for classification
     const dummy = new THREE.Object3D();
-    const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
-    const rotationAngle = isGeostationary ? (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI) : 0; // Rotation for geostationary satellites
-    const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
+    const gmst = satellite.gstime(simulationTime);
 
     tleArray.forEach((sat, i) => {
         const satrec = satellite.twoline2satrec(sat.tleLine1.trim(), sat.tleLine2.trim());
-        instancedMesh.userData[i] = { satrec };
+        instancedMesh.userData[i] = { satrec, metadata: sat.metadata }; // Store metadata for classification
 
-        // Propagate TLE to get initial position
-        const positionAndVelocity = satellite.propagate(satrec, simulationTime);
-        if (!positionAndVelocity.position) {
-            console.error(`Failed to propagate satellite at index ${i}`);
-            return; // Skip this satellite if propagation fails
+        // Propagate TLE to get the initial position
+        const position = propagateSatellitePosition(satrec, gmst, false);
+        if (position) {
+            dummy.position.copy(position);
+            dummy.updateMatrix();
+            instancedMesh.setMatrixAt(i, dummy.matrix);
         }
 
-        // Convert ECI to geodetic (latitude, longitude, altitude)
-        const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-        const altitude = positionGd.height * scaleFactor * distanceCompressionFactor; // Apply vertical exaggeration
-        const latitude = satellite.degreesLat(positionGd.latitude);
-        const longitude = satellite.degreesLong(positionGd.longitude);
-
-        // Calculate 3D position
-        const currentPosition = latLonToVector3(latitude, longitude, sphereRadius + altitude);
-
-
-        // Apply Earth's rotation if geostationary
-        if (isGeostationary) {
-            currentPosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle); // Rotate along the Y-axis
-        }
-
-        // Set the position in the instanced mesh
-        dummy.position.copy(currentPosition);
-        dummy.updateMatrix();
-        instancedMesh.setMatrixAt(i, dummy.matrix);
+        // Assign initial color based on classification scheme
+        const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
+        colors.set(color.toArray(), i * 3);
     });
+
+    instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
+    instancedMesh.instanceMatrix.needsUpdate = true;
+    instancedMesh.instanceColor.needsUpdate = true;
 
     return instancedMesh;
 }
 
+// Helper function to propagate satellite position
+function propagateSatellitePosition(satrec, gmst, isGeostationary) {
+    const positionAndVelocity = satellite.propagate(satrec, simulationTime);
+    if (!positionAndVelocity.position) return null;
+
+    const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+    const altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
+    const latitude = satellite.degreesLat(positionGd.latitude);
+    const longitude = satellite.degreesLong(positionGd.longitude);
+
+    let position = latLonToVector3(latitude, longitude, sphereRadius + altitude);
+
+    // Apply Earth's rotation for geostationary satellites
+    if (isGeostationary) {
+        const rotationAngle = (simulationTime.getTime() / 1000) % 86400 * earthRotationSpeed;
+        position.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle);
+    }
+
+    return position;
+}
 
 
 const satelliteLines = new Map(); // Map satellite index to its line
 
-function updateSatellitePositions(instancedMesh, isGeostationary = false) {
+function updateSatellitePositions(instancedMesh) {
+    if (!instancedMesh || !instancedMesh.instanceColor) {
+        console.error("InstancedMesh or its color buffer is not initialized.");
+        return;
+    }
+
     const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
     const dummy = new THREE.Object3D();
-    const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
-    const rotationAngle = isGeostationary ? (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI) : 0; // Rotation for geostationary satellites
+    const colors = instancedMesh.instanceColor.array;
+    const earthCenter = new THREE.Vector3(0, 0, 0);
 
-    const earthCenter = new THREE.Vector3(0, 0, 0); // Earth's center
-    const tiltedYAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt); // Earth's tilted Y-axis
+    // Earth's axial tilt in radians
+    const earthTiltRadians = 23.4 * (Math.PI / 180); // 23.4 degrees
 
     for (let i = 0; i < instancedMesh.count; i++) {
-        const { satrec } = instancedMesh.userData[i];
-        const positionAndVelocity = satellite.propagate(satrec, simulationTime);
-        if (!positionAndVelocity.position) continue;
+        const { satrec, metadata } = instancedMesh.userData[i];
 
-        // Convert ECI to geodetic
-        const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-        const altitude = positionGd.height * scaleFactor * distanceCompressionFactor; // Dynamically apply vertical exaggeration
-        const latitude = satellite.degreesLat(positionGd.latitude);
-        const longitude = satellite.degreesLong(positionGd.longitude);
+        // Propagate satellite position
+        const position = propagateSatellitePosition(satrec, gmst);
+        if (!position) continue;
 
-        // Calculate 3D position
-        const currentPosition = latLonToVector3(latitude, longitude, sphereRadius + altitude);
+        // Apply Earth's axial tilt compensation
+        position.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTiltRadians);
 
-        // Apply Earth's axial tilt (align with equatorial plane)
-        currentPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
-
-        // Apply Earth's rotation if geostationary
-        if (isGeostationary) {
-            currentPosition.applyAxisAngle(tiltedYAxis, rotationAngle); // Rotate around Earth's tilted axis
+        // Apply rotation for geostationary satellites
+        // if (metadata.orbitClass === 'geostationary' || metadata.orbitClass === 'sunSynchronous') {
+        if (instancedMesh) {
+            const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Seconds in a day
+            const rotationAngle = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
+            const tiltedYAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTiltRadians);
+            position.applyAxisAngle(tiltedYAxis, rotationAngle); // Rotate around Earth's tilted Y-axis
         }
 
         // Update satellite position in the instanced mesh
-        dummy.position.copy(currentPosition);
+        dummy.position.copy(position);
         dummy.updateMatrix();
         instancedMesh.setMatrixAt(i, dummy.matrix);
 
+        // Update satellite color based on active classification scheme
+        const color = new THREE.Color(getColorByScheme(activeScheme, metadata));
+        colors.set(color.toArray(), i * 3);
 
-            // Draw or update the line to the Earth's center if in fixed view
-            if (currentChapter === 'fixed') {
-                if (!isSatelliteVisible(currentPosition)) {
-                    // Remove line if it exists but the satellite is not visible
-                    if (satelliteLines.has(i)) {
-                        const line = satelliteLines.get(i);
-                        scene.remove(line);
-                        line.geometry.dispose();
-                        line.material.dispose();
-                        satelliteLines.delete(i);
-                    }
-                    continue;
-                }
-    
-                if (!satelliteLines.has(i)) {
-                    const satLineGeometry = new THREE.BufferGeometry();
-                    const positions = new Float32Array(6); // Two points (start and end)
-                    satLineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                    const satLineMaterial = new THREE.LineBasicMaterial({ 
-                        color: 0xffffff, 
-                        transparent: true, 
-                        alphaHash: true,
-                        opacity: 0.6 
-                    });
-                    const line = new THREE.Line(satLineGeometry, satLineMaterial);
-                    scene.add(line);
-                    satelliteLines.set(i, line);
-                }
-    
-                // Update the line's geometry
-                const line = satelliteLines.get(i);
-                const positions = line.geometry.attributes.position.array;
-                positions[0] = earthCenter.x;
-                positions[1] = earthCenter.y;
-                positions[2] = earthCenter.z;
-                positions[3] = currentPosition.x;
-                positions[4] = currentPosition.y;
-                positions[5] = currentPosition.z;
-                line.geometry.attributes.position.needsUpdate = true;
-            }
-            
-
+        // Update lines in fixed view
+        if (currentChapter === 'fixed') {
+            updateSatelliteLine(i, position, earthCenter);
         }
+    }
 
-    instancedMesh.instanceMatrix.needsUpdate = true; 
+    instancedMesh.instanceMatrix.needsUpdate = true;
+    instancedMesh.instanceColor.needsUpdate = true; // Ensure colors are updated
+}
+
+function updateSatelliteLine(index, satellitePosition, earthCenter) {
+    if (!isSatelliteVisible(satellitePosition)) {
+        // Remove line if satellite is not visible
+        if (satelliteLines.has(index)) {
+            const line = satelliteLines.get(index);
+            scene.remove(line);
+            line.geometry.dispose();
+            line.material.dispose();
+            satelliteLines.delete(index);
+        }
+        return;
+    }
+
+    // Retrieve the satellite's color from instanceColor
+    const colorArray = satelliteMesh.instanceColor.array;
+    const satelliteColor = new THREE.Color(
+        colorArray[index * 3],
+        colorArray[index * 3 + 1],
+        colorArray[index * 3 + 2]
+    );
+
+    // Create or update the line
+    if (!satelliteLines.has(index)) {
+        const lineGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(6); // Two points (start and end)
+        lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const lineMaterial = new THREE.LineBasicMaterial({
+            color: satelliteColor, // Set the line's initial color
+            transparent: true,
+            opacity: .33,
+            // alphaHash: true,
+        });
+
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        scene.add(line);
+        satelliteLines.set(index, line);
+    }
+
+    // Update the line's color if it already exists
+    const line = satelliteLines.get(index);
+    line.material.color = satelliteColor;
+
+    // Update line geometry
+    const positions = line.geometry.attributes.position.array;
+    positions[0] = earthCenter.x;
+    positions[1] = earthCenter.y;
+    positions[2] = earthCenter.z;
+    positions[3] = satellitePosition.x;
+    positions[4] = satellitePosition.y;
+    positions[5] = satellitePosition.z;
+    line.geometry.attributes.position.needsUpdate = true;
 }
                                 
 function clearSatelliteLines() {
@@ -621,25 +787,31 @@ function switchChapterMesh(tleArray, isFixedView) {
     // Remove the current mesh from the scene
     if (satelliteMesh) scene.remove(satelliteMesh);
 
-    // Clear satellite lines if leaving fixed view
-    if (!isFixedView) {
-        clearSatelliteLines();
-    }
+    // Clear satellite lines if switching out of fixed view
+    if (!isFixedView) clearSatelliteLines();
 
-    // Switch the active mesh
-    satelliteMesh = isFixedView ? fixedInstancedMesh : sandboxInstancedMesh;
+    // Create or update the appropriate mesh
+    const material = new THREE.MeshStandardMaterial({
+        metalness: 1,
+        roughness: 0.2,
+        transparent: true,
+        opacity: 0.8,
+        alphaHash: true,
+    });
+
+    satelliteMesh = createSatelliteInstancedMesh(tleArray, material, isFixedView);
+
     scene.add(satelliteMesh);
 
-    // Update positions from the previous mesh
-    const oldMesh = isFixedView ? sandboxInstancedMesh : fixedInstancedMesh;
-    if (oldMesh) {
-        const dummy = new THREE.Object3D();
-        for (let i = 0; i < oldMesh.count; i++) {
-            oldMesh.getMatrixAt(i, dummy.matrix);
-            satelliteMesh.setMatrixAt(i, dummy.matrix);
-        }
-        satelliteMesh.instanceMatrix.needsUpdate = true;
+    // Update satellite lines for fixed view
+    if (isFixedView) {
+        tleArray.forEach((sat, i) => {
+            const position = propagateSatellitePosition(sat.satrec, satellite.gstime(simulationTime), isFixedView);
+            if (position) updateSatelliteLine(i, position, new THREE.Vector3(0, 0, 0));
+        });
     }
+
+    console.log(`Switched to ${isFixedView ? "fixed" : "sandbox"} view.`);
 }
 
 
@@ -665,7 +837,7 @@ function setResponsiveCameraPosition() {
 
     // Function to fetch and set initial simulation time
     function initializeSimulationTime() {
-        fetch('https://orbital-bbfd.onrender.com/satellites') // Fetch from render server
+        return fetch('https://orbital-bbfd.onrender.com/satellites') // Fetch from server
             .then(response => {
                 if (!response.ok) {
                     throw new Error("Failed to fetch last cache time");
@@ -673,24 +845,24 @@ function setResponsiveCameraPosition() {
                 return response.json();
             })
             .then(data => {
-                // Set simulationTime to cached timestamp from the server response
-                simulationTime = new Date(data.timestamp);
+                simulationTime = new Date(data.timestamp); // Cache server timestamp
                 document.getElementById("simulation-time").textContent = simulationTime.toUTCString().replace("GMT", "UTC");
             })
             .catch(error => {
                 console.error("Error loading cache time:", error);
-                // Fallback to a default date if fetch fails
-                simulationTime = new Date('2024-11-01T00:00:00Z');
+                simulationTime = new Date('2024-11-01T00:00:00Z'); // Fallback
             });
     }
         
-    // Update simulation time centrally
     function updateSimulationTime() {
         simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
-        let displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
+        const displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
         document.getElementById("simulation-time").textContent = displayTime;
+    
+        // Update Sun's position with new simulation time
+        updateSunPosition(simulationTime, scaleFactor);
     }
-
+    
 
 // Adjust Earth rotation based on centralized simulation time
 function updateEarthRotation() {
@@ -751,80 +923,49 @@ function updateEarthRotation() {
 
 
 
-function animate() {
-
+  function animate() {
     delta += clock.getDelta();
 
-    let lastLat = null;
-    let lastLon = null;
-      
+    if (delta > interval) {
+        stats.begin();
+        animationFrameId = requestAnimationFrame(animate);
 
-    if (delta  > interval) {
+        updateSimulationTime();
+        updateEarthRotation();
 
-            stats.begin()
-            animationFrameId = requestAnimationFrame(animate);
+        // Check camera distance to switch modes dynamically
+        checkCameraDistance();
 
-            updateSimulationTime();
-
-            updateEarthRotation();
-
-            // Update positions for non-geostationary satellites
-            if (satelliteMesh) {
-                updateSatellitePositions(satelliteMesh, false);
-            }
-
-            // Update positions for geostationary satellites
-            if (geostationaryInstancedMesh) {
-                updateSatellitePositions(geostationaryInstancedMesh, true);
-            }
-
-            // Update positions for geosynchronous satellites
-            if (geosynchronousInstancedMesh) {
-                updateSatellitePositions(geosynchronousInstancedMesh, true);
-            }
-
-            if (sunSynchronousInstancedMesh) {
-                updateSatellitePositions(sunSynchronousInstancedMesh, true);
-            }
-        
-            updateMoonPosition();
-            animateSunRotation();
-            updateSunDistance();
-            
-
-            // Dynamically switch to fixed views based on the current city
-            if (currentChapter === 'fixed') {
-                const { lat, lon } = chapterConfig.fixed.coordinates[selectedCity];
-                if (lat !== lastLat || lon !== lastLon) { // Prevent redundant calls
-                    switchToFixedView(lat, lon);
-                    lastLat = lat;
-                    lastLon = lon;
-
-                }
-            }
-
-            // updateScaleBar(camera, pivot, earthRadiusKm, scaleBarElements);
-            
-            // // planets moving
-            // planets.forEach(({ name, mesh }) => {
-            //     const position = calculatePlanetPosition(name, time / 1000); // Scale time if needed
-            //     mesh.position.copy(position);
-            // });
-
-
-            controls.update();
-
-
-            renderer.render(scene, camera);
-
-            stats.end()
-            
-
-            delta = delta % interval;
-
+        // Update positions and colors for all satellites
+        if (satelliteMesh) {
+            updateSatellitePositions(satelliteMesh);
         }
-        requestAnimationFrame(animate);
+
+        updateMoonPosition();
+        animateSunRotation();
+        updateSunDistance();
+
+        // Sync Sun's position dynamically
+        updateSunPosition(simulationTime, scaleFactor);
+
+
+        if (currentChapter === 'fixed') {
+            const { lat, lon } = chapterConfig.fixed.coordinates[selectedCity];
+            if (lat !== lastLat || lon !== lastLon) {
+                switchToFixedView(lat, lon);
+                lastLat = lat;
+                lastLon = lon;
+            }
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+        stats.end();
+
+        delta = delta % interval;
     }
+    requestAnimationFrame(animate);
+}
 
 
     // Convert geographic coordinates (lat, lon) to 3D cartesian coordinates
@@ -870,7 +1011,8 @@ function animate() {
             switchChapterMesh(tleArray, true); // Switch to fixed mesh
         });
     }
-                
+               
+    // config params for each bookmark/chapter
     const chapterConfig = {
         sandbox: {
             controls: {
@@ -888,10 +1030,10 @@ function animate() {
                 tokyo: { lat: 35.6895, lon: 139.6917 },
             },
             controls: {
-                minDistance: 3, // Adjust zoom levels for the fixed chapter
-                maxDistance: 3,
-                enablePan: false, // Disable panning for fixed view
-                zoomSpeed: 0,
+                minDistance: sphereRadius * 2, // Adjust zoom levels for the fixed chapter
+                maxDistance: sphereRadius * 10,
+                enablePan: true, // Disable panning for fixed view
+                zoomSpeed: 0.5,
                 rotateSpeed: 0,
             },
         },
@@ -991,17 +1133,27 @@ function animate() {
         sphere = new THREE.Mesh(geometry, material);
         sphere.castShadow = true; // Enable shadows for the sphere
         sphere.receiveShadow = true; // Enable receiving shadows    
-        pivot.add(sphere); // Add the sphere to the pivot group, so it rotates with the graticules        
+        pivot.add(sphere); // Add the sphere to the pivot group, so it rotates with the graticules   
+        pivot.add(satelliteMesh);     
         
             
+
+
         // Add markers for debugging
         // addLocationMarker(40.7128, -74.0060, 0xff0000); // NYC (red)
         // addLocationMarker(48.8566, 2.3522, 0x00ff00); // Paris (green)
         // addLocationMarker(35.6895, 139.6917, 0x0000ff); // Tokyo (blue)
 
-
+    // Create a debug line from Earth's center to the Sun
+    // const sunLineMaterial = new THREE.LineBasicMaterial({ color: 0xffff00 });
+    // const sunLineGeometry = new THREE.BufferGeometry().setAttribute(
+    //     'position',
+    //     new THREE.BufferAttribute(new Float32Array(6), 3) // 2 points: start and end
+    // );
+    // sunLine = new THREE.Line(sunLineGeometry, sunLineMaterial);
+    // scene.add(sunLine); // Add to the scene
     }
-    
+
 
     init();
 
