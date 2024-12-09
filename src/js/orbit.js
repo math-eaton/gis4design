@@ -5,8 +5,10 @@ import * as satellite from 'satellite.js';
 import Stats from 'stats.js'
 import { createNoise2D } from 'simplex-noise';
 // import { Earcut } from 'three/src/extras/Earcut.js';
-import { MapControls } from 'three/examples/jsm/controls/MapControls.js';
+import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
 import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls.js';
+import { MapControls } from 'three/examples/jsm/controls/MapControls.js';
+import { FlyControls } from 'three/examples/jsm/controls/FlyControls.js';
 
 
 //
@@ -21,7 +23,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
     let instancedMesh;
     let sunLine;
 
-    let orbitControls, mapControls, firstPersonControls;
+    let orbitControls, mapControls, firstPersonControls, trackballControls, flyControls;
 
 
     let currentChapter = 'smallScale'; // Default chapter
@@ -93,23 +95,38 @@ export function orbitalView(containerId, onTLELoadComplete) {
     });
 
     function initControls() {
-        // Initialize OrbitControls
+        // Initialize OrbitControls small scale
         orbitControls = new OrbitControls(camera, renderer.domElement);
         orbitControls.enableDamping = true;
+        orbitControls.enablePan = false;
         orbitControls.dampingFactor = 0.25;
-        orbitControls.zoomSpeed = 0.666;
+        orbitControls.zoomSpeed = 0.5;
         orbitControls.rotateSpeed = 0.25;
-        orbitControls.minDistance = 10;
+        orbitControls.minDistance = 5;
         orbitControls.maxDistance = 100;
+
+        // Trackball option large scale
+        trackballControls = new TrackballControls(camera, renderer.domElement);
+        trackballControls.rotateSpeed = 1.25;
+        trackballControls.zoomSpeed = .5;
+        trackballControls.panSpeed = 0.2;
+        trackballControls.noZoom = false;
+        trackballControls.noPan = false;
+        // trackballControls.noRotate = true;
+        trackballControls.staticMoving = false;
+        trackballControls.dynamicDampingFactor = 0.33;    
+
+        
     
-        // Initialize MapControls (for largeScale)
+        // Initialize MapControls 
         mapControls = new MapControls(camera, renderer.domElement);
-        mapControls.enableDamping = true;
-        mapControls.dampingFactor = 0.3;
-        mapControls.zoomSpeed = 0.5;
-        mapControls.enableRotate = true;
-        mapControls.minDistance = 1;
-        mapControls.maxDistance = 50;
+        // mapControls.enableDamping = true;
+        // mapControls.dampingFactor = 0.3;
+        // mapControls.zoomSpeed = 0.5;
+        // mapControls.enableRotate = true;
+        // mapControls.minDistance = 1;
+        // mapControls.maxDistance = 50;
+
     
         // Initialize FirstPersonControls (for fixed)
         firstPersonControls = new FirstPersonControls(camera, renderer.domElement);
@@ -117,23 +134,32 @@ export function orbitalView(containerId, onTLELoadComplete) {
         firstPersonControls.movementSpeed = 5;
         firstPersonControls.noFly = true;
         firstPersonControls.lookVertical = true;
-    
+
+        // flycontrol option
+        flyControls = new FlyControls(camera, renderer.domElement);
+        // flyControls.movementSpeed = 100; // Adjust for smooth movement
+        // flyControls.rollSpeed = Math.PI / 24;
+        // flyControls.autoForward = false;
+        // flyControls.dragToLook = true;
+        
         // Start with OrbitControls enabled
         enableControls(orbitControls);
     }
     
     function enableControls(activeControls) {
-        // Disable all controls
+        // Disable all controls by default
         orbitControls.enabled = false;
         mapControls.enabled = false;
         firstPersonControls.enabled = false;
+        flyControls.enabled = false;
+        trackballControls.enabled = false; 
     
-        // Enable the specified controls
+        // actively enable the specified controls
         if (activeControls) {
             activeControls.enabled = true;
         }
     }
-        
+            
 
     async function init() {
         scene = new THREE.Scene();
@@ -630,7 +656,7 @@ function isSatelliteVisible(position) {
     camera.updateMatrixWorld(); // Ensure the camera matrix is up-to-date
 
     // Create an expanded frustum matrix
-    const bufferFactor = 0.9; // Add a 10% buffer
+    const bufferFactor = .9; // Add a -N% buffer
     const projectionMatrixWithBuffer = camera.projectionMatrix.clone();
     projectionMatrixWithBuffer.elements[0] *= bufferFactor; // Left/Right
     projectionMatrixWithBuffer.elements[5] *= bufferFactor; // Top/Bottom
@@ -832,8 +858,14 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
     const isVisible = isSatelliteVisible(satellitePosition);
 
     if (!isVisible) {
-        // Fade out line if it's no longer visible
-        fadeLine(index, 0);
+        // Remove line if it's no longer visible
+        if (satelliteLines.has(index)) {
+            const line = satelliteLines.get(index);
+            scene.remove(line);
+            line.geometry.dispose();
+            line.material.dispose();
+            satelliteLines.delete(index);
+        }
         return;
     }
 
@@ -855,15 +887,12 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
         const lineMaterial = new THREE.LineBasicMaterial({
             color: satelliteColor, // Assign satellite's color to the line
             transparent: true, // Enable transparency
-            opacity: 0, // Start fully transparent for fade-in
+            opacity: 1, // Set opacity directly to visible
         });
 
         const line = new THREE.Line(lineGeometry, lineMaterial);
         scene.add(line);
         satelliteLines.set(index, line);
-
-        // Start fading in
-        fadeLine(index, 1); // target opacity
     }
 
     // Update line geometry
@@ -877,7 +906,6 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
     positions[5] = satellitePosition.z;
     line.geometry.attributes.position.needsUpdate = true;
 }
-
             
 
 function switchChapterMesh(tleArray, isFixedView) {
@@ -917,11 +945,14 @@ function setResponsiveCameraPosition() {
 
     // Adjust camera and active control properties dynamically
     if (orbitControls.enabled) {
-        orbitControls.minDistance = isMobile ? 50 : 10;
+        orbitControls.minDistance = isMobile ? 50 : 5;
         orbitControls.maxDistance = isMobile ? 500 : 100;
     } else if (mapControls.enabled) {
         mapControls.minDistance = isMobile ? 20 : 10;
         mapControls.maxDistance = isMobile ? 100 : 50;
+    } else if (mapControls.enabled) {
+        trackballControls.minDistance = isMobile ? 20 : 5;
+        trackballControls.maxDistance = isMobile ? 100 : 50;
     } else if (firstPersonControls.enabled) {
         // FirstPersonControls don't have min/max distance but can have adjusted speed
         firstPersonControls.movementSpeed = isMobile ? 2 : 5;
@@ -1063,7 +1094,9 @@ function updateEarthRotation() {
 
         if (orbitControls.enabled) orbitControls.update();
         if (mapControls.enabled) mapControls.update();
-        if (firstPersonControls.enabled) firstPersonControls.update(clock.getDelta()); // Pass delta for FirstPersonControls
+        if (firstPersonControls.enabled) firstPersonControls.update(clock.getDelta()); // Requires delta time
+        if (trackballControls.enabled) trackballControls.update(); // Explicit update for TrackballControls
+        if (flyControls.enabled) flyControls.update(delta); // Pass delta to FlyControls
         // else(
         //     controls.update()
         //     )
@@ -1074,6 +1107,13 @@ function updateEarthRotation() {
     }
     requestAnimationFrame(animate);
 }
+
+// function resetCameraForFlyControls() {
+//     camera.position.set(0, 0, sphereRadius * 2); // Position the camera at a reasonable distance
+//     camera.lookAt(new THREE.Vector3(0, 0, 0)); // Point the camera at the Earth's center
+//     camera.updateProjectionMatrix(); // Apply changes to the camera
+// }
+
 
 
     // Convert geographic coordinates (lat, lon) to 3D cartesian coordinates
@@ -1095,13 +1135,32 @@ function updateEarthRotation() {
     const modeManager = {
         smallScale: {
             activate: () => {
-                enableControls(orbitControls); // Activate OrbitControls
-                applyChapterConfig('smallScale');
+            // Reset the pivot's rotation to align north-south
+            pivot.rotation.set(0, 0, 0);
+
+
+            // Enable OrbitControls
+            enableControls(orbitControls);
+
+            // Adjust camera position for a top-down or equatorial view
+            camera.lookAt(new THREE.Vector3(0, 0, 0)); // Ensure camera looks at Earth's center
+            camera.updateProjectionMatrix();
+            
+
+            // Reset OrbitControls target to the globe's center
+            orbitControls.target.set(0, 0, 0);
+            orbitControls.update();
+
+            // Apply chapter-specific configurations
+            applyChapterConfig('smallScale');
             },
         },
         largeScale: {
             activate: () => {
-                enableControls(mapControls); // Activate MapControls
+                // enableControls(orbitControls); // Activate OrbitControls
+                enableControls(trackballControls); // Activate TrackballControls
+                // enableControls(flyControls); // Activate FlyControls
+                // resetCameraForFlyControls(); // Reset the camera for FlyControls
                 applyChapterConfig('largeScale');
             },
         },
@@ -1130,12 +1189,13 @@ function updateEarthRotation() {
     function cleanupLargeScaleFeatures() {
         // Remove satellite lines from the scene
         satelliteLines.forEach((line, index) => {
-            fadeLine(index, 0); // Fade out instead of immediate removal
+            scene.remove(line);
+            line.geometry.dispose();
+            line.material.dispose();
         });
         satelliteLines.clear();
     }
-
-
+    
     function switchMode(mode, city) {
         if (currentChapter === mode) return; // Avoid redundant switches
 
@@ -1202,21 +1262,21 @@ function updateEarthRotation() {
         const config = modeManager[chapter]?.controls;
         if (!config) return;
     
-        // Apply settings based on the active controls
-        if (orbitControls.enabled) {
-            orbitControls.enablePan = config.enablePan ?? orbitControls.enablePan;
-            orbitControls.zoomSpeed = config.zoomSpeed ?? orbitControls.zoomSpeed;
-            orbitControls.rotateSpeed = config.rotateSpeed ?? orbitControls.rotateSpeed;
-            orbitControls.minDistance = config.minDistance ?? orbitControls.minDistance;
-            orbitControls.maxDistance = config.maxDistance ?? orbitControls.maxDistance;
-        } else if (mapControls.enabled) {
-            mapControls.enablePan = config.enablePan ?? mapControls.enablePan;
-            mapControls.zoomSpeed = config.zoomSpeed ?? mapControls.zoomSpeed;
-            mapControls.enableRotate = config.enableRotate ?? mapControls.enableRotate;
-        } else if (firstPersonControls.enabled) {
-            firstPersonControls.movementSpeed = config.movementSpeed ?? firstPersonControls.movementSpeed;
-            firstPersonControls.lookSpeed = config.lookSpeed ?? firstPersonControls.lookSpeed;
-        }
+        // // Apply settings based on the active controls
+        // if (orbitControls.enabled) {
+        //     orbitControls.enablePan = config.enablePan ?? orbitControls.enablePan;
+        //     orbitControls.zoomSpeed = config.zoomSpeed ?? orbitControls.zoomSpeed;
+        //     orbitControls.rotateSpeed = config.rotateSpeed ?? orbitControls.rotateSpeed;
+        //     orbitControls.minDistance = config.minDistance ?? orbitControls.minDistance;
+        //     orbitControls.maxDistance = config.maxDistance ?? orbitControls.maxDistance;
+        // } else if (mapControls.enabled) {
+        //     mapControls.enablePan = config.enablePan ?? mapControls.enablePan;
+        //     mapControls.zoomSpeed = config.zoomSpeed ?? mapControls.zoomSpeed;
+        //     mapControls.enableRotate = config.enableRotate ?? mapControls.enableRotate;
+        // } else if (firstPersonControls.enabled) {
+        //     firstPersonControls.movementSpeed = config.movementSpeed ?? firstPersonControls.movementSpeed;
+        //     firstPersonControls.lookSpeed = config.lookSpeed ?? firstPersonControls.lookSpeed;
+        // }
     }
         
     // Function to add the Earth sphere to match the graticule radius
