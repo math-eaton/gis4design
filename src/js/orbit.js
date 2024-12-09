@@ -428,8 +428,8 @@ function processTLEData(tleData) {
     tleArray.forEach((sat) => {
         sat.metadata = {
             orbitClass: determineOrbitClass(sat),
-            ownerCountry: sat.owner || 'Unknown', // Example: Add owner metadata
-            satelliteType: sat.type || 'Unknown', // Example: Add type metadata
+            ownerCountry: sat.country || 'Unknown', // Example: Add owner metadata
+            satelliteType: sat.objectType || 'Unknown', // Example: Add type metadata
         };
     });
 
@@ -474,17 +474,17 @@ const classificationSchemes = {
     ownerCountry: {
         getClass: (sat) => sat.ownerCountry, // Example: "USA", "China", "Others"
         colors: { 
-            USA: 0x0000ff, 
-            China: 0xff0000, 
+            US: 0x0000ff, 
+            PRC: 0xff0000, 
             Unknown: 0x00ff00 
         },
     },
     satelliteType: {
         getClass: (sat) => sat.satelliteType, // Example: "GPS", "Weather", "Debris"
         colors: { 
-            GPS: 0x00ff00, 
+            ROCKETBODY: 0x00ff00, 
             Weather: 0x0088ff, 
-            Debris: 0xff8800 },
+            DEBRIS: 0xff8800 },
     },
 };
 
