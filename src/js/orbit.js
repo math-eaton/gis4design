@@ -576,10 +576,17 @@ const cameraViewProjectionMatrix = new THREE.Matrix4();
 
 function isSatelliteVisible(position) {
     camera.updateMatrixWorld(); // Ensure the camera matrix is up-to-date
-    cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+
+    // Create an expanded frustum matrix
+    const bufferFactor = 0.9; // Add a 10% buffer
+    const projectionMatrixWithBuffer = camera.projectionMatrix.clone();
+    projectionMatrixWithBuffer.elements[0] *= bufferFactor; // Left/Right
+    projectionMatrixWithBuffer.elements[5] *= bufferFactor; // Top/Bottom
+
+    cameraViewProjectionMatrix.multiplyMatrices(projectionMatrixWithBuffer, camera.matrixWorldInverse);
     frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
 
-    // Check if the satellite is within the frustum
+    // Check if the satellite is within the expanded frustum
     if (!frustum.containsPoint(position)) {
         return false;
     }
