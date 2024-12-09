@@ -18,7 +18,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
     let instancedMesh;
     let sunLine;
 
-    let currentChapter = 'sandbox'; // Default chapter
+    let currentChapter = 'smallScale'; // Default chapter
     let lastLat, lastLon;
 
     let scaleBar;
@@ -50,7 +50,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
 
     
     const earthRotationSpeed = (2 * Math.PI) / 86400; // Earth rotation speed in radians per second
-    const earthTilt = 23.4 * (Math.PI / 180); // Convert 23.4 degrees to radians
+    const earthTilt = 23.44 * (Math.PI / 180); // Convert 23.4 degrees to radians
     // const earthTilt = 0; // troubleshooting
 
     const moonOrbitalPeriodInSeconds = 27.32 * 24 * 3600; // 27.32 days in seconds
@@ -570,35 +570,33 @@ function propagateSatellitePosition(satrec) {
 }
 
 
+// custom frustrum culling for satellite lines
 const frustum = new THREE.Frustum();
 const cameraViewProjectionMatrix = new THREE.Matrix4();
 
 function isSatelliteVisible(position) {
-    camera.updateMatrixWorld(); // Ensure camera matrix is up-to-date
+    camera.updateMatrixWorld(); // Ensure the camera matrix is up-to-date
     cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
 
-    return frustum.containsPoint(position);
-}
-
-function checkCameraDistance() {
-    const cameraDistance = camera.position.length(); // Distance from camera to (0, 0, 0)
-    const threshold = sphereRadius * 10; // Example threshold to switch modes
-
-    if (!tleArray || tleArray.length === 0) {
-        console.error("TLE array is not available for view switching.");
-        return;
+    // Check if the satellite is within the frustum
+    if (!frustum.containsPoint(position)) {
+        return false;
     }
 
-    if (cameraDistance < threshold && currentChapter !== 'fixed') {
-        currentChapter = 'fixed';
-        switchChapterMesh(tleArray, true); // Switch to fixed view
-    } else if (cameraDistance >= threshold && currentChapter !== 'sandbox') {
-        currentChapter = 'sandbox';
-        switchChapterMesh(tleArray, false); // Switch to sandbox view
-    }
-}
+    // Check if the satellite is occluded by the Earth sphere
+    const earthCenter = new THREE.Vector3(0, 0, 0);
+    const directionToSatellite = position.clone().sub(earthCenter).normalize();
+    const directionToCamera = camera.position.clone().sub(earthCenter).normalize();
 
+    // If the angle between the satellite's direction and the camera's direction is >90 degrees, it's occluded
+    const dotProduct = directionToSatellite.dot(directionToCamera);
+    if (dotProduct < 0) {
+        return false; // Satellite is occluded
+    }
+
+    return true;
+}
 
 // create satellite instances (scale dependent appearance)
 function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
@@ -611,7 +609,7 @@ function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
     // Geometry scaling based on view type
     const satelliteGeometry = isFixedView
         ? new THREE.SphereGeometry(0.002, 8, 8) // Smaller, higher resolution for fixed view
-        : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for sandbox view
+        : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for smallScale view
 
     const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, material, instanceCount);
     const colors = new Float32Array(instanceCount * 3); // Color buffer for classification
@@ -677,8 +675,6 @@ function updateSatellitePositions(instancedMesh) {
     const colors = instancedMesh.instanceColor.array;
     const earthCenter = new THREE.Vector3(0, 0, 0);
 
-    // Earth's axial tilt in radians
-    const earthTiltRadians = 23.4 * (Math.PI / 180); // 23.4 degrees
 
     for (let i = 0; i < instancedMesh.count; i++) {
         const { satrec, metadata } = instancedMesh.userData[i];
@@ -688,14 +684,14 @@ function updateSatellitePositions(instancedMesh) {
         if (!position) continue;
 
         // Apply Earth's axial tilt compensation
-        position.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTiltRadians);
+        position.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
 
         // Apply rotation for geostationary satellites
         // if (metadata.orbitClass === 'geostationary' || metadata.orbitClass === 'sunSynchronous') {
         if (instancedMesh) {
             const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Seconds in a day
             const rotationAngle = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
-            const tiltedYAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTiltRadians);
+            const tiltedYAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
             position.applyAxisAngle(tiltedYAxis, rotationAngle); // Rotate around Earth's tilted Y-axis
         }
 
@@ -709,7 +705,7 @@ function updateSatellitePositions(instancedMesh) {
         colors.set(color.toArray(), i * 3);
 
         // Update lines in fixed view
-        if (currentChapter === 'fixed') {
+        if (currentChapter !== 'smallScale') {
             updateSatelliteLine(i, position, earthCenter);
         }
     }
@@ -748,8 +744,7 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
         const lineMaterial = new THREE.LineBasicMaterial({
             color: satelliteColor, // Set the line's initial color
             transparent: false,
-            opacity: .33,
-            // alphaHash: true,
+            opacity: 0.33,
         });
 
         const line = new THREE.Line(lineGeometry, lineMaterial);
@@ -757,11 +752,8 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
         satelliteLines.set(index, line);
     }
 
-    // Update the line's color if it already exists
-    const line = satelliteLines.get(index);
-    line.material.color = satelliteColor;
-
     // Update line geometry
+    const line = satelliteLines.get(index);
     const positions = line.geometry.attributes.position.array;
     positions[0] = earthCenter.x;
     positions[1] = earthCenter.y;
@@ -811,14 +803,14 @@ function switchChapterMesh(tleArray, isFixedView) {
         });
     }
 
-    console.log(`Switched to ${isFixedView ? "fixed" : "sandbox"} view.`);
+    console.log(`Switched to ${isFixedView ? "fixed" : "smallScale"} view.`);
 }
 
 
 function setResponsiveCameraPosition() {
     const isMobile = window.innerWidth <= 768;
 
-    if (currentChapter === 'sandbox') {
+    if (currentChapter === 'smallScale') {
         camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
         controls.minDistance = isMobile ? 50 : 10;
         controls.maxDistance = isMobile ? 500 : 100;
@@ -933,7 +925,7 @@ function updateEarthRotation() {
         updateSimulationTime();
         updateEarthRotation();
 
-        // Check camera distance to switch modes dynamically
+        // Check camera distance for LOD
         checkCameraDistance();
 
         // Update positions and colors for all satellites
@@ -982,39 +974,10 @@ function updateEarthRotation() {
     
     let selectedCity = 'newYork'; // Default city
 
-
-    function setupChapterControls() {
-        document.getElementById('chapter-sandbox').addEventListener('click', () => {
-            currentChapter = 'sandbox';
-            switchToSandboxView();
-            switchChapterMesh(tleArray, false); // Switch to sandbox mesh
-        });
-    
-        document.getElementById('chapter-newYork').addEventListener('click', () => {
-            currentChapter = 'fixed';
-            selectedCity = 'newYork';
-            switchToFixedView(chapterConfig.fixed.coordinates.newYork.lat, chapterConfig.fixed.coordinates.newYork.lon);
-            switchChapterMesh(tleArray, true); // Switch to fixed mesh
-        });
-    
-        document.getElementById('chapter-paris').addEventListener('click', () => {
-            currentChapter = 'fixed';
-            selectedCity = 'paris';
-            switchToFixedView(chapterConfig.fixed.coordinates.paris.lat, chapterConfig.fixed.coordinates.paris.lon);
-            switchChapterMesh(tleArray, true); // Switch to fixed mesh
-        });
-    
-        document.getElementById('chapter-tokyo').addEventListener('click', () => {
-            currentChapter = 'fixed';
-            selectedCity = 'tokyo';
-            switchToFixedView(chapterConfig.fixed.coordinates.tokyo.lat, chapterConfig.fixed.coordinates.tokyo.lon);
-            switchChapterMesh(tleArray, true); // Switch to fixed mesh
-        });
-    }
-               
+   
     // config params for each bookmark/chapter
     const chapterConfig = {
-        sandbox: {
+        smallScale: {
             controls: {
                 minDistance: 10,
                 maxDistance: 100,
@@ -1039,81 +1002,137 @@ function updateEarthRotation() {
         },
     };
 
-    function applyChapterConfig(chapter) {
-        const config = chapterConfig[chapter];
-        if (!config) return;
-    
-        const { controls: controlsConfig } = config;
-    
-        if (controlsConfig) {
-            controls.minDistance = controlsConfig.minDistance;
-            controls.maxDistance = controlsConfig.maxDistance;
-            controls.enablePan = controlsConfig.enablePan;
-            controls.zoomSpeed = controlsConfig.zoomSpeed;
-            controls.rotateSpeed = controlsConfig.rotateSpeed;
+
+// Add a mode manager for cleaner mode handling
+const modeManager = {
+    smallScale: {
+        controls: {
+            minDistance: 10,
+            maxDistance: 100,
+            enablePan: false,
+            zoomSpeed: 0.666,
+            rotateSpeed: 0.25,
+        },
+        activate: () => {
+            applyChapterConfig('smallScale');
+            // No changes to camera/controls state for seamless transition
+        },
+    },
+    largeScale: {
+        controls: {
+            minDistance: 1,
+            maxDistance: 50,
+            enablePan: true,
+            zoomSpeed: 0.5,
+            rotateSpeed: 0.5,
+        },
+        activate: () => {
+            applyChapterConfig('largeScale');
+            // No changes to camera/controls state for seamless transition
+        },
+    },
+    fixed: {
+        cities: {
+            newYork: { lat: 40.7128, lon: -74.0060 },
+            paris: { lat: 48.8566, lon: 2.3522 },
+            tokyo: { lat: 35.6895, lon: 139.6917 },
+        },
+        activate: (city) => {
+            const { lat, lon } = modeManager.fixed.cities[city];
+            controls.enabled = false; // Disable free camera movement for fixed view
+            switchToFixedView(lat, lon);
+            switchChapterMesh(tleArray, true); // Update satellites for fixed view
+            applyChapterConfig('fixed');
+        },
+    },
+};
+
+// track camera when changing LOD
+let previousCameraState = {
+    position: new THREE.Vector3(),
+    zoom: 1,
+};
+
+// cleanup
+function cleanupLargeScaleFeatures() {
+    // Remove satellite lines from the scene
+    satelliteLines.forEach((line, index) => {
+        scene.remove(line);
+        line.geometry.dispose();
+        line.material.dispose();
+    });
+    satelliteLines.clear();
+}
+
+
+function switchMode(mode, city) {
+    if (currentChapter === mode) return; // Avoid redundant switches
+
+    if (mode === 'fixed') {
+        modeManager.fixed.activate(city);
+    } else {
+        if (currentChapter === 'largeScale' && mode === 'smallScale') {
+            cleanupLargeScaleFeatures(); // Clean up largeScale-specific features
         }
+
+        // Save the current camera state
+        previousCameraState.position.copy(camera.position);
+        previousCameraState.zoom = camera.zoom;
+
+        modeManager[mode].activate();
+
+        // Restore camera state for a seamless transition
+        camera.position.copy(previousCameraState.position);
+        camera.zoom = previousCameraState.zoom;
+        camera.updateProjectionMatrix(); // Ensure the updated zoom is applied
     }
-    
 
-    function switchToFixedView(lat, lon) {
-        // controls.enabled = false; // Disable free camera movement
+    currentChapter = mode; // Update the current mode
+}
 
-        applyChapterConfig('fixed'); // Apply chapter config
+// Refined Threshold-based Mode Switching
+function checkCameraDistance() {
+    const cameraDistance = camera.position.length(); // Get the current camera distance
+    const threshold = sphereRadius * 11; // Threshold for switching modes
 
-    
-        const radius = sphereRadius; // Slightly above Earth's surface
-        const fixedPointLocal = latLonToVector3(lat, lon, radius); // Fixed point in local space
-    
-        function updateFixedView() {
-            // Calculate Earth's rotation in the current simulation time
-            const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
-            const rotationAngle = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
-    
-            // Reset pivot rotation and apply tilt and rotation
-            pivot.rotation.set(0, 0, 0); // Reset previous rotations
-            pivot.rotateZ(earthTilt); // Apply Earth's axial tilt
-            pivot.rotateY(rotationAngle); // Apply Earth's rotation
-    
-            // Transform the fixed point using the pivot's world matrix
-            const fixedPointWorld = fixedPointLocal.clone().applyMatrix4(pivot.matrixWorld);
-
-    
-            // Calculate the final camera position
-            const cameraPositionWorld = fixedPointWorld.clone();
-    
-            // Update the camera's position
-            camera.position.copy(cameraPositionWorld);
-    
-            // Ensure the camera looks directly at the fixed point on the sphere
-            camera.lookAt(fixedPointWorld);
-
-
-            // const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            // const markerGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-            // const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-            // marker.position.copy(fixedPointWorld);
-            // scene.add(marker);
-
-        }
-    
-        // Hook into the animation loop
-        function animateFixedView() {
-            if (currentChapter === 'fixed') {
-                updateFixedView();
-            }
-        }
-    
-        animateFixedView();
-
+    if (cameraDistance < threshold && currentChapter !== 'largeScale') {
+        switchMode('largeScale');
+    } else if (cameraDistance >= threshold && currentChapter !== 'smallScale') {
+        switchMode('smallScale');
     }
-                                    
-    function switchToSandboxView() {
-        controls.enabled = true; // Enable free camera movement
-        camera.position.set(0, 0, 66); // Reset position
-        camera.lookAt(new THREE.Vector3(0, 0, 0)); // Center of Earth
-    
-        applyChapterConfig('sandbox'); // Apply sandbox chapter settings
+}
+
+// First-person fixed view implementation
+function switchToFixedView(lat, lon) {
+    const radius = sphereRadius; // Earth's radius
+    const fixedPoint = latLonToVector3(lat, lon, radius);
+
+    camera.position.copy(fixedPoint); // Place the camera at the fixed point
+    camera.lookAt(new THREE.Vector3(0, 0, 0)); // Look towards the center of Earth
+    camera.updateProjectionMatrix();
+}
+
+// Simplify chapter controls
+function setupChapterControls() {
+    document.getElementById('chapter-smallScale').addEventListener('click', () => switchMode('smallScale'));
+    document.getElementById('chapter-largeScale').addEventListener('click', () => switchMode('largeScale'));
+    document.getElementById('chapter-newYork').addEventListener('click', () => switchMode('fixed', 'newYork'));
+    document.getElementById('chapter-paris').addEventListener('click', () => switchMode('fixed', 'paris'));
+    document.getElementById('chapter-tokyo').addEventListener('click', () => switchMode('fixed', 'tokyo'));
+}
+
+// Apply chapter-specific control settings
+function applyChapterConfig(chapter) {
+    const config = modeManager[chapter]?.controls;
+    if (config) {
+        controls.minDistance = config.minDistance;
+        controls.maxDistance = config.maxDistance;
+        controls.enablePan = config.enablePan;
+        controls.zoomSpeed = config.zoomSpeed;
+        controls.rotateSpeed = config.rotateSpeed;
     }
+}
+
     
     // Function to add the Earth sphere to match the graticule radius
     function addEarthSphere() {
@@ -1289,11 +1308,11 @@ function updateEarthRotation() {
     function addGraticulesToScene(data) {
         const lineMaterial = new THREE.LineBasicMaterial({ 
                 // color: 0xaaaaaa, 
-                color: 0x696969,
+                color: 0x444444,
                 opacity: 0.5,
-                transparent: true,
                 alphaHash: true,
-                visible: true
+                visible: true,
+                transparent: false,
             }); 
 
 
@@ -1412,7 +1431,7 @@ function updateEarthRotation() {
             if (currentChapter === 'fixed') {
                 return { minExp: Math.log10(0.05), maxExp: Math.log10(1) }; // Fixed chapter range
             } else {
-                return { minExp: Math.log10(0.1), maxExp: Math.log10(25) }; // Sandbox chapter range
+                return { minExp: Math.log10(0.1), maxExp: Math.log10(25) }; // smallScale chapter range
             }
         }
     
@@ -1448,7 +1467,7 @@ function updateEarthRotation() {
     
         // Function to get the maximum speed ceiling based on the chapter
         function getMaxSpeedForChapter() {
-            return currentChapter === 'sandbox' ? 20000 : 500; // 20,000 for sandbox, 500 for fixed
+            return currentChapter === 'smallScale' ? 20000 : 500; // 20,000 for smallScale, 500 for fixed
         }
     
         // Update speed slider dynamically on input
