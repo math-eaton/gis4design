@@ -5,6 +5,9 @@ import * as satellite from 'satellite.js';
 import Stats from 'stats.js'
 import { createNoise2D } from 'simplex-noise';
 // import { Earcut } from 'three/src/extras/Earcut.js';
+import { MapControls } from 'three/examples/jsm/controls/MapControls.js';
+import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls.js';
+
 
 //
 
@@ -17,6 +20,9 @@ export function orbitalView(containerId, onTLELoadComplete) {
     let tleArray = [];
     let instancedMesh;
     let sunLine;
+
+    let orbitControls, mapControls, firstPersonControls;
+
 
     let currentChapter = 'smallScale'; // Default chapter
     let lastLat, lastLon;
@@ -86,6 +92,49 @@ export function orbitalView(containerId, onTLELoadComplete) {
         }
     });
 
+    function initControls() {
+        // Initialize OrbitControls
+        orbitControls = new OrbitControls(camera, renderer.domElement);
+        orbitControls.enableDamping = true;
+        orbitControls.dampingFactor = 0.25;
+        orbitControls.zoomSpeed = 0.666;
+        orbitControls.rotateSpeed = 0.25;
+        orbitControls.minDistance = 10;
+        orbitControls.maxDistance = 100;
+    
+        // Initialize MapControls (for largeScale)
+        mapControls = new MapControls(camera, renderer.domElement);
+        mapControls.enableDamping = true;
+        mapControls.dampingFactor = 0.3;
+        mapControls.zoomSpeed = 0.5;
+        mapControls.enableRotate = true;
+        mapControls.minDistance = 1;
+        mapControls.maxDistance = 50;
+    
+        // Initialize FirstPersonControls (for fixed)
+        firstPersonControls = new FirstPersonControls(camera, renderer.domElement);
+        firstPersonControls.lookSpeed = 0.1;
+        firstPersonControls.movementSpeed = 5;
+        firstPersonControls.noFly = true;
+        firstPersonControls.lookVertical = true;
+    
+        // Start with OrbitControls enabled
+        enableControls(orbitControls);
+    }
+    
+    function enableControls(activeControls) {
+        // Disable all controls
+        orbitControls.enabled = false;
+        mapControls.enabled = false;
+        firstPersonControls.enabled = false;
+    
+        // Enable the specified controls
+        if (activeControls) {
+            activeControls.enabled = true;
+        }
+    }
+        
+
     async function init() {
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(5, window.innerWidth / window.innerHeight, 0.1, 300000);
@@ -101,21 +150,24 @@ export function orbitalView(containerId, onTLELoadComplete) {
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
         document.getElementById(containerId).appendChild(renderer.domElement);
-    
-        controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.enableZoom = true;
-        controls.enablePan = false;
-        controls.dampingFactor = 0.25;
-    
-        controls.zoomSpeed = 0.666;
-        controls.rotateSpeed = 0.25;
-    
-        controls.minDistance = 10;
-        controls.maxDistance = 100;
-    
+
+        initControls();
+
         // Responsive z-position initialization
         setResponsiveCameraPosition();
+
+    
+        // controls = new OrbitControls(camera, renderer.domElement);
+        // controls.enableDamping = true;
+        // controls.enableZoom = true;
+        // controls.enablePan = false;
+        // controls.dampingFactor = 0.25;
+    
+        // controls.zoomSpeed = 0.666;
+        // controls.rotateSpeed = 0.25;
+    
+        // controls.minDistance = 10;
+        // controls.maxDistance = 100;
     
         // Wait for simulation time to be initialized
         await initializeSimulationTime();
@@ -721,42 +773,97 @@ function updateSatellitePositions(instancedMesh) {
     instancedMesh.instanceColor.needsUpdate = true; // Ensure colors are updated
 }
 
-function updateSatelliteLine(index, satellitePosition, earthCenter) {
-    if (!isSatelliteVisible(satellitePosition)) {
-        // Remove line if satellite is not visible
-        if (satelliteLines.has(index)) {
-            const line = satelliteLines.get(index);
-            scene.remove(line);
-            line.geometry.dispose();
-            line.material.dispose();
-            satelliteLines.delete(index);
+// Manage line transitions
+let lineTransitions = new Map(); // To track the transition state of each line
+
+function fadeLine(index, targetOpacity, duration = 0.1) {
+    if (!satelliteLines.has(index)) return;
+
+    const line = satelliteLines.get(index);
+    const material = line.material;
+
+    // Initialize transition state if not already present
+    if (!lineTransitions.has(index)) {
+        lineTransitions.set(index, { currentOpacity: material.opacity, startTime: performance.now() });
+    }
+
+    const transition = lineTransitions.get(index);
+    transition.targetOpacity = targetOpacity; // Set target opacity
+    transition.duration = duration * 1000; // Convert to milliseconds
+
+    // Animate opacity in the render loop
+    function updateLineOpacity() {
+        const elapsed = performance.now() - transition.startTime;
+        if (elapsed < transition.duration) {
+            // Calculate the interpolated opacity
+            const progress = elapsed / transition.duration;
+            const newOpacity = THREE.MathUtils.lerp(
+                transition.currentOpacity,
+                transition.targetOpacity,
+                progress
+            );
+
+            material.opacity = newOpacity;
+            material.needsUpdate = true;
+
+            // Continue updating in the next frame
+            requestAnimationFrame(updateLineOpacity);
+        } else {
+            // Finalize the opacity
+            material.opacity = targetOpacity;
+            material.needsUpdate = true;
+
+            // Remove transition state if the transition is complete
+            if (material.opacity === 0) {
+                scene.remove(line); // Remove fully transparent lines
+                line.geometry.dispose();
+                line.material.dispose();
+                satelliteLines.delete(index);
+            }
+            lineTransitions.delete(index); // Clear transition tracking
         }
+    }
+
+    updateLineOpacity();
+}
+
+
+function updateSatelliteLine(index, satellitePosition, earthCenter) {
+    const isVisible = isSatelliteVisible(satellitePosition);
+
+    if (!isVisible) {
+        // Fade out line if it's no longer visible
+        fadeLine(index, 0);
         return;
     }
 
-    // Retrieve the satellite's color from instanceColor
-    const colorArray = satelliteMesh.instanceColor.array;
-    const satelliteColor = new THREE.Color(
-        colorArray[index * 3],
-        colorArray[index * 3 + 1],
-        colorArray[index * 3 + 2]
-    );
-
     // Create or update the line
     if (!satelliteLines.has(index)) {
+        // Retrieve the satellite's color from instanceColor
+        const colorArray = satelliteMesh.instanceColor.array;
+        const satelliteColor = new THREE.Color(
+            colorArray[index * 3],
+            colorArray[index * 3 + 1],
+            colorArray[index * 3 + 2]
+        );
+
+        // Create the line if it doesn't exist
         const lineGeometry = new THREE.BufferGeometry();
         const positions = new Float32Array(6); // Two points (start and end)
         lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
         const lineMaterial = new THREE.LineBasicMaterial({
-            color: satelliteColor, // Set the line's initial color
-            transparent: false,
-            opacity: 0.33,
+            color: satelliteColor, // Assign satellite's color to the line
+            transparent: true, // Enable transparency
+            opacity: 0, // Start fully transparent for fade-in
         });
 
         const line = new THREE.Line(lineGeometry, lineMaterial);
         scene.add(line);
         satelliteLines.set(index, line);
+
+        // Start fading in
+        fadeLine(index, 1); // target opacity
     }
 
     // Update line geometry
@@ -769,15 +876,6 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
     positions[4] = satellitePosition.y;
     positions[5] = satellitePosition.z;
     line.geometry.attributes.position.needsUpdate = true;
-}
-                                
-function clearSatelliteLines() {
-    satelliteLines.forEach((line, index) => {
-        scene.remove(line);
-        line.geometry.dispose();
-        line.material.dispose();
-    });
-    satelliteLines.clear();
 }
 
             
@@ -817,15 +915,20 @@ function switchChapterMesh(tleArray, isFixedView) {
 function setResponsiveCameraPosition() {
     const isMobile = window.innerWidth <= 768;
 
-    if (currentChapter === 'smallScale') {
-        camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
-        controls.minDistance = isMobile ? 50 : 10;
-        controls.maxDistance = isMobile ? 500 : 100;
-    } else if (currentChapter === 'fixed') {
-        camera.position.z = isMobile ? 40 : 30; // Example fixed zoom for mobile
-        controls.minDistance = isMobile ? 20 : 30;
-        controls.maxDistance = isMobile ? 40 : 50;
+    // Adjust camera and active control properties dynamically
+    if (orbitControls.enabled) {
+        orbitControls.minDistance = isMobile ? 50 : 10;
+        orbitControls.maxDistance = isMobile ? 500 : 100;
+    } else if (mapControls.enabled) {
+        mapControls.minDistance = isMobile ? 20 : 10;
+        mapControls.maxDistance = isMobile ? 100 : 50;
+    } else if (firstPersonControls.enabled) {
+        // FirstPersonControls don't have min/max distance but can have adjusted speed
+        firstPersonControls.movementSpeed = isMobile ? 2 : 5;
     }
+
+    // Adjust camera position
+    camera.position.z = isMobile ? baseZ * mobileScaleFactor : baseZ;
 }
 
 
@@ -957,7 +1060,13 @@ function updateEarthRotation() {
             }
         }
 
-        controls.update();
+
+        if (orbitControls.enabled) orbitControls.update();
+        if (mapControls.enabled) mapControls.update();
+        if (firstPersonControls.enabled) firstPersonControls.update(clock.getDelta()); // Pass delta for FirstPersonControls
+        // else(
+        //     controls.update()
+        //     )
         renderer.render(scene, camera);
         stats.end();
 
@@ -983,164 +1092,133 @@ function updateEarthRotation() {
 
    
     // config params for each bookmark/chapter
-    const chapterConfig = {
+    const modeManager = {
         smallScale: {
-            controls: {
-                minDistance: 10,
-                maxDistance: 100,
-                enablePan: false,
-                zoomSpeed: 0.666,
-                rotateSpeed: 0.25,
+            activate: () => {
+                enableControls(orbitControls); // Activate OrbitControls
+                applyChapterConfig('smallScale');
+            },
+        },
+        largeScale: {
+            activate: () => {
+                enableControls(mapControls); // Activate MapControls
+                applyChapterConfig('largeScale');
             },
         },
         fixed: {
-            coordinates: {
+            cities: {
                 newYork: { lat: 40.7128, lon: -74.0060 },
                 paris: { lat: 48.8566, lon: 2.3522 },
                 tokyo: { lat: 35.6895, lon: 139.6917 },
             },
-            controls: {
-                minDistance: sphereRadius * 2, // Adjust zoom levels for the fixed chapter
-                maxDistance: sphereRadius * 10,
-                enablePan: true, // Disable panning for fixed view
-                zoomSpeed: 0.5,
-                rotateSpeed: 0,
+            activate: (city) => {
+                const { lat, lon } = modeManager.fixed.cities[city];
+                switchToFixedView(lat, lon); // Position camera for fixed mode
+                enableControls(firstPersonControls); // Activate FirstPersonControls
+                applyChapterConfig('fixed');
             },
         },
     };
+        
+    // track camera when changing LOD
+    let previousCameraState = {
+        position: new THREE.Vector3(),
+        zoom: 1,
+    };
+
+    // cleanup
+    function cleanupLargeScaleFeatures() {
+        // Remove satellite lines from the scene
+        satelliteLines.forEach((line, index) => {
+            fadeLine(index, 0); // Fade out instead of immediate removal
+        });
+        satelliteLines.clear();
+    }
 
 
-// Add a mode manager for cleaner mode handling
-const modeManager = {
-    smallScale: {
-        controls: {
-            minDistance: 10,
-            maxDistance: 100,
-            enablePan: false,
-            zoomSpeed: 0.666,
-            rotateSpeed: 0.25,
-        },
-        activate: () => {
-            applyChapterConfig('smallScale');
-            // No changes to camera/controls state for seamless transition
-        },
-    },
-    largeScale: {
-        controls: {
-            minDistance: 1,
-            maxDistance: 50,
-            enablePan: true,
-            zoomSpeed: 0.5,
-            rotateSpeed: 0.5,
-        },
-        activate: () => {
-            applyChapterConfig('largeScale');
-            // No changes to camera/controls state for seamless transition
-        },
-    },
-    fixed: {
-        cities: {
-            newYork: { lat: 40.7128, lon: -74.0060 },
-            paris: { lat: 48.8566, lon: 2.3522 },
-            tokyo: { lat: 35.6895, lon: 139.6917 },
-        },
-        activate: (city) => {
-            const { lat, lon } = modeManager.fixed.cities[city];
-            controls.enabled = false; // Disable free camera movement for fixed view
-            switchToFixedView(lat, lon);
-            switchChapterMesh(tleArray, true); // Update satellites for fixed view
-            applyChapterConfig('fixed');
-        },
-    },
-};
-
-// track camera when changing LOD
-let previousCameraState = {
-    position: new THREE.Vector3(),
-    zoom: 1,
-};
-
-// cleanup
-function cleanupLargeScaleFeatures() {
-    // Remove satellite lines from the scene
-    satelliteLines.forEach((line, index) => {
-        scene.remove(line);
-        line.geometry.dispose();
-        line.material.dispose();
-    });
-    satelliteLines.clear();
-}
-
-
-function switchMode(mode, city) {
-    if (currentChapter === mode) return; // Avoid redundant switches
-
-    if (mode === 'fixed') {
-        modeManager.fixed.activate(city);
-    } else {
-        if (currentChapter === 'largeScale' && mode === 'smallScale') {
-            cleanupLargeScaleFeatures(); // Clean up largeScale-specific features
-        }
+    function switchMode(mode, city) {
+        if (currentChapter === mode) return; // Avoid redundant switches
 
         // Save the current camera state
         previousCameraState.position.copy(camera.position);
-        previousCameraState.zoom = camera.zoom;
+        previousCameraState.zoom = camera.zoom;        
 
-        modeManager[mode].activate();
+        if (mode === 'fixed') {
+            modeManager.fixed.activate(city); // Activate fixed mode for the chosen city
+        } 
+        if (mode === 'smallScale') {
+            cleanupLargeScaleFeatures(); // Clean up largeScale-specific features
+            modeManager[mode].activate(); // Activate the selected mode
+        }
+        else {
+        modeManager[mode].activate(); // Activate the selected mode
+        
 
-        // Restore camera state for a seamless transition
-        camera.position.copy(previousCameraState.position);
-        camera.zoom = previousCameraState.zoom;
-        camera.updateProjectionMatrix(); // Ensure the updated zoom is applied
+
+            // modeManager[mode].activate();
+
+            // Restore camera state for a seamless transition
+            camera.position.copy(previousCameraState.position);
+            camera.zoom = previousCameraState.zoom;
+            camera.updateProjectionMatrix(); // Ensure the updated zoom is applied
+        }
+
+        currentChapter = mode; // Update the current mode
     }
 
-    currentChapter = mode; // Update the current mode
-}
+    // Refined Threshold-based Mode Switching
+    function checkCameraDistance() {
+        const cameraDistance = camera.position.length(); // Get the current camera distance
+        const threshold = sphereRadius * 10.1; // Threshold for switching modes
 
-// Refined Threshold-based Mode Switching
-function checkCameraDistance() {
-    const cameraDistance = camera.position.length(); // Get the current camera distance
-    const threshold = sphereRadius * 11; // Threshold for switching modes
-
-    if (cameraDistance < threshold && currentChapter !== 'largeScale') {
-        switchMode('largeScale');
-    } else if (cameraDistance >= threshold && currentChapter !== 'smallScale') {
-        switchMode('smallScale');
+        if (cameraDistance < threshold && currentChapter !== 'largeScale') {
+            switchMode('largeScale');
+        } else if (cameraDistance >= threshold && currentChapter !== 'smallScale') {
+            switchMode('smallScale');
+        }
     }
-}
 
-// First-person fixed view implementation
-function switchToFixedView(lat, lon) {
-    const radius = sphereRadius; // Earth's radius
-    const fixedPoint = latLonToVector3(lat, lon, radius);
+    // First-person fixed view implementation
+    function switchToFixedView(lat, lon) {
+        const radius = sphereRadius; // Earth's radius
+        const fixedPoint = latLonToVector3(lat, lon, radius);
 
-    camera.position.copy(fixedPoint); // Place the camera at the fixed point
-    camera.lookAt(new THREE.Vector3(0, 0, 0)); // Look towards the center of Earth
-    camera.updateProjectionMatrix();
-}
-
-// Simplify chapter controls
-function setupChapterControls() {
-    document.getElementById('chapter-smallScale').addEventListener('click', () => switchMode('smallScale'));
-    document.getElementById('chapter-largeScale').addEventListener('click', () => switchMode('largeScale'));
-    document.getElementById('chapter-newYork').addEventListener('click', () => switchMode('fixed', 'newYork'));
-    document.getElementById('chapter-paris').addEventListener('click', () => switchMode('fixed', 'paris'));
-    document.getElementById('chapter-tokyo').addEventListener('click', () => switchMode('fixed', 'tokyo'));
-}
-
-// Apply chapter-specific control settings
-function applyChapterConfig(chapter) {
-    const config = modeManager[chapter]?.controls;
-    if (config) {
-        controls.minDistance = config.minDistance;
-        controls.maxDistance = config.maxDistance;
-        controls.enablePan = config.enablePan;
-        controls.zoomSpeed = config.zoomSpeed;
-        controls.rotateSpeed = config.rotateSpeed;
+        camera.position.copy(fixedPoint); // Place the camera at the fixed point
+        camera.lookAt(new THREE.Vector3(0, 0, 0)); // Look towards the center of Earth
+        camera.updateProjectionMatrix();
     }
-}
 
+    // Simplify chapter controls
+    function setupChapterControls() {
+        document.getElementById('chapter-smallScale').addEventListener('click', () => switchMode('smallScale'));
+        document.getElementById('chapter-largeScale').addEventListener('click', () => switchMode('largeScale'));
+        document.getElementById('chapter-newYork').addEventListener('click', () => switchMode('fixed', 'newYork'));
+        document.getElementById('chapter-paris').addEventListener('click', () => switchMode('fixed', 'paris'));
+        document.getElementById('chapter-tokyo').addEventListener('click', () => switchMode('fixed', 'tokyo'));
+    }
+
+    // Apply chapter-specific control settings
+    function applyChapterConfig(chapter) {
+        const config = modeManager[chapter]?.controls;
+        if (!config) return;
     
+        // Apply settings based on the active controls
+        if (orbitControls.enabled) {
+            orbitControls.enablePan = config.enablePan ?? orbitControls.enablePan;
+            orbitControls.zoomSpeed = config.zoomSpeed ?? orbitControls.zoomSpeed;
+            orbitControls.rotateSpeed = config.rotateSpeed ?? orbitControls.rotateSpeed;
+            orbitControls.minDistance = config.minDistance ?? orbitControls.minDistance;
+            orbitControls.maxDistance = config.maxDistance ?? orbitControls.maxDistance;
+        } else if (mapControls.enabled) {
+            mapControls.enablePan = config.enablePan ?? mapControls.enablePan;
+            mapControls.zoomSpeed = config.zoomSpeed ?? mapControls.zoomSpeed;
+            mapControls.enableRotate = config.enableRotate ?? mapControls.enableRotate;
+        } else if (firstPersonControls.enabled) {
+            firstPersonControls.movementSpeed = config.movementSpeed ?? firstPersonControls.movementSpeed;
+            firstPersonControls.lookSpeed = config.lookSpeed ?? firstPersonControls.lookSpeed;
+        }
+    }
+        
     // Function to add the Earth sphere to match the graticule radius
     function addEarthSphere() {
         const geometry = new THREE.SphereGeometry(sphereRadius, 64, 64); 
