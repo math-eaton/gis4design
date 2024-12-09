@@ -20,7 +20,6 @@ export function orbitalView(containerId, onTLELoadComplete) {
     let scene, camera, renderer, controls, pivot, moonPivot, sunMesh;
     let animationFrameId;
     let tleArray = [];
-    let instancedMesh;
     let sunLine;
 
     let orbitControls, mapControls, firstPersonControls, trackballControls, flyControls;
@@ -73,7 +72,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
     // stats
     const stats = new Stats()
     stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
-    // document.body.appendChild(stats.dom)
+    document.body.appendChild(stats.dom)
     stats.dom.id = 'statistics';
 
     window.addEventListener('keydown', (event) => {
@@ -100,7 +99,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
         orbitControls.enableDamping = true;
         orbitControls.enablePan = false;
         orbitControls.dampingFactor = 0.25;
-        orbitControls.zoomSpeed = 0.5;
+        // orbitControls.zoomSpeed = 0.5;
         orbitControls.rotateSpeed = 0.25;
         orbitControls.minDistance = 5;
         orbitControls.maxDistance = 100;
@@ -108,13 +107,13 @@ export function orbitalView(containerId, onTLELoadComplete) {
         // Trackball option large scale
         trackballControls = new TrackballControls(camera, renderer.domElement);
         trackballControls.rotateSpeed = 1.25;
-        trackballControls.zoomSpeed = .5;
         trackballControls.panSpeed = 0.2;
         trackballControls.noZoom = false;
         trackballControls.noPan = false;
         // trackballControls.noRotate = true;
         trackballControls.staticMoving = false;
         trackballControls.dynamicDampingFactor = 0.33;    
+        
 
         
     
@@ -385,53 +384,6 @@ export function orbitalView(containerId, onTLELoadComplete) {
         moonMesh.position.copy(moonPosition);
     }
         
-    // model planets
-
-    // const orbitScaleFactor = 20; // Adjust for more proportionate orbits
-
-    // const distanceScaleFactor = 0.05;
-
-    // function calculatePlanetPosition(planet, time) {
-    //     const orbitalParams = {
-    //         Mercury: { a: 57.91e6 * distanceScaleFactor, e: 0.205, i: 7.0, T: 0.24 },
-    //         Venus: { a: 108.2e6 * distanceScaleFactor, e: 0.007, i: 3.4, T: 0.62 },
-    //         Earth: { a: 149.6e6 * distanceScaleFactor, e: 0.017, i: 0.0, T: 1.0 },
-    //         Mars: { a: 227.9e6 * distanceScaleFactor, e: 0.093, i: 1.85, T: 1.88 },
-    //         Jupiter: { a: 778.5e6 * distanceScaleFactor, e: 0.049, i: 1.3, T: 11.86 },
-    //         Saturn: { a: 1.429e9 * distanceScaleFactor, e: 0.056, i: 2.49, T: 29.46 },
-    //         Uranus: { a: 2.871e9 * distanceScaleFactor, e: 0.046, i: 0.77, T: 84.01 },
-    //         Neptune: { a: 4.495e9 * distanceScaleFactor, e: 0.009, i: 1.77, T: 164.8 }
-    //     };
-    
-    //     const { a, e, i, T } = orbitalParams[planet];
-    
-    //     const angle = (2 * Math.PI * time) / T;
-    //     const x = a * (Math.cos(angle) - e) * scaleFactor * distanceCompressionFactor;
-    //     const z = a * Math.sin(angle) * Math.sqrt(1 - e ** 2) * scaleFactor * distanceCompressionFactor;
-            
-    //     const cosInclination = Math.cos(i * (Math.PI / 180));
-    //     const sinInclination = Math.sin(i * (Math.PI / 180));
-    //     const adjustedY = 0 * cosInclination - z * sinInclination;
-    //     const adjustedZ = 0 * sinInclination + z * cosInclination;
-    
-    //     const sunPosition = directionalLight.position;
-    //     return new THREE.Vector3(x + sunPosition.x, adjustedY + sunPosition.y, adjustedZ + sunPosition.z);
-    // }
-            
-
-    // const sizeScaleFactor = 0.5;
-
-    // function addPlanet(planetName, color, relativeRadius) {
-    //     const planetRadius = sphereRadius * (relativeRadius / earthRadiusKm) * scaleFactor;
-    //     const geometry = new THREE.SphereGeometry(planetRadius, 32, 32);
-    //     const material = new THREE.MeshStandardMaterial({ color });
-    //     const planetMesh = new THREE.Mesh(geometry, material);
-    //     scene.add(planetMesh);
-    //     planets.push({ name: planetName, mesh: planetMesh });
-    // }
-    
-    
-    // irl satellite stuff
 
 // Load TLE data from cached JSON file
 // with loading screen
@@ -606,17 +558,18 @@ function toggleCategoryVisibility(category) {
 
 
 
-
+// satellite material
 function createSatelliteMeshes(tleArray) {
     const material = new THREE.MeshStandardMaterial({
         metalness: 1,
         roughness: 0.2,
-        transparent: true,
-        opacity: 0.8,
+        transparent: false,
+        wireframe: true,
+        // opacity: 0.8,
     });
 
     // Create a single instanced mesh for all satellites
-    satelliteMesh = createSatelliteInstancedMesh(tleArray, material, currentChapter === 'fixed');
+    satelliteMesh = createSatelliteInstancedMesh(tleArray, material, currentChapter === 'smallScale');
 
     // Add the consolidated mesh to the scene
     scene.add(satelliteMesh);
@@ -799,60 +752,6 @@ function updateSatellitePositions(instancedMesh) {
     instancedMesh.instanceColor.needsUpdate = true; // Ensure colors are updated
 }
 
-// Manage line transitions
-let lineTransitions = new Map(); // To track the transition state of each line
-
-function fadeLine(index, targetOpacity, duration = 0.1) {
-    if (!satelliteLines.has(index)) return;
-
-    const line = satelliteLines.get(index);
-    const material = line.material;
-
-    // Initialize transition state if not already present
-    if (!lineTransitions.has(index)) {
-        lineTransitions.set(index, { currentOpacity: material.opacity, startTime: performance.now() });
-    }
-
-    const transition = lineTransitions.get(index);
-    transition.targetOpacity = targetOpacity; // Set target opacity
-    transition.duration = duration * 1000; // Convert to milliseconds
-
-    // Animate opacity in the render loop
-    function updateLineOpacity() {
-        const elapsed = performance.now() - transition.startTime;
-        if (elapsed < transition.duration) {
-            // Calculate the interpolated opacity
-            const progress = elapsed / transition.duration;
-            const newOpacity = THREE.MathUtils.lerp(
-                transition.currentOpacity,
-                transition.targetOpacity,
-                progress
-            );
-
-            material.opacity = newOpacity;
-            material.needsUpdate = true;
-
-            // Continue updating in the next frame
-            requestAnimationFrame(updateLineOpacity);
-        } else {
-            // Finalize the opacity
-            material.opacity = targetOpacity;
-            material.needsUpdate = true;
-
-            // Remove transition state if the transition is complete
-            if (material.opacity === 0) {
-                scene.remove(line); // Remove fully transparent lines
-                line.geometry.dispose();
-                line.material.dispose();
-                satelliteLines.delete(index);
-            }
-            lineTransitions.delete(index); // Clear transition tracking
-        }
-    }
-
-    updateLineOpacity();
-}
-
 
 function updateSatelliteLine(index, satellitePosition, earthCenter) {
     const isVisible = isSatelliteVisible(satellitePosition);
@@ -886,8 +785,9 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
 
         const lineMaterial = new THREE.LineBasicMaterial({
             color: satelliteColor, // Assign satellite's color to the line
-            transparent: true, // Enable transparency
-            opacity: 1, // Set opacity directly to visible
+            transparent: false, 
+            alphaHash: true,
+            // opacity: 0.9, 
         });
 
         const line = new THREE.Line(lineGeometry, lineMaterial);
@@ -907,37 +807,6 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
     line.geometry.attributes.position.needsUpdate = true;
 }
             
-
-function switchChapterMesh(tleArray, isFixedView) {
-    // Remove the current mesh from the scene
-    if (satelliteMesh) scene.remove(satelliteMesh);
-
-    // Clear satellite lines if switching out of fixed view
-    if (!isFixedView) clearSatelliteLines();
-
-    // Create or update the appropriate mesh
-    const material = new THREE.MeshStandardMaterial({
-        metalness: 1,
-        roughness: 0.2,
-        transparent: false,
-        opacity: 0.8,
-        alphaHash: true,
-    });
-
-    satelliteMesh = createSatelliteInstancedMesh(tleArray, material, isFixedView);
-
-    scene.add(satelliteMesh);
-
-    // Update satellite lines for fixed view
-    if (isFixedView) {
-        tleArray.forEach((sat, i) => {
-            const position = propagateSatellitePosition(sat.satrec, satellite.gstime(simulationTime), isFixedView);
-            if (position) updateSatelliteLine(i, position, new THREE.Vector3(0, 0, 0));
-        });
-    }
-
-    console.log(`Switched to ${isFixedView ? "fixed" : "smallScale"} view.`);
-}
 
 
 function setResponsiveCameraPosition() {
@@ -1093,13 +962,11 @@ function updateEarthRotation() {
 
 
         if (orbitControls.enabled) orbitControls.update();
-        if (mapControls.enabled) mapControls.update();
+        // if (mapControls.enabled) mapControls.update();
         if (firstPersonControls.enabled) firstPersonControls.update(clock.getDelta()); // Requires delta time
         if (trackballControls.enabled) trackballControls.update(); // Explicit update for TrackballControls
-        if (flyControls.enabled) flyControls.update(delta); // Pass delta to FlyControls
-        // else(
-        //     controls.update()
-        //     )
+        // if (flyControls.enabled) flyControls.update(delta); // Pass delta to FlyControls
+
         renderer.render(scene, camera);
         stats.end();
 
@@ -1130,23 +997,20 @@ function updateEarthRotation() {
     
     let selectedCity = 'newYork'; // Default city
 
-   
     // config params for each bookmark/chapter
     const modeManager = {
         smallScale: {
             activate: () => {
-            // Reset the pivot's rotation to align north-south
-            pivot.rotation.set(0, 0, 0);
-
 
             // Enable OrbitControls
             enableControls(orbitControls);
+            // orbitControls.zoomSpeed = 0.5;
+            orbitControls.enablePan = false;
 
             // Adjust camera position for a top-down or equatorial view
             camera.lookAt(new THREE.Vector3(0, 0, 0)); // Ensure camera looks at Earth's center
             camera.updateProjectionMatrix();
             
-
             // Reset OrbitControls target to the globe's center
             orbitControls.target.set(0, 0, 0);
             orbitControls.update();
@@ -1157,10 +1021,14 @@ function updateEarthRotation() {
         },
         largeScale: {
             activate: () => {
-                // enableControls(orbitControls); // Activate OrbitControls
-                enableControls(trackballControls); // Activate TrackballControls
-                // enableControls(flyControls); // Activate FlyControls
-                // resetCameraForFlyControls(); // Reset the camera for FlyControls
+                enableControls(orbitControls); // Activate OrbitControls
+                orbitControls.enablePan = true;
+                orbitControls.target.set( 0, 1, 0);
+                // Dynamically set minDistance to prevent zooming in further
+                const currentDistance = camera.position.distanceTo(orbitControls.target);
+                orbitControls.minDistance = currentDistance; // Prevent zooming closer than the current distance
+                orbitControls.update();
+
                 applyChapterConfig('largeScale');
             },
         },
@@ -1210,11 +1078,10 @@ function updateEarthRotation() {
             cleanupLargeScaleFeatures(); // Clean up largeScale-specific features
             modeManager[mode].activate(); // Activate the selected mode
         }
-        else {
-        modeManager[mode].activate(); // Activate the selected mode
+        else if (mode === 'largeScale') {
+            
+            modeManager[mode].activate(); // Activate the selected mode
         
-
-
             // modeManager[mode].activate();
 
             // Restore camera state for a seamless transition
@@ -1229,7 +1096,7 @@ function updateEarthRotation() {
     // Refined Threshold-based Mode Switching
     function checkCameraDistance() {
         const cameraDistance = camera.position.length(); // Get the current camera distance
-        const threshold = sphereRadius * 10.1; // Threshold for switching modes
+        const threshold = sphereRadius * 8; // Threshold for switching modes
 
         if (cameraDistance < threshold && currentChapter !== 'largeScale') {
             switchMode('largeScale');
@@ -1252,9 +1119,6 @@ function updateEarthRotation() {
     function setupChapterControls() {
         document.getElementById('chapter-smallScale').addEventListener('click', () => switchMode('smallScale'));
         document.getElementById('chapter-largeScale').addEventListener('click', () => switchMode('largeScale'));
-        document.getElementById('chapter-newYork').addEventListener('click', () => switchMode('fixed', 'newYork'));
-        document.getElementById('chapter-paris').addEventListener('click', () => switchMode('fixed', 'paris'));
-        document.getElementById('chapter-tokyo').addEventListener('click', () => switchMode('fixed', 'tokyo'));
     }
 
     // Apply chapter-specific control settings
@@ -1262,21 +1126,6 @@ function updateEarthRotation() {
         const config = modeManager[chapter]?.controls;
         if (!config) return;
     
-        // // Apply settings based on the active controls
-        // if (orbitControls.enabled) {
-        //     orbitControls.enablePan = config.enablePan ?? orbitControls.enablePan;
-        //     orbitControls.zoomSpeed = config.zoomSpeed ?? orbitControls.zoomSpeed;
-        //     orbitControls.rotateSpeed = config.rotateSpeed ?? orbitControls.rotateSpeed;
-        //     orbitControls.minDistance = config.minDistance ?? orbitControls.minDistance;
-        //     orbitControls.maxDistance = config.maxDistance ?? orbitControls.maxDistance;
-        // } else if (mapControls.enabled) {
-        //     mapControls.enablePan = config.enablePan ?? mapControls.enablePan;
-        //     mapControls.zoomSpeed = config.zoomSpeed ?? mapControls.zoomSpeed;
-        //     mapControls.enableRotate = config.enableRotate ?? mapControls.enableRotate;
-        // } else if (firstPersonControls.enabled) {
-        //     firstPersonControls.movementSpeed = config.movementSpeed ?? firstPersonControls.movementSpeed;
-        //     firstPersonControls.lookSpeed = config.lookSpeed ?? firstPersonControls.lookSpeed;
-        // }
     }
         
     // Function to add the Earth sphere to match the graticule radius
@@ -1300,8 +1149,7 @@ function updateEarthRotation() {
         pivot.add(sphere); // Add the sphere to the pivot group, so it rotates with the graticules   
         pivot.add(satelliteMesh);     
         
-            
-
+        
 
         // Add markers for debugging
         // addLocationMarker(40.7128, -74.0060, 0xff0000); // NYC (red)
@@ -1480,13 +1328,13 @@ function updateEarthRotation() {
         });
     }
 
-    function addLocationMarker(lat, lon, color) {
-        const markerMaterial = new THREE.MeshBasicMaterial({ color });
-        const markerGeometry = new THREE.SphereGeometry(0.01, 16, 16); // Tiny marker
-        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-        marker.position.copy(latLonToVector3(lat, lon, sphereRadius)); // Position marker on the sphere
-        pivot.add(marker); // Add marker to the rotating Earth
-    }
+    // function addLocationMarker(lat, lon, color) {
+    //     const markerMaterial = new THREE.MeshBasicMaterial({ color });
+    //     const markerGeometry = new THREE.SphereGeometry(0.01, 16, 16); // Tiny marker
+    //     const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+    //     marker.position.copy(latLonToVector3(lat, lon, sphereRadius)); // Position marker on the sphere
+    //     pivot.add(marker); // Add marker to the rotating Earth
+    // }
     
 
     // Helper function to create THREE.BufferGeometry from GeoJSON coordinates
