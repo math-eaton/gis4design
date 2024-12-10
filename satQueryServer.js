@@ -4,7 +4,7 @@ import path from 'path';
 import axios from 'axios';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
-import { spacetrackUsername, spacetrackPassword } from './auth.js';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,8 +13,21 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Load environment variables from .env file in local development
+if (process.env.NODE_ENV !== 'production') {
+    dotenv.config();
+}
+
+// Ensure credentials are available
+const spacetrackUsername = process.env.SPACETRACK_USERNAME;
+const spacetrackPassword = process.env.SPACETRACK_PASSWORD;
+
+if (!spacetrackUsername || !spacetrackPassword) {
+    throw new Error("Space-Track credentials are not set. Please configure environment variables.");
+}
+
 const port = process.env.PORT || 3000;
-const CACHE_FILE = path.join(__dirname, 'cachedGP.json');
+const CACHE_FILE = path.join(__dirname, 'cachedSatellites.json');
 const LAST_UPDATE_FILE = path.join(__dirname, 'lastUpdate.json');
 
 let spaceTrackCookie = null; // Store the session cookie
@@ -113,10 +126,8 @@ function isCacheExpired() {
     if (!fs.existsSync(LAST_UPDATE_FILE)) return true;
 
     const lastUpdate = JSON.parse(fs.readFileSync(LAST_UPDATE_FILE, 'utf-8')).timestamp;
-    const currentTime = Date.now();
     const oneHourInMillis = 60 * 60 * 1000;
-
-    return (currentTime - lastUpdate) > oneHourInMillis; // Update hourly
+    return (Date.now() - lastUpdate) > oneHourInMillis; // Update hourly
 }
 
 // Serve Cached or Updated GP Data

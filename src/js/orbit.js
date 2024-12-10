@@ -496,14 +496,30 @@ function getColorByScheme(scheme, sat) {
 }
 
 function applyClassification(instancedMesh, scheme, tleArray) {
+    if (!instancedMesh || !instancedMesh.count) {
+        console.error("InstancedMesh is not properly initialized.");
+        return;
+    }
+
     const dummy = new THREE.Object3D();
     const colors = new Float32Array(instancedMesh.count * 3); // RGB for each instance
 
     tleArray.forEach((sat, i) => {
-        const colorHex = getColorByScheme(scheme, sat);
+        if (i >= instancedMesh.count) {
+            console.warn(`Instance index ${i} exceeds InstancedMesh count (${instancedMesh.count}).`);
+            return;
+        }
+
+        const colorHex = getColorByScheme(scheme, sat.metadata);
         const color = new THREE.Color(colorHex);
 
-        dummy.matrix = instancedMesh.getMatrixAt(i); // Fetch existing transformation
+        try {
+            instancedMesh.getMatrixAt(i, dummy.matrix); // Safely get the matrix
+        } catch (err) {
+            console.error(`Error accessing matrix for instance ${i}:`, err);
+            return;
+        }
+
         dummy.updateMatrix();
 
         instancedMesh.setMatrixAt(i, dummy.matrix); // Retain position
@@ -513,6 +529,7 @@ function applyClassification(instancedMesh, scheme, tleArray) {
     instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
     instancedMesh.instanceMatrix.needsUpdate = true;
 }
+
 
 let activeScheme = 'orbitClass'; // Default scheme
 
@@ -533,7 +550,7 @@ document.getElementById('satellite-type').addEventListener('click', () => {
 function switchClassification(newScheme) {
     activeScheme = newScheme;
     applyClassification(satelliteMesh, activeScheme, tleArray);
-    updateLegend();
+    // updateLegend();
 }
 
 function updateLegend() {
@@ -655,20 +672,30 @@ function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
     const gmst = satellite.gstime(simulationTime);
 
     tleArray.forEach((sat, i) => {
-        const satrec = satellite.twoline2satrec(sat.tleLine1.trim(), sat.tleLine2.trim());
-        instancedMesh.userData[i] = { satrec, metadata: sat.metadata }; // Store metadata for classification
+        try {
+            const satrec = satellite.twoline2satrec(sat.tleLine1.trim(), sat.tleLine2.trim());
+            instancedMesh.userData[i] = { satrec, metadata: sat.metadata }; // Store metadata for classification
 
-        // Propagate TLE to get the initial position
-        const position = propagateSatellitePosition(satrec, gmst, false);
-        if (position) {
-            dummy.position.copy(position);
-            dummy.updateMatrix();
-            instancedMesh.setMatrixAt(i, dummy.matrix);
+            // Propagate TLE to get the initial position
+            const position = propagateSatellitePosition(satrec, gmst, false);
+            if (position) {
+                dummy.position.copy(position);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+            } else {
+                // Log and assign a default position if propagation fails
+                console.warn(`Failed to propagate position for satellite: ${sat.name}`);
+                dummy.position.set(0, 0, 0);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+            }
+
+            // Assign initial color based on classification scheme
+            const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
+            colors.set(color.toArray(), i * 3);
+        } catch (error) {
+            console.error(`Error initializing satellite ${sat.name}:`, error);
         }
-
-        // Assign initial color based on classification scheme
-        const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
-        colors.set(color.toArray(), i * 3);
     });
 
     instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
@@ -677,7 +704,6 @@ function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
 
     return instancedMesh;
 }
-
 // Helper function to propagate satellite position
 function propagateSatellitePosition(satrec, gmst, isGeostationary) {
     const positionAndVelocity = satellite.propagate(satrec, simulationTime);

@@ -194,9 +194,6 @@ tutorials
 *.ai
 
 node_modules
-cachedSatellites.json
-lastCacheTime.json
-
 
 .rtf
 auth.js
