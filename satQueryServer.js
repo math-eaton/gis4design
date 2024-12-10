@@ -13,7 +13,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Load environment variables from .env file in local development
+// Load environment variables in local development
 if (process.env.NODE_ENV !== 'production') {
     dotenv.config();
 }
@@ -27,8 +27,12 @@ if (!spacetrackUsername || !spacetrackPassword) {
 }
 
 const port = process.env.PORT || 3000;
-const CACHE_FILE = path.join(__dirname, 'cachedSatellites.json');
-const LAST_UPDATE_FILE = path.join(__dirname, 'lastUpdate.json');
+const CACHE_DIR = path.join(__dirname, 'cache');
+const TIMESTAMP_FILES = {
+    PAYLOAD: path.join(CACHE_DIR, 'payload_timestamp.json'),
+    'ROCKET BODY': path.join(CACHE_DIR, 'rocket_body_timestamp.json'),
+    DEBRIS: path.join(CACHE_DIR, 'debris_timestamp.json'),
+};
 
 let spaceTrackCookie = null; // Store the session cookie
 
@@ -61,8 +65,8 @@ async function loginToSpaceTrack() {
     }
 }
 
-// Fetch Latest GP Data
-async function fetchGPData() {
+// Fetch GP Data and Filter by Type
+async function fetchGPDataByType(objectType) {
     if (!spaceTrackCookie) {
         const loggedIn = await loginToSpaceTrack();
         if (!loggedIn) {
@@ -71,6 +75,7 @@ async function fetchGPData() {
     }
 
     try {
+        console.log(`Fetching GP data for type: ${objectType}`);
         const response = await axios.get(
             "https://www.space-track.org/basicspacedata/query/class/gp/decay_date/null-val/epoch/%3Enow-30/orderby/norad_cat_id/format/json",
             {
@@ -80,77 +85,99 @@ async function fetchGPData() {
             }
         );
 
-        const gpData = response.data.map(gp => ({
-            name: gp.OBJECT_NAME,
-            catalogNumber: gp.NORAD_CAT_ID.toString(),
-            tleLine0: gp.TLE_LINE0 || null,
-            tleLine1: gp.TLE_LINE1 || null,
-            tleLine2: gp.TLE_LINE2 || null,
-            country: gp.COUNTRY_CODE || "Unknown",
-            objectType: gp.OBJECT_TYPE || "Unknown",
-            launchDate: gp.LAUNCH_DATE || "Unknown",
-            decayDate: gp.DECAY_DATE || null,
-            inclination: gp.INCLINATION || null,
-            apogee: gp.APOAPSIS || null,
-            perigee: gp.PERIAPSIS || null,
-            period: gp.PERIOD || null,
-        }));
+        const normalizedObjectType = objectType.replace(/\s+/g, '').toUpperCase();
 
-        fs.writeFileSync(CACHE_FILE, JSON.stringify(gpData, null, 2));
-        console.log("GP Data Cached");
-        return gpData;
+        const filteredData = response.data
+            .filter(gp => gp.OBJECT_TYPE?.replace(/\s+/g, '').toUpperCase() === normalizedObjectType)
+            .map(gp => ({
+                name: gp.OBJECT_NAME,
+                catalogNumber: gp.NORAD_CAT_ID.toString(),
+                tleLine1: gp.TLE_LINE1 || null,
+                tleLine2: gp.TLE_LINE2 || null,
+                country: gp.COUNTRY_CODE || "Unknown",
+                objType: gp.OBJECT_TYPE.replace(' ', "") || "Unknown",
+            }));
+
+        console.log(`Filtered ${filteredData.length} items for ${objectType}`);
+
+        const cacheFile = path.join(CACHE_DIR, `${objectType.toLowerCase().replace(' ', '')}.json`);
+        fs.writeFileSync(cacheFile, JSON.stringify(filteredData, null, 2));
+        console.log(`${objectType} Data Cached at ${cacheFile}`);
+
+        // Update the last update time for this type
+        const timestampFile = TIMESTAMP_FILES[objectType];
+        fs.writeFileSync(timestampFile, JSON.stringify({ timestamp: Date.now() }, null, 2));
+
+        return filteredData;
     } catch (error) {
-        console.error("Error fetching GP data from Space-Track:", error);
+        console.error(`Error fetching ${objectType} data from Space-Track:`, error);
 
         // Force re-login if cookie is invalid
         if (error.response && error.response.status === 401) {
             console.log("Session expired. Re-logging in...");
             spaceTrackCookie = null; // Clear invalid cookie
-            return fetchGPData(); // Retry fetching GP data
+            return fetchGPDataByType(objectType); // Retry fetching data
         }
 
         throw error;
     }
 }
 
-// Load Cached GP Data
-function loadCachedGPData() {
-    if (fs.existsSync(CACHE_FILE)) {
-        return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf-8'));
+// Load Cached Data by Type
+function loadCachedDataByType(objectType) {
+    const cacheFile = path.join(CACHE_DIR, `${objectType.toLowerCase().replace(' ', '_')}.json`);
+    console.log(`Loading cache from: ${cacheFile}`);
+    if (fs.existsSync(cacheFile)) {
+        const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+        console.log(`Loaded ${cachedData.length} items from cache for ${objectType}`);
+        return cachedData;
     }
+    console.warn(`Cache file not found for ${objectType}`);
     return [];
 }
 
 // Check if Cache Needs Update
-function isCacheExpired() {
-    if (!fs.existsSync(LAST_UPDATE_FILE)) return true;
+function isCacheExpired(objectType) {
+    const timestampFile = TIMESTAMP_FILES[objectType];
+    if (!fs.existsSync(timestampFile)) return true;
 
-    const lastUpdate = JSON.parse(fs.readFileSync(LAST_UPDATE_FILE, 'utf-8')).timestamp;
+    const timestamp = JSON.parse(fs.readFileSync(timestampFile, 'utf-8')).timestamp;
     const oneHourInMillis = 60 * 60 * 1000;
-    return (Date.now() - lastUpdate) > oneHourInMillis; // Update hourly
+    return (Date.now() - timestamp) > oneHourInMillis; // Update hourly
 }
 
-// Serve Cached or Updated GP Data
-app.get('/satellites', async (req, res) => {
-    try {
-        let gpData = loadCachedGPData();
 
-        if (isCacheExpired()) {
-            console.log("Updating GP Data...");
-            gpData = await fetchGPData();
-            fs.writeFileSync(LAST_UPDATE_FILE, JSON.stringify({ timestamp: Date.now() }, null, 2));
+// Serve Data by Object Type
+app.get('/satellites/:type', async (req, res) => {
+    const { type } = req.params;
+    const validTypes = ['PAYLOAD', 'ROCKET BODY', 'DEBRIS'];
+    if (!validTypes.includes(type.toUpperCase())) {
+        return res.status(400).send("Invalid object type. Must be PAYLOAD, ROCKET BODY, or DEBRIS.");
+    }
+
+    try {
+        let data = loadCachedDataByType(type.toUpperCase());
+
+        if (isCacheExpired(type.toUpperCase())) {
+            console.log(`Updating ${type} Data...`);
+            data = await fetchGPDataByType(type.toUpperCase());
         } else {
-            console.log("Using cached GP data.");
+            console.log(`Using cached ${type} data.`);
         }
 
-        res.json({ timestamp: Date.now(), satellites: gpData });
+        res.json({ timestamp: Date.now(), satellites: data });
     } catch (error) {
-        console.error("Error fetching satellite data:", error);
-        res.status(500).send("Error fetching satellite data");
+        console.error(`Error fetching ${type} data:`, error);
+        res.status(500).send(`Error fetching ${type} data`);
     }
 });
 
+// Ensure Cache Directory Exists
+if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+}
+
 // Start the Server
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}/satellites`);
+    console.log(`Server running at http://localhost:${port}/satellites/:type`);
 });
