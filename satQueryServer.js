@@ -148,6 +148,7 @@ function isCacheExpired(objectType) {
 
 
 // Serve Data by Object Type
+// Serve Data by Object Type
 app.get('/satellites/:type', async (req, res) => {
     const { type } = req.params;
     const validTypes = ['PAYLOAD', 'ROCKET BODY', 'DEBRIS'];
@@ -165,10 +166,36 @@ app.get('/satellites/:type', async (req, res) => {
             console.log(`Using cached ${type} data.`);
         }
 
-        res.json({ timestamp: Date.now(), satellites: data });
+        // Respond with satellites data and the latest timestamp for this type
+        const timestamp = fs.existsSync(TIMESTAMP_FILES[type.toUpperCase()])
+            ? JSON.parse(fs.readFileSync(TIMESTAMP_FILES[type.toUpperCase()], 'utf-8')).timestamp
+            : null;
+
+        res.json({ timestamp: timestamp || Date.now(), satellites: data });
     } catch (error) {
         console.error(`Error fetching ${type} data:`, error);
         res.status(500).send(`Error fetching ${type} data`);
+    }
+});
+
+// Metadata Endpoint: Return the most recent cache timestamp across all types
+app.get('/satellites', (req, res) => {
+    try {
+        const timestamps = Object.values(TIMESTAMP_FILES)
+            .map(file => {
+                if (fs.existsSync(file)) {
+                    const { timestamp } = JSON.parse(fs.readFileSync(file, 'utf-8'));
+                    return timestamp;
+                }
+                return 0; // Default to 0 if file doesn't exist
+            });
+
+        const latestTimestamp = Math.max(...timestamps);
+
+        res.json({ timestamp: latestTimestamp }); // Respond with the most recent timestamp
+    } catch (error) {
+        console.error('Error fetching metadata:', error);
+        res.status(500).send('Error fetching metadata');
     }
 });
 

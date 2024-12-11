@@ -393,22 +393,33 @@ let satelliteMesh;
 let geostationaryInstancedMesh;
 
 function loadTLEData() {
-    fetch('https://orbital-bbfd.onrender.com/satellites')
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to load cached TLE data');
-            return response.json();
+    const types = ['PAYLOAD', 'ROCKET BODY', 'DEBRIS'];
+    const fetchPromises = types.map(type =>
+        fetch(`https://orbital-bbfd.onrender.com/satellites/${type}`)
+            .then(response => {
+                if (!response.ok) throw new Error(`Failed to load ${type} TLE data`);
+                return response.json();
+            })
+            .then(data => ({ type, data }))
+    );
+
+    Promise.all(fetchPromises)
+        .then(results => {
+            const allSatellites = results.reduce((acc, result) => {
+                acc[result.type] = result.data.satellites;
+                return acc;
+            }, {});
+            processTLEData(allSatellites); // Pass all satellite data to your visualization loop
         })
-        .then(tleData => processTLEData(tleData))
         .catch(error => {
             console.warn('Error fetching TLE data from server:', error);
             console.log('Attempting to load data from local static file...');
-
             fetch('cachedSatellites_celestrak.json')
                 .then(localResponse => {
                     if (!localResponse.ok) throw new Error('Local file fetch failed');
                     return localResponse.json();
                 })
-                .then(tleData => processTLEData(tleData))
+                .then(localData => processTLEData(localData))
                 .catch(localError => {
                     console.error('Failed to load TLE data from both server and local file:', localError);
                     onTLELoadComplete(); // Still trigger the callback if loading fails
@@ -865,7 +876,7 @@ function setResponsiveCameraPosition() {
 
     // Function to fetch and set initial simulation time
     function initializeSimulationTime() {
-        return fetch('https://orbital-bbfd.onrender.com/satellites') // Fetch from server
+        return fetch('https://orbital-bbfd.onrender.com/satellites') // Use the metadata endpoint
             .then(response => {
                 if (!response.ok) {
                     throw new Error("Failed to fetch last cache time");
@@ -873,15 +884,20 @@ function setResponsiveCameraPosition() {
                 return response.json();
             })
             .then(data => {
-                simulationTime = new Date(data.timestamp); // Cache server timestamp
-                document.getElementById("simulation-time").textContent = simulationTime.toUTCString().replace("GMT", "UTC");
+                if (!data.timestamp) {
+                    throw new Error("Timestamp not found in response");
+                }
+                simulationTime = new Date(data.timestamp);
+                document.getElementById("simulation-time").textContent = simulationTime
+                    .toUTCString()
+                    .replace("GMT", "UTC");
             })
             .catch(error => {
                 console.error("Error loading cache time:", error);
                 simulationTime = new Date('2024-11-01T00:00:00Z'); // Fallback
             });
     }
-        
+            
     function updateSimulationTime() {
         simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
         const displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
