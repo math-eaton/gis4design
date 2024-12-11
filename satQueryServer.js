@@ -14,238 +14,237 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Load environment variables in local development
+// Load environment variables
 if (process.env.NODE_ENV !== 'production') {
     dotenv.config();
 }
 
-// Ensure credentials are available
-const spacetrackUsername = process.env.SPACETRACK_USERNAME;
-const spacetrackPassword = process.env.SPACETRACK_PASSWORD;
-
-if (!spacetrackUsername || !spacetrackPassword) {
-    throw new Error("Space-Track credentials are not set. Please configure environment variables.");
+const SPACETRACK_USERNAME = process.env.SPACETRACK_USERNAME;
+const SPACETRACK_PASSWORD = process.env.SPACETRACK_PASSWORD;
+if (!SPACETRACK_USERNAME || !SPACETRACK_PASSWORD) {
+    throw new Error("Space-Track credentials are not set.");
 }
 
-const port = process.env.PORT || 3000;
+const CELESTRAK_API = 'https://celestrak.org/NORAD/elements/gp.php';
+const SPACETRACK_API = 'https://www.space-track.org';
 const CACHE_DIR = path.join(__dirname, 'cache');
+const GROUPS_FILE = path.join(__dirname, 'groups.json');
 const TIMESTAMPS_FILE = path.join(CACHE_DIR, 'timestamps.json');
+const PORT = process.env.PORT || 3000;
 
-let spaceTrackCookie = null; // Store the session cookie
+let spaceTrackCookie = null;
 
-// Load or initialize timestamps
-function getTimestamps() {
-    if (fs.existsSync(TIMESTAMPS_FILE)) {
-        return JSON.parse(fs.readFileSync(TIMESTAMPS_FILE, 'utf-8'));
-    }
-    const initialTimestamps = {
-        PAYLOAD: 0,
-        'ROCKET BODY': 0,
-        DEBRIS: 0,
-    };
-    fs.writeFileSync(TIMESTAMPS_FILE, JSON.stringify(initialTimestamps, null, 2));
-    return initialTimestamps;
-}
-
-// Update timestamp for a specific type
-function updateTimestamp(objectType) {
-    const timestamps = getTimestamps();
-    timestamps[objectType] = Date.now();
-    fs.writeFileSync(TIMESTAMPS_FILE, JSON.stringify(timestamps, null, 2));
-}
-
-
-// Login to Space-Track and get a session cookie
-async function loginToSpaceTrack() {
-    try {
-        const response = await axios.post(
-            "https://www.space-track.org/ajaxauth/login",
-            `identity=${encodeURIComponent(spacetrackUsername)}&password=${encodeURIComponent(spacetrackPassword)}`,
-            {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-            }
-        );
-
-        if (response.status === 200) {
-            console.log("Successfully logged in to Space-Track.");
-            const setCookieHeader = response.headers['set-cookie'];
-            if (setCookieHeader) {
-                spaceTrackCookie = setCookieHeader[0].split(';')[0]; // Extract the session cookie
-                return true;
-            }
-        }
-        console.error("Failed to obtain session cookie.");
-        return false;
-    } catch (error) {
-        console.error("Error logging in to Space-Track:", error);
-        return false;
-    }
-}
-
-
-async function fetchGPDataByType(objectType) {
-    if (!spaceTrackCookie) {
-        const loggedIn = await loginToSpaceTrack();
-        if (!loggedIn) {
-            throw new Error("Failed to log in to Space-Track.");
-        }
-    }
-
-    try {
-        console.log(`Fetching GP data for type: ${objectType}`);
-        const response = await axios.get(
-            "https://www.space-track.org/basicspacedata/query/class/gp/decay_date/null-val/epoch/%3Enow-30/orderby/norad_cat_id/format/json",
-            {
-                headers: {
-                    "Cookie": spaceTrackCookie,
-                },
-            }
-        );
-
-        const normalizedObjectType = objectType.toUpperCase();
-
-        const filteredData = response.data
-            .filter(gp => gp.OBJECT_TYPE?.toUpperCase() === normalizedObjectType)
-            .map(gp => {
-                const orbitClass = determineOrbitClass(gp.TLE_LINE1, gp.TLE_LINE2); // Compute orbit class
-                return {
-                    name: gp.OBJECT_NAME,
-                    catalogNumber: gp.NORAD_CAT_ID.toString(),
-                    tleLine1: gp.TLE_LINE1 || null,
-                    tleLine2: gp.TLE_LINE2 || null,
-                    country: gp.COUNTRY_CODE || "Unknown",
-                    objType: gp.OBJECT_TYPE || "Unknown",
-                    orbitClass, // Add computed orbit class
-                };
-            });
-
-        console.log(`Filtered ${filteredData.length} items for ${objectType}`);
-
-        const cacheFile = path.join(CACHE_DIR, `${objectType.toLowerCase().replace(/\s+/g, '_')}.json`);
-        fs.writeFileSync(cacheFile, JSON.stringify(filteredData, null, 2));
-        console.log(`${objectType} Data Cached at ${cacheFile}`);
-
-        // Update timestamp for this type
-        updateTimestamp(objectType);
-
-        return filteredData;
-    } catch (error) {
-        console.error(`Error fetching ${objectType} data from Space-Track:`, error);
-
-        // Force re-login if cookie is invalid
-        if (error.response && error.response.status === 401) {
-            console.log("Session expired. Re-logging in...");
-            spaceTrackCookie = null; // Clear invalid cookie
-            return fetchGPDataByType(objectType); // Retry fetching data
-        }
-
-        throw error;
-    }
-}
-
-// Load Cached Data by Type
-function loadCachedDataByType(objectType) {
-    const cacheFile = path.join(CACHE_DIR, `${objectType.toLowerCase().replace(/\s+/g, '_')}.json`);
-    console.log(`Loading cache from: ${cacheFile}`);
-    if (fs.existsSync(cacheFile)) {
-        const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
-        console.log(`Loaded ${cachedData.length} items from cache for ${objectType}`);
-        return cachedData;
-    }
-    console.warn(`Cache file not found for ${objectType}`);
-    return [];
-}
-
-// Check if Cache Needs Update
-function isCacheExpired(objectType) {
-    const timestamps = getTimestamps();
-    const timestamp = timestamps[objectType];
-    const oneHourInMillis = 60 * 60 * 1000;
-    return (Date.now() - timestamp) > oneHourInMillis; // Update hourly
-}
-
-// Serve Data by Object Type
-app.get('/satellites/:type', async (req, res) => {
-    const { type } = req.params;
-    const validTypes = ['PAYLOAD', 'ROCKET BODY', 'DEBRIS'];
-    if (!validTypes.includes(type.toUpperCase())) {
-        return res.status(400).send("Invalid object type. Must be PAYLOAD, ROCKET BODY, or DEBRIS.");
-    }
-
-    try {
-        let data = loadCachedDataByType(type.toUpperCase());
-
-        if (isCacheExpired(type.toUpperCase())) {
-            console.log(`Updating ${type} Data...`);
-            data = await fetchGPDataByType(type.toUpperCase());
-        } else {
-            console.log(`Using cached ${type} data.`);
-        }
-
-        res.json(data); // Only send satellite data
-    } catch (error) {
-        console.error(`Error fetching ${type} data:`, error);
-        res.status(500).send(`Error fetching ${type} data`);
-    }
-});
-
-// Serve Universal Timestamp
-app.get('/timestamp', (req, res) => {
-    try {
-        const timestamps = getTimestamps();
-        res.json(timestamps); // Serve all timestamps
-    } catch (error) {
-        console.error('Error fetching timestamps:', error);
-        res.status(500).send('Error fetching timestamps');
-    }
-});
-
-// Metadata Endpoint: Return the most recent cache timestamp across all types
-app.get('/satellites', (req, res) => {
-    try {
-        const timestamps = Object.values(TIMESTAMP_FILES)
-            .map(file => {
-                if (fs.existsSync(file)) {
-                    const { timestamp } = JSON.parse(fs.readFileSync(file, 'utf-8'));
-                    return timestamp;
-                }
-                return 0; // Default to 0 if file doesn't exist
-            });
-
-        const latestTimestamp = Math.max(...timestamps);
-
-        res.json({ timestamp: latestTimestamp }); // Respond with the most recent timestamp
-    } catch (error) {
-        console.error('Error fetching metadata:', error);
-        res.status(500).send('Error fetching metadata');
-    }
-});
-
-// Ensure Cache Directory Exists
+// Ensure cache directory exists
 if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
 
+// Load group definitions
+const groups = JSON.parse(fs.readFileSync(GROUPS_FILE, 'utf-8'));
+
+// Login to Space-Track
+async function loginToSpaceTrack() {
+    try {
+        const response = await axios.post(
+            `${SPACETRACK_API}/ajaxauth/login`,
+            `identity=${encodeURIComponent(SPACETRACK_USERNAME)}&password=${encodeURIComponent(SPACETRACK_PASSWORD)}`,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+        if (response.status === 200) {
+            spaceTrackCookie = response.headers['set-cookie'][0].split(';')[0];
+            console.log("Successfully logged in to Space-Track.");
+            return true;
+        }
+    } catch (error) {
+        console.error("Space-Track login failed:", error.message);
+    }
+    return false;
+}
+
+// Fetch GP Data from Space-Track
+async function fetchSpaceTrackData() {
+    if (!spaceTrackCookie && !(await loginToSpaceTrack())) {
+        throw new Error('Failed to authenticate with Space-Track.');
+    }
+    try {
+        const response = await axios.get(
+            `${SPACETRACK_API}/basicspacedata/query/class/gp/decay_date/null-val/epoch/%3Enow-30/orderby/norad_cat_id/format/json`,
+            { headers: { Cookie: spaceTrackCookie } }
+        );
+        return response.data.map((gp) => ({
+            catalogNumber: gp.NORAD_CAT_ID.toString(),
+            name: gp.OBJECT_NAME,
+            tleLine1: gp.TLE_LINE1 || null,
+            tleLine2: gp.TLE_LINE2 || null,
+            country: gp.COUNTRY_CODE || 'Unknown',
+            objType: gp.OBJECT_TYPE || 'Unknown',
+            orbitClass: determineOrbitClass(gp.TLE_LINE1, gp.TLE_LINE2),
+        }));
+    } catch (error) {
+        console.error('Error fetching GP data from Space-Track:', error.message);
+        throw error;
+    }
+}
+
+// Fetch Data from CelesTrak
+async function fetchCelesTrakGroupData(apiQuery) {
+    const url = `${CELESTRAK_API}?GROUP=${apiQuery}&FORMAT=JSON`;
+    try {
+        const response = await axios.get(url);
+        return response.data.map((satellite) => ({
+            catalogNumber: satellite.NORAD_CAT_ID.toString(),
+            name: satellite.OBJECT_NAME,
+            api: apiQuery,
+        }));
+    } catch (error) {
+        console.error(`Error fetching data for group "${apiQuery}" from CelesTrak:`, error.message);
+        return [];
+    }
+}
+
+// Merge Space-Track and CelesTrak Data
+async function mergeData(apiQuery) {
+    const spaceTrackData = await fetchSpaceTrackData();
+    const celestrakData = await fetchCelesTrakGroupData(apiQuery);
+
+    // Filter and merge matched records based on catalogNumber
+    const mergedData = celestrakData
+        .filter((celestrakItem) =>
+            spaceTrackData.some((spaceTrackItem) => spaceTrackItem.catalogNumber === celestrakItem.catalogNumber)
+        )
+        .map((celestrakItem) => {
+            const spaceTrackItem = spaceTrackData.find(
+                (item) => item.catalogNumber === celestrakItem.catalogNumber
+            );
+            return {
+                name: spaceTrackItem.name,
+                tleLine1: spaceTrackItem.tleLine1,
+                tleLine2: spaceTrackItem.tleLine2,
+                country: spaceTrackItem.country,
+                objType: spaceTrackItem.objType,
+                orbitClass: spaceTrackItem.orbitClass,
+            };
+        });
+
+    return mergedData;
+}
+
+// Cache and Save Data
+async function cacheGroupData(groupMajor) {
+    const timestamps = JSON.parse(fs.existsSync(TIMESTAMPS_FILE) ? fs.readFileSync(TIMESTAMPS_FILE, 'utf-8') : '{}');
+    const now = Date.now();
+
+    const minorGroups = groups.filter((g) => g.group_major === groupMajor);
+    const data = {};
+
+    for (const minorGroup of minorGroups) {
+        if (isCacheExpired(minorGroup.api)) {
+            console.log(`Re-caching data for group_minor: "${minorGroup.api}"`);
+            const mergedData = await mergeData(minorGroup.api);
+            data[minorGroup.group_minor] = mergedData; // Group by group_minor
+            timestamps[minorGroup.api] = now; // Update timestamp for the minor group
+        } else {
+            console.log(`Using cached data for group_minor: "${minorGroup.api}"`);
+            const cacheFile = path.join(CACHE_DIR, `${minorGroup.api.toLowerCase()}.json`);
+            if (fs.existsSync(cacheFile)) {
+                const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+                data[minorGroup.group_minor] = cachedData.data; // Add cached satellites under group_minor
+            }
+        }
+    }
+
+    // Save consolidated data for group_major
+    const cacheFile = path.join(CACHE_DIR, `${groupMajor.toLowerCase().replace(/\s+/g, '_')}.json`);
+    fs.writeFileSync(cacheFile, JSON.stringify({ group_major: groupMajor, data }, null, 2));
+    console.log(`Cached data for group_major: "${groupMajor}" at ${cacheFile}`);
+
+    // Save updated timestamps
+    fs.writeFileSync(TIMESTAMPS_FILE, JSON.stringify(timestamps, null, 2));
+}
+
+
+// Determine Orbit Class
 function determineOrbitClass(tleLine1, tleLine2) {
     try {
         const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
-        const inclination = satrec.inclo * (180 / Math.PI); // Convert inclination to degrees
-        const period = (2 * Math.PI) / satrec.no; // Orbital period in minutes
+        const inclination = satrec.inclo * (180 / Math.PI);
+        const period = (2 * Math.PI) / satrec.no;
 
         if (Math.abs(inclination) < 0.1 && Math.abs(period - 1436) < 1) return 'geostationary';
         if (Math.abs(period - 1436) < 10) return 'geosynchronous';
         if (Math.abs(inclination - 98) < 2 && Math.abs(period - 100) < 5) return 'sunSynchronous';
         return 'nonGeostationary';
-    } catch (error) {
-        console.error('Failed to determine orbit class:', error);
+    } catch {
         return 'unknown';
     }
 }
 
+// Endpoint to Serve Group Data
+app.get('/satellites/:group_major', async (req, res) => {
+    const { group_major } = req.params;
 
-// Start the Server
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}/satellites/:type`);
+    try {
+        const cacheFile = path.join(CACHE_DIR, `${group_major.toLowerCase().replace(/\s+/g, '_')}.json`);
+        if (!fs.existsSync(cacheFile)) {
+            return res.status(404).send('No cached data available.');
+        }
+
+        const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+        res.json(cachedData);
+    } catch (error) {
+        console.error(`Error serving data for group_major "${group_major}":`, error.message);
+        res.status(500).send('Error fetching data.');
+    }
+});
+
+// Re-cache all data on server startup
+async function recacheAllGroups() {
+    const now = Date.now();
+    const fourHoursInMillis = 4 * 60 * 60 * 1000;
+
+    // Find the oldest timestamp across all groups
+    const timestamps = JSON.parse(fs.existsSync(TIMESTAMPS_FILE) ? fs.readFileSync(TIMESTAMPS_FILE, 'utf-8') : '{}');
+    const oldestTimestamp = Math.min(...Object.values(timestamps));
+
+    if (now - oldestTimestamp > fourHoursInMillis) {
+        console.log('Triggering re-caching at the major group level.');
+        const majorGroups = [...new Set(groups.map((g) => g.group_major))];
+        for (const majorGroup of majorGroups) {
+            console.log(`Re-caching data for group_major: "${majorGroup}"`);
+            await cacheGroupData(majorGroup);
+        }
+    } else {
+        console.log('No re-caching needed. All timestamps are within the last 4 hours.');
+    }
+}
+
+function initializeTimestamps() {
+    if (!fs.existsSync(TIMESTAMPS_FILE)) {
+        console.log('No timestamps file found. Creating a new one.');
+        const initialTimestamps = groups.reduce((acc, group) => {
+            acc[group.api] = 0; // Initialize all timestamps to 0
+            return acc;
+        }, {});
+        fs.writeFileSync(TIMESTAMPS_FILE, JSON.stringify(initialTimestamps, null, 2));
+        console.log('Timestamps file created.');
+    }
+}
+
+
+function isCacheExpired(apiQuery) {
+    console.log(`Checking if cache is expired for: ${apiQuery}`);
+    const timestamps = JSON.parse(fs.existsSync(TIMESTAMPS_FILE) ? fs.readFileSync(TIMESTAMPS_FILE, 'utf-8') : '{}');
+    const lastUpdated = timestamps[apiQuery] || 0;
+    const fourHoursInMillis = 4 * 60 * 60 * 1000;
+    return Date.now() - lastUpdated > fourHoursInMillis;
+}
+
+
+// Start Server
+app.listen(PORT, () => {
+    initializeTimestamps();
+    recacheAllGroups()
+    .then(() => console.log('Re-caching completed on server startup for expired groups.'))
+    .catch((error) => console.error('Error during re-caching:', error.message));
+    console.log(`Server running at http://localhost:${PORT}/satellites/:group_major`);
 });

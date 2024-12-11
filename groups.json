@@ -1,0 +1,277 @@
+[
+    {
+      "api": "last-30-days",
+      "group_minor": "Last 30 Days' Launches",
+      "group_major": "Last 30 Days"
+    },
+    {
+      "api": "stations",
+      "group_minor": "Space Stations",
+      "group_major": "Space Stations"
+    },
+    {
+      "api": "visual",
+      "group_minor": "100 Brightest",
+      "group_major": "100 Brightest"
+    },
+    {
+      "api": "active",
+      "group_minor": "Active",
+      "group_major": "Active"
+    },
+    {
+      "api": "analyst",
+      "group_minor": "Analyst",
+      "group_major": "Analyst"
+    },
+    {
+      "api": "cosmos-1408-debris",
+      "group_minor": "Russian ASAT Test Debris (COSMOS 1408)",
+      "group_major": "Debris"
+    },
+    {
+      "api": "fengyun-1c-debris",
+      "group_minor": "Chinese ASAT Test Debris (FENGYUN 1C)",
+      "group_major": "Debris"
+    },
+    {
+      "api": "iridium-33-debris",
+      "group_minor": "IRIDIUM 33 Debris",
+      "group_major": "Debris"
+    },
+    {
+      "api": "cosmos-2251-debris",
+      "group_minor": "COSMOS 2251 Debris",
+      "group_major": "Debris"
+    },
+    {
+      "api": "weather",
+      "group_minor": "Weather Satellites",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "noaa",
+      "group_minor": "NOAA Satellites",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "goes",
+      "group_minor": "GOES Satellites",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "resource",
+      "group_minor": "Earth Resource Satellites",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "sarsat",
+      "group_minor": "Search & Rescue Satellites (SARSAT)",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "dmc",
+      "group_minor": "Disaster Monitoring Satellites",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "tdrss",
+      "group_minor": "Tracking and Data Relay Satellite System (TDRSS)",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "argos",
+      "group_minor": "ARGOS Data Collection System",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "planet",
+      "group_minor": "Planet Satellites",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "spire",
+      "group_minor": "Spire Satellites",
+      "group_major": "Weather & Earth Resources"
+    },
+    {
+      "api": "geo",
+      "group_minor": "Active Geosynchronous",
+      "group_major": "Communications"
+    },
+    {
+      "api": "gpz",
+      "group_minor": "GEO Protected Zone",
+      "group_major": "Communications"
+    },
+    {
+      "api": "gpz-plus",
+      "group_minor": "GEO Protected Zone Plus",
+      "group_major": "Communications"
+    },
+    {
+      "api": "intelsat",
+      "group_minor": "Intelsat Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "ses",
+      "group_minor": "SES Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "eutelsat",
+      "group_minor": "Eutelsat Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "iridium",
+      "group_minor": "Iridium Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "iridium-NEXT",
+      "group_minor": "Iridium NEXT Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "starlink",
+      "group_minor": "Starlink Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "oneweb",
+      "group_minor": "OneWeb Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "orbcomm",
+      "group_minor": "Orbcomm Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "globalstar",
+      "group_minor": "Globalstar Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "swarm",
+      "group_minor": "Swarm Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "amateur",
+      "group_minor": "Amateur Radio Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "satnogs",
+      "group_minor": "SatNOGS Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "x-comm",
+      "group_minor": "Experimental Communication Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "other-comm",
+      "group_minor": "Other Communication Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "gorizont",
+      "group_minor": "Gorizont Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "raduga",
+      "group_minor": "Raduga Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "molniya",
+      "group_minor": "Molniya Satellites",
+      "group_major": "Communications"
+    },
+    {
+      "api": "gnss",
+      "group_minor": "GNSS Satellites",
+      "group_major": "Navigation"
+    },
+    {
+      "api": "gps-ops",
+      "group_minor": "GPS Operational Satellites",
+      "group_major": "Navigation"
+    },
+    {
+      "api": "glo-ops",
+      "group_minor": "GLONASS Operational Satellites",
+      "group_major": "Navigation"
+    },
+    {
+      "api": "galileo",
+      "group_minor": "Galileo Satellites",
+      "group_major": "Navigation"
+    },
+    {
+      "api": "beidou",
+      "group_minor": "Beidou Satellites",
+      "group_major": "Navigation"
+    },
+    {
+      "api": "sbas",
+      "group_minor": "Satellite-Based Augmentation System (WAAS/EGNOS/MSAS)",
+      "group_major": "Navigation"
+    },
+    {
+      "api": "nnss",
+      "group_minor": "Navy Navigation Satellite System (NNSS)",
+      "group_major": "Navigation"
+    },
+    {
+      "api": "musson",
+      "group_minor": "Russian LEO Navigation Satellites",
+      "group_major": "Navigation"
+    },
+    {
+      "api": "science",
+      "group_minor": "Space & Earth Science Satellites",
+      "group_major": "Scientific"
+    },
+    {
+      "api": "geodetic",
+      "group_minor": "Geodetic Satellites",
+      "group_major": "Scientific"
+    },
+    {
+      "api": "engineering",
+      "group_minor": "Engineering Satellites",
+      "group_major": "Scientific"
+    },
+    {
+      "api": "education",
+      "group_minor": "Education Satellites",
+      "group_major": "Scientific"
+    },
+    {
+      "api": "military",
+      "group_minor": "Miscellaneous Military Satellites",
+      "group_major": "Miscellaneous"
+    },
+    {
+      "api": "radar",
+      "group_minor": "Radar Calibration Satellites",
+      "group_major": "Miscellaneous"
+    },
+    {
+      "api": "cubesat",
+      "group_minor": "CubeSats",
+      "group_major": "Miscellaneous"
+    },
+    {
+      "api": "other",
+      "group_minor": "Other Satellites",
+      "group_major": "Miscellaneous"
+    }
+  ]  
