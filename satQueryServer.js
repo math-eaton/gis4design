@@ -5,6 +5,7 @@ import axios from 'axios';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import * as satellite from 'satellite.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -83,7 +84,6 @@ async function loginToSpaceTrack() {
     }
 }
 
-const UNIVERSAL_TIMESTAMP_FILE = path.join(CACHE_DIR, 'timestamp.json');
 
 async function fetchGPDataByType(objectType) {
     if (!spaceTrackCookie) {
@@ -108,14 +108,18 @@ async function fetchGPDataByType(objectType) {
 
         const filteredData = response.data
             .filter(gp => gp.OBJECT_TYPE?.toUpperCase() === normalizedObjectType)
-            .map(gp => ({
-                name: gp.OBJECT_NAME,
-                catalogNumber: gp.NORAD_CAT_ID.toString(),
-                tleLine1: gp.TLE_LINE1 || null,
-                tleLine2: gp.TLE_LINE2 || null,
-                country: gp.COUNTRY_CODE || "Unknown",
-                objType: gp.OBJECT_TYPE || "Unknown",
-            }));
+            .map(gp => {
+                const orbitClass = determineOrbitClass(gp.TLE_LINE1, gp.TLE_LINE2); // Compute orbit class
+                return {
+                    name: gp.OBJECT_NAME,
+                    catalogNumber: gp.NORAD_CAT_ID.toString(),
+                    tleLine1: gp.TLE_LINE1 || null,
+                    tleLine2: gp.TLE_LINE2 || null,
+                    country: gp.COUNTRY_CODE || "Unknown",
+                    objType: gp.OBJECT_TYPE || "Unknown",
+                    orbitClass, // Add computed orbit class
+                };
+            });
 
         console.log(`Filtered ${filteredData.length} items for ${objectType}`);
 
@@ -223,6 +227,23 @@ app.get('/satellites', (req, res) => {
 if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
+
+function determineOrbitClass(tleLine1, tleLine2) {
+    try {
+        const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
+        const inclination = satrec.inclo * (180 / Math.PI); // Convert inclination to degrees
+        const period = (2 * Math.PI) / satrec.no; // Orbital period in minutes
+
+        if (Math.abs(inclination) < 0.1 && Math.abs(period - 1436) < 1) return 'geostationary';
+        if (Math.abs(period - 1436) < 10) return 'geosynchronous';
+        if (Math.abs(inclination - 98) < 2 && Math.abs(period - 100) < 5) return 'sunSynchronous';
+        return 'nonGeostationary';
+    } catch (error) {
+        console.error('Failed to determine orbit class:', error);
+        return 'unknown';
+    }
+}
+
 
 // Start the Server
 app.listen(port, () => {

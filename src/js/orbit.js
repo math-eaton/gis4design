@@ -213,7 +213,27 @@ export function orbitalView(containerId, onGPDataLoadComplete) {
     
         addMoon();
         setupChapterControls();
-        loadGPData();
+
+        // Load GP data and initialize satellite mesh
+        await loadGPData();
+
+        console.log('Initial tleArray:', tleArray);
+        const payloadSatellites = tleArray.filter(sat => sat.objType === 'PAYLOAD');
+        console.log('Filtered payload satellites:', payloadSatellites);
+    
+        // Check for case sensitivity
+        const caseInsensitivePayloadSatellites = tleArray.filter(
+            sat => sat.objType?.toUpperCase() === 'PAYLOAD'
+        );
+        console.log('Case-insensitive filtered payload satellites:', caseInsensitivePayloadSatellites);
+    
+        // Proceed with creating the satellite mesh
+        satelliteMesh = createSatelliteInstancedMesh(payloadSatellites, new THREE.MeshBasicMaterial(), currentChapter === 'smallScale');
+        pivot.add(satelliteMesh);
+    
+        switchClassification('orbitClass');
+        
+               
         loadAllData();
         initializeSlider();
     
@@ -392,7 +412,7 @@ export function orbitalView(containerId, onGPDataLoadComplete) {
 let satelliteMesh;
 let geostationaryInstancedMesh;
 
-function loadGPData() {
+async function loadGPData() {
     const types = ['PAYLOAD', 'ROCKET BODY', 'DEBRIS'];
     const cacheFiles = {
         PAYLOAD: 'cache/payload.json',
@@ -406,10 +426,9 @@ function loadGPData() {
                 if (!response.ok) throw new Error(`Failed to load ${type} GP data`);
                 return response.json();
             })
-            .then(data => ({ type, satellites: data })) // Rename `data` for clarity
+            .then(data => ({ type, satellites: data }))
             .catch(error => {
                 console.warn(`Error fetching ${type} data from server, attempting local cache:`, error);
-                // Attempt to load from local cache
                 const cacheFile = cacheFiles[type.toUpperCase()];
                 return fetch(cacheFile)
                     .then(localResponse => {
@@ -427,33 +446,40 @@ function loadGPData() {
             })
     );
 
-    Promise.all(fetchPromises)
-        .then(results => {
-            const allSatellites = results.reduce((acc, result) => {
-                acc[result.type] = result.satellites;
-                return acc;
-            }, {});
+    const results = await Promise.all(fetchPromises);
 
-            processGPData(allSatellites); // Pass all satellite data to your visualization loop
-        })
-        .catch(error => {
-            console.error('Failed to load GP data for all types:', error);
-            onGPDataLoadComplete(); // Trigger callback even if loading fails
+    // Log raw results for debugging
+    console.log('Loaded GP data results:', results);
+
+    // Filter payload satellites for initial rendering
+    const payloadData = results.find(result => result.type === 'PAYLOAD')?.satellites || [];
+    console.log('Payload data:', payloadData);
+
+    // Add payload data to tleArray
+    tleArray = payloadData;
+
+    // Cache other satellite data for future toggling
+    results
+        .filter(result => result.type !== 'PAYLOAD')
+        .forEach(result => {
+            tleArray.push(...result.satellites);
         });
+
+    console.log('Final tleArray after caching:', tleArray);
+
+    onGPDataLoadComplete();
 }
 
-function processGPData(allSatellites) {
-    console.log('Received allSatellites:', allSatellites);
+function processGPData(satellites) {
+    console.log('Processing satellites:', satellites);
 
-    Object.entries(allSatellites).forEach(([type, satellites]) => {
-        console.log(`Processing type: ${type}, Satellites:`, satellites);
-        if (!Array.isArray(satellites)) {
-            console.error(`Expected an array for type ${type}, but got:`, satellites);
-            throw new TypeError(`Satellites for type ${type} is not an array`);
-        }
+    if (!Array.isArray(satellites)) {
+        console.error(`Expected an array of satellites but got:`, satellites);
+        throw new TypeError('Satellites must be an array');
+    }
 
-        // Add metadata and propagate TLE for each satellite
-        satellites.forEach(sat => {
+    satellites.forEach(sat => {
+        try {
             const satrec = satellite.twoline2satrec(
                 sat.tleLine1.trim(),
                 sat.tleLine2.trim()
@@ -462,24 +488,20 @@ function processGPData(allSatellites) {
             // Attach metadata for visualization
             sat.metadata = {
                 satrec, // Store the satrec for propagation
-                orbitClass: determineOrbitClass(sat),
+                orbitClass: sat.orbitClass, // computed while caching
                 ownerCountry: sat.country || 'Unknown',
                 satelliteType: sat.objType || 'Unknown',
-                type, // Include the satellite type (e.g., PAYLOAD, ROCKET BODY, DEBRIS)
             };
-        });
+        } catch (err) {
+            console.error('Failed to process satellite:', sat.name, err);
+            sat.metadata = { orbitClass: 'unknown', ownerCountry: 'Unknown', satelliteType: 'Unknown' };
+        }
     });
 
-    // Combine all satellites into a single array for visualization
-    const allSatelliteData = Object.values(allSatellites).flat();
-
-    console.log('All GP Data with Metadata:', allSatelliteData);
+    console.log('Processed satellites with metadata:', satellites);
 
     // Create meshes for visualization
-    createSatelliteMeshes(allSatelliteData);
-
-    // Notify that the GP data has been successfully loaded
-    onGPDataLoadComplete();
+    createSatelliteMeshes(satellites);
 }
 
 // Helper function to classify orbit type
@@ -536,7 +558,7 @@ function getColorByScheme(scheme, sat) {
     return colors[category] || 0xff0000; // Default to white if no color is defined
 }
 
-function applyClassification(instancedMesh, scheme, tleArray) {
+function applyClassification(instancedMesh, scheme, satellites) {
     if (!instancedMesh || !instancedMesh.count) {
         console.error("InstancedMesh is not properly initialized.");
         return;
@@ -545,9 +567,14 @@ function applyClassification(instancedMesh, scheme, tleArray) {
     const dummy = new THREE.Object3D();
     const colors = new Float32Array(instancedMesh.count * 3); // RGB for each instance
 
-    tleArray.forEach((sat, i) => {
+    satellites.forEach((sat, i) => {
         if (i >= instancedMesh.count) {
             console.warn(`Instance index ${i} exceeds InstancedMesh count (${instancedMesh.count}).`);
+            return;
+        }
+
+        if (!sat.metadata) {
+            console.warn(`Satellite at index ${i} is missing metadata. Skipping.`);
             return;
         }
 
@@ -571,7 +598,6 @@ function applyClassification(instancedMesh, scheme, tleArray) {
     instancedMesh.instanceMatrix.needsUpdate = true;
 }
 
-
 let activeScheme = 'orbitClass'; // Default scheme
 
 document.getElementById('orbit-class').addEventListener('click', () => {
@@ -582,17 +608,53 @@ document.getElementById('owner-country').addEventListener('click', () => {
     switchClassification('ownerCountry');
 });
 
-document.getElementById('satellite-type').addEventListener('click', () => {
-    switchClassification('satelliteType');
+document.getElementById('payload-button').addEventListener('click', () => {
+    switchSatType('PAYLOAD');
 });
 
+document.getElementById('rocket-body-button').addEventListener('click', () => {
+    switchSatType('ROCKET BODY');
+});
 
+document.getElementById('debris-button').addEventListener('click', () => {
+    switchSatType('DEBRIS');
+});
 
 function switchClassification(newScheme) {
+    if (!satelliteMesh || !satelliteMesh.count) {
+        console.error("Satellite mesh is not initialized or empty. Cannot switch classification.");
+        return;
+    }
+
     activeScheme = newScheme;
-    applyClassification(satelliteMesh, activeScheme, tleArray);
-    // updateLegend();
+    const filteredSatellites = tleArray.filter(sat => sat.objType === activeSatType);
+    applyClassification(satelliteMesh, activeScheme, filteredSatellites);
 }
+
+let activeSatType = 'PAYLOAD'; // Default satellite type
+
+function switchSatType(newType) {
+    if (!satelliteMesh) {
+        console.error("Satellite mesh is not initialized. Cannot switch satellite type.");
+        return;
+    }
+
+    activeSatType = newType;
+
+    // Filter satellites based on the selected type
+    const filteredSatellites = tleArray.filter(sat => sat.objType === activeSatType);
+
+    // Recreate the instanced mesh with the filtered satellites
+    scene.remove(satelliteMesh); // Remove the existing mesh
+    satelliteMesh = createSatelliteInstancedMesh(filteredSatellites, satelliteMesh.material, currentChapter === 'smallScale');
+    scene.add(satelliteMesh); // Add the updated mesh back to the scene
+
+    // Reapply the active classification scheme to the updated mesh
+    applyClassification(satelliteMesh, activeScheme, filteredSatellites);
+
+    console.log(`Switched to satellite type: ${activeSatType}`);
+}
+
 
 function updateLegend() {
     const legendContainer = document.getElementById('category-toggles');
@@ -618,6 +680,9 @@ function toggleCategoryVisibility(category) {
 
 // satellite material
 function createSatelliteMeshes(allSatellites) {
+    console.log('All satellites passed to createSatelliteMeshes:', allSatellites);
+    console.log('Satellite count:', allSatellites.length);
+
     const material = new THREE.MeshBasicMaterial({
         metalness: 1,
         roughness: 0.2,
@@ -625,13 +690,14 @@ function createSatelliteMeshes(allSatellites) {
         wireframe: true,
     });
 
-    // Create a single instanced mesh for all satellites
     satelliteMesh = createSatelliteInstancedMesh(allSatellites, material, currentChapter === 'smallScale');
 
-    // Add the consolidated mesh to the scene
-    scene.add(satelliteMesh);
-
-    console.log("Consolidated satellite mesh created and added to the scene.");
+    if (satelliteMesh && satelliteMesh.count > 0) {
+        console.log("Consolidated satellite mesh created and added to the scene.");
+        scene.add(satelliteMesh);
+    } else {
+        console.error("Failed to create satellite mesh or no instances were added.");
+    }
 }
 
 // Propagate position helper
@@ -695,39 +761,45 @@ function isSatelliteVisible(position) {
 
 // create satellite instances (scale dependent appearance)
 function createSatelliteInstancedMesh(satellites, material, isFixedView = false) {
+    console.log('Creating instanced mesh. Satellite count:', satellites.length);
+
     const instanceCount = satellites.length;
 
+    if (instanceCount === 0) {
+        console.error('No satellites to create instanced mesh.');
+        return null;
+    }
+
     const satelliteGeometry = isFixedView
-        ? new THREE.SphereGeometry(0.002, 8, 8) // Smaller, higher resolution for fixed view
+        ? new THREE.SphereGeometry(0.002, 4, 4) // Smaller, higher resolution for fixed view
         : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for smallScale view
 
     const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, material, instanceCount);
     const colors = new Float32Array(instanceCount * 3); // Color buffer for classification
     const dummy = new THREE.Object3D();
-    const gmst = satellite.gstime(simulationTime);
+
+    instancedMesh.userData = []; // Initialize userData as an array
 
     satellites.forEach((sat, i) => {
         try {
-            const { satrec, metadata } = sat.metadata;
-
-            // Propagate TLE to get the initial position
-            const position = propagateSatellitePosition(satrec, gmst, false);
-            if (position) {
-                dummy.position.copy(position);
-                dummy.updateMatrix();
-                instancedMesh.setMatrixAt(i, dummy.matrix);
-            } else {
-                console.warn(`Failed to propagate position for satellite: ${sat.name}`);
-                dummy.position.set(0, 0, 0);
-                dummy.updateMatrix();
-                instancedMesh.setMatrixAt(i, dummy.matrix);
-            }
+            // Initialize the satellite's position
+            dummy.position.set(0, 0, 0); // Default position
+            dummy.updateMatrix();
+            instancedMesh.setMatrixAt(i, dummy.matrix);
 
             // Assign initial color based on classification scheme
-            const color = new THREE.Color(getColorByScheme(activeScheme, metadata));
+            const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
             colors.set(color.toArray(), i * 3);
+
+            // Store TLE and metadata in userData
+            instancedMesh.userData[i] = {
+                tleLine1: sat.tleLine1,
+                tleLine2: sat.tleLine2,
+                metadata: sat.metadata,
+            };
         } catch (error) {
             console.error(`Error initializing satellite ${sat.name}:`, error);
+            instancedMesh.userData[i] = null; // Explicitly set null for failed initialization
         }
     });
 
@@ -773,9 +845,21 @@ function updateSatellitePositions(instancedMesh) {
     const colors = instancedMesh.instanceColor.array;
     const earthCenter = new THREE.Vector3(0, 0, 0);
 
-
     for (let i = 0; i < instancedMesh.count; i++) {
-        const { satrec, metadata } = instancedMesh.userData[i];
+        const { tleLine1, tleLine2, metadata } = instancedMesh.userData[i];
+        if (!tleLine1 || !tleLine2) {
+            console.warn(`Missing TLE data for satellite at index ${i}`);
+            continue;
+        }
+
+        // Dynamically create the satrec
+        let satrec;
+        try {
+            satrec = satellite.twoline2satrec(tleLine1.trim(), tleLine2.trim());
+        } catch (error) {
+            console.error(`Error creating satrec for satellite at index ${i}:`, error);
+            continue;
+        }
 
         // Propagate satellite position
         const position = propagateSatellitePosition(satrec, gmst);
@@ -784,8 +868,6 @@ function updateSatellitePositions(instancedMesh) {
         // Apply Earth's axial tilt compensation
         position.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
 
-        // Apply rotation for geostationary satellites
-        // if (metadata.orbitClass === 'geostationary' || metadata.orbitClass === 'sunSynchronous') {
         if (instancedMesh) {
             const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Seconds in a day
             const rotationAngle = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
@@ -811,6 +893,7 @@ function updateSatellitePositions(instancedMesh) {
     instancedMesh.instanceMatrix.needsUpdate = true;
     instancedMesh.instanceColor.needsUpdate = true; // Ensure colors are updated
 }
+
 
 
 function updateSatelliteLine(index, satellitePosition, earthCenter) {
