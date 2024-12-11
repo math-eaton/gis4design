@@ -29,7 +29,7 @@ const CELESTRAK_API = 'https://celestrak.org/NORAD/elements/gp.php';
 const SPACETRACK_API = 'https://www.space-track.org';
 const CACHE_DIR = path.join(__dirname, 'cache');
 const GROUPS_FILE = path.join(__dirname, 'groups.json');
-const TIMESTAMPS_FILE = path.join(__dirname, 'timestamps.json');
+const TIMESTAMPS_FILE = path.join(CACHE_DIR, 'timestamps.json');
 const PORT = process.env.PORT || 3000;
 
 let spaceTrackCookie = null;
@@ -238,6 +238,19 @@ function isCacheExpired(apiQuery) {
     const fourHoursInMillis = 4 * 60 * 60 * 1000;
     return Date.now() - lastUpdated > fourHoursInMillis;
 }
+
+app.get('/timestamps', (req, res) => {
+    try {
+        if (!fs.existsSync(TIMESTAMPS_FILE)) {
+            return res.status(404).send('Timestamps file not found.');
+        }
+        const timestamps = JSON.parse(fs.readFileSync(TIMESTAMPS_FILE, 'utf-8'));
+        res.json(timestamps);
+    } catch (error) {
+        console.error('Error serving timestamps:', error.message);
+        res.status(500).send('Error fetching timestamps.');
+    }
+});
 
 
 // Start Server
