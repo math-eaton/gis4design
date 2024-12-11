@@ -85,22 +85,22 @@ async function fetchGPDataByType(objectType) {
             }
         );
 
-        const normalizedObjectType = objectType.replace(/\s+/g, '').toUpperCase();
+        const normalizedObjectType = objectType.toUpperCase();
 
         const filteredData = response.data
-            .filter(gp => gp.OBJECT_TYPE?.replace(/\s+/g, '').toUpperCase() === normalizedObjectType)
+            .filter(gp => gp.OBJECT_TYPE?.toUpperCase() === normalizedObjectType)
             .map(gp => ({
                 name: gp.OBJECT_NAME,
                 catalogNumber: gp.NORAD_CAT_ID.toString(),
                 tleLine1: gp.TLE_LINE1 || null,
                 tleLine2: gp.TLE_LINE2 || null,
                 country: gp.COUNTRY_CODE || "Unknown",
-                objType: gp.OBJECT_TYPE.replace(' ', "") || "Unknown",
+                objType: gp.OBJECT_TYPE || "Unknown", // Keep the original type here
             }));
 
         console.log(`Filtered ${filteredData.length} items for ${objectType}`);
 
-        const cacheFile = path.join(CACHE_DIR, `${objectType.toLowerCase().replace(' ', '')}.json`);
+        const cacheFile = path.join(CACHE_DIR, `${objectType.toLowerCase().replace(/\s+/g, '_')}.json`);
         fs.writeFileSync(cacheFile, JSON.stringify(filteredData, null, 2));
         console.log(`${objectType} Data Cached at ${cacheFile}`);
 
@@ -147,7 +147,6 @@ function isCacheExpired(objectType) {
 }
 
 
-// Serve Data by Object Type
 // Serve Data by Object Type
 app.get('/satellites/:type', async (req, res) => {
     const { type } = req.params;
