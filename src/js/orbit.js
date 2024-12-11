@@ -414,7 +414,7 @@ function loadTLEData() {
         .catch(error => {
             console.warn('Error fetching TLE data from server:', error);
             console.log('Attempting to load data from local static file...');
-            fetch('cachedSatellites_celestrak.json')
+            fetch('orbital/cachedSatellites_celestrak.json')
                 .then(localResponse => {
                     if (!localResponse.ok) throw new Error('Local file fetch failed');
                     return localResponse.json();
@@ -588,7 +588,7 @@ function toggleCategoryVisibility(category) {
 
 // satellite material
 function createSatelliteMeshes(tleArray) {
-    const material = new THREE.MeshStandardMaterial({
+    const material = new THREE.MeshBasicMaterial({
         metalness: 1,
         roughness: 0.2,
         transparent: false,
