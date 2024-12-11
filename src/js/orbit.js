@@ -16,7 +16,7 @@ import { FlyControls } from 'three/examples/jsm/controls/FlyControls.js';
 // 'W' key toggles wireframe
 // 'R' key toggles rotation
 
-export function orbitalView(containerId, onGPDataLoadComplete) {
+export function orbitalView(containerId, onSatelliteLoadComplete) {
     let scene, camera, renderer, controls, pivot, moonPivot, sunMesh;
     let animationFrameId;
     let tleArray = [];
@@ -215,7 +215,7 @@ export function orbitalView(containerId, onGPDataLoadComplete) {
         setupChapterControls();
 
         // Load GP data and initialize satellite mesh
-        await loadGPData();
+        await loadSatelliteData();
 
         console.log('Initial tleArray:', tleArray);
         const payloadSatellites = tleArray.filter(sat => sat.objType === 'PAYLOAD');
@@ -231,7 +231,7 @@ export function orbitalView(containerId, onGPDataLoadComplete) {
         satelliteMesh = createSatelliteInstancedMesh(payloadSatellites, new THREE.MeshBasicMaterial(), currentChapter === 'smallScale');
         pivot.add(satelliteMesh);
     
-        switchClassification('orbitClass');
+        switchClassification('group_major');
         
                
         loadAllData();
@@ -412,142 +412,170 @@ export function orbitalView(containerId, onGPDataLoadComplete) {
 let satelliteMesh;
 let geostationaryInstancedMesh;
 
-async function loadGPData() {
-    const types = ['PAYLOAD', 'ROCKET BODY', 'DEBRIS'];
-    const cacheFiles = {
-        PAYLOAD: 'cache/payload.json',
-        'ROCKET BODY': 'cache/rocket_body.json',
-        DEBRIS: 'cache/debris.json',
-    };
+function loadSatelliteData() {
+    const groupMajors = [
+        "Last 30 Days", "Space Stations", "100 Brightest", "Debris", 
+        "Weather & Earth Resources", "Communications", "Navigation", 
+        "Scientific", "Miscellaneous"
+    ];
 
-    const fetchPromises = types.map(type =>
-        fetch(`https://orbital-bbfd.onrender.com/satellites/${type}`)
-            .then(response => {
-                if (!response.ok) throw new Error(`Failed to load ${type} GP data`);
-                return response.json();
-            })
-            .then(data => ({ type, satellites: data }))
-            .catch(error => {
-                console.warn(`Error fetching ${type} data from server, attempting local cache:`, error);
-                const cacheFile = cacheFiles[type.toUpperCase()];
-                return fetch(cacheFile)
-                    .then(localResponse => {
-                        if (!localResponse.ok) throw new Error(`Failed to load local cache for ${type}`);
-                        return localResponse.json();
-                    })
-                    .then(localData => {
-                        console.log(`Loaded ${type} data from local cache.`);
-                        return { type, satellites: localData };
-                    })
-                    .catch(localError => {
-                        console.error(`Failed to load ${type} data from both server and local cache:`, localError);
-                        return { type, satellites: [] }; // Fallback to an empty array
-                    });
-            })
-    );
+    // Fetch data for all group_major endpoints in parallel
+    Promise.all(groupMajors.map(groupMajor => loadGroupMajorData(groupMajor)))
+        .then(groupDataArrays => {
+            // Combine all group data into one array
+            const allSatellites = groupDataArrays.flat();
 
-    const results = await Promise.all(fetchPromises);
+            // Process and store data for rendering
+            processSatelliteData(allSatellites);
 
-    // Log raw results for debugging
-    console.log('Loaded GP data results:', results);
+            console.log("Successfully loaded and processed all satellite data.");
+            onSatelliteLoadComplete(); // Callback to signal completion
+        })
+        .catch(error => {
+            console.error("Failed to load some satellite data:", error);
+            console.log("Attempting to load data from local cache...");
 
-    // Filter payload satellites for initial rendering
-    const payloadData = results.find(result => result.type === 'PAYLOAD')?.satellites || [];
-    console.log('Payload data:', payloadData);
-
-    // Add payload data to tleArray
-    tleArray = payloadData;
-
-    // Cache other satellite data for future toggling
-    results
-        .filter(result => result.type !== 'PAYLOAD')
-        .forEach(result => {
-            tleArray.push(...result.satellites);
+            // Fallback to local cache
+            fetch('cache/active.json')
+                .then(localResponse => {
+                    if (!localResponse.ok) throw new Error('Local cache fetch failed');
+                    return localResponse.json();
+                })
+                .then(processSatelliteData)
+                .catch(localError => {
+                    console.error("Failed to load satellite data from both server and local cache:", localError);
+                    onSatelliteLoadComplete(); // Trigger callback even if loading fails
+                });
         });
-
-    console.log('Final tleArray after caching:', tleArray);
-
-    onGPDataLoadComplete();
 }
 
-function processGPData(satellites) {
-    console.log('Processing satellites:', satellites);
+async function loadGroupMajorData(groupMajor) {
+    const endpoint = `https://orbital-bbfd.onrender.com/satellites/${groupMajor}`;
+    try {
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error(`Failed to load data for ${groupMajor}`);
+        const data = await response.json();
 
-    if (!Array.isArray(satellites)) {
-        console.error(`Expected an array of satellites but got:`, satellites);
-        throw new TypeError('Satellites must be an array');
+        const flattenedData = flattenSatelliteData(groupMajor, data);
+        console.log(`Loaded and flattened data for ${groupMajor}:`, flattenedData);
+        return flattenedData;
+    } catch (error) {
+        console.warn(`Error loading data for ${groupMajor}:`, error);
+        return []; // Return an empty array if fetching fails
+    }
+}
+
+function flattenSatelliteData(groupMajor, groupData) {
+    const tleArray = [];
+
+    // Ensure `data` exists and is structured correctly
+    if (groupData.data && typeof groupData.data === 'object') {
+        Object.entries(groupData.data).forEach(([groupMinor, satellites]) => {
+            if (Array.isArray(satellites)) {
+                satellites.forEach((sat) => {
+                    if (sat.tleLine1 && sat.tleLine2) {
+                        tleArray.push({
+                            name: sat.name || 'Unknown',
+                            tleLine1: sat.tleLine1,
+                            tleLine2: sat.tleLine2,
+                            country: sat.country || 'Unknown',
+                            orbitClass: sat.orbitClass || 'Unknown',
+                            objType: sat.objType || 'Unknown',
+                            group_major: groupMajor,
+                            group_minor: groupMinor, // Preserved for future use
+                        });
+                    } else {
+                        console.warn(`Satellite missing TLE data:`, sat);
+                    }
+                });
+            } else {
+                console.warn(`Expected an array of satellites under group_minor: ${groupMinor}, but got:`, satellites);
+            }
+        });
+    } else {
+        console.warn(`Expected a 'data' object for group_major: ${groupMajor}, but got:`, groupData.data);
     }
 
-    satellites.forEach(sat => {
-        try {
-            const satrec = satellite.twoline2satrec(
-                sat.tleLine1.trim(),
-                sat.tleLine2.trim()
-            );
+    return tleArray;
+}
 
-            // Attach metadata for visualization
-            sat.metadata = {
-                satrec, // Store the satrec for propagation
-                orbitClass: sat.orbitClass, // computed while caching
-                ownerCountry: sat.country || 'Unknown',
-                satelliteType: sat.objType || 'Unknown',
-            };
-        } catch (err) {
-            console.error('Failed to process satellite:', sat.name, err);
-            sat.metadata = { orbitClass: 'unknown', ownerCountry: 'Unknown', satelliteType: 'Unknown' };
-        }
+
+function processSatelliteData(tleArray) {
+    if (!Array.isArray(tleArray) || tleArray.length === 0) {
+        console.error("No valid satellite data to process.");
+        return;
+    }
+
+    // Add metadata for classification
+    tleArray.forEach((sat) => {
+        sat.metadata = {
+            satrec: createSatrec(sat.tleLine1, sat.tleLine2), // Generate satrec for propagation
+            orbitClass: sat.orbitClass,
+            country: sat.country,
+            satelliteType: sat.objType,
+            group_major: sat.group_major,
+            group_minor: sat.group_minor,
+        };
     });
 
-    console.log('Processed satellites with metadata:', satellites);
+    console.log("Processed Satellite Data with Metadata:", tleArray);
 
-    // Create meshes for visualization
-    createSatelliteMeshes(satellites);
+    // Pass TLE data for mesh creation
+    createSatelliteMeshes(tleArray);
 }
 
-// Helper function to classify orbit type
-function determineOrbitClass(sat) {
+function createSatrec(tleLine1, tleLine2) {
     try {
-        const satrec = satellite.twoline2satrec(
-            sat.tleLine1.trim(),
-            sat.tleLine2.trim()
-        );
-        const inclination = satrec.inclo * (180 / Math.PI); // Convert inclination to degrees
-        const period = (2 * Math.PI) / satrec.no; // Orbital period in minutes
-
-        if (Math.abs(inclination) < 0.1 && Math.abs(period - 1436) < 1) return 'geostationary';
-        if (Math.abs(period - 1436) < 10) return 'geosynchronous';
-        if (Math.abs(inclination - 98) < 2 && Math.abs(period - 100) < 5) return 'sunSynchronous';
-        return 'nonGeostationary';
-    } catch (err) {
-        console.error('Failed to determine orbit class for satellite:', sat.name, err);
-        return 'unknown';
+        return satellite.twoline2satrec(tleLine1.trim(), tleLine2.trim());
+    } catch (error) {
+        console.warn("Failed to create Satrec from TLE:", { tleLine1, tleLine2 }, error);
+        return null;
     }
 }
+
 
 const classificationSchemes = {
     orbitClass: {
-        getClass: (sat) => sat.orbitClass, 
-        colors: { 
-            geostationary: 0xffffff, 
-            sunSynchronous: 0xffff00, 
+        getClass: (sat) => sat.orbitClass,
+        colors: {
+            geostationary: 0xffffff,
+            sunSynchronous: 0xffff00,
             nonGeostationary: 0xff0000,
-            unknown: 0xff00ff
+            unknown: 0xff00ff,
         },
     },
-    ownerCountry: {
-        getClass: (sat) => sat.ownerCountry, // Example: "USA", "China", "Others"
-        colors: { 
-            US: 0x0000ff, 
-            PRC: 0xff0000, 
-            Unknown: 0x00ff00 
+    country: {
+        getClass: (sat) => sat.country || 'Unknown', // Ensure fallback to 'Unknown' if country is not provided
+        colors: {
+            US: 0x0000ff,
+            PRC: 0xff0000,
+            Russia: 0x00ffff,
+            Unknown: 0x00ff00,
+            ESA: 0xffff00, // European Space Agency
+        },
+    },
+    group_major: {
+        getClass: (sat) => sat.group_major,
+        colors: {
+            "Last 30 Days": 0xff0000,
+            "Space Stations": 0x00ff00,
+            "100 Brightest": 0x0000ff,
+            Debris: 0xffff00,
+            "Weather & Earth Resources": 0xff8800,
+            Communications: 0x0088ff,
+            Navigation: 0x88ff00,
+            Scientific: 0xff00ff,
+            Miscellaneous: 0x888888,
         },
     },
     satelliteType: {
-        getClass: (sat) => sat.satelliteType, // Example: "GPS", "Weather", "Debris"
-        colors: { 
-            ROCKETBODY: 0x00ff00, 
-            Weather: 0x0088ff, 
-            DEBRIS: 0xff8800 },
+        getClass: (sat) => sat.objType || 'Unknown', // Example: "PAYLOAD", "ROCKET BODY", "DEBRIS"
+        colors: {
+            PAYLOAD: 0x00ff00,
+            "ROCKET BODY": 0x0000ff,
+            DEBRIS: 0xff0000,
+            Unknown: 0xffff00,
+        },
     },
 };
 
@@ -598,27 +626,20 @@ function applyClassification(instancedMesh, scheme, satellites) {
     instancedMesh.instanceMatrix.needsUpdate = true;
 }
 
-let activeScheme = 'orbitClass'; // Default scheme
+let activeScheme = 'group_major'; // Default scheme
 
 document.getElementById('orbit-class').addEventListener('click', () => {
     switchClassification('orbitClass');
 });
 
+document.getElementById('group-major').addEventListener('click', () => {
+    switchClassification('group_major');
+});
+
 document.getElementById('owner-country').addEventListener('click', () => {
-    switchClassification('ownerCountry');
+    switchClassification('country');
 });
 
-document.getElementById('payload-button').addEventListener('click', () => {
-    switchSatType('PAYLOAD');
-});
-
-document.getElementById('rocket-body-button').addEventListener('click', () => {
-    switchSatType('ROCKET BODY');
-});
-
-document.getElementById('debris-button').addEventListener('click', () => {
-    switchSatType('DEBRIS');
-});
 
 function switchClassification(newScheme) {
     if (!satelliteMesh || !satelliteMesh.count) {
@@ -655,21 +676,6 @@ function switchSatType(newType) {
     console.log(`Switched to satellite type: ${activeSatType}`);
 }
 
-
-function updateLegend() {
-    const legendContainer = document.getElementById('category-toggles');
-    legendContainer.innerHTML = '';
-
-    const { colors } = classificationSchemes[activeScheme];
-    for (const [category, colorHex] of Object.entries(colors)) {
-        const button = document.createElement('button');
-        button.style.background = `#${colorHex.toString(16)}`;
-        button.style.color = 'white';
-        button.textContent = category;
-        button.onclick = () => toggleCategoryVisibility(category);
-        legendContainer.appendChild(button);
-    }
-}
 
 function toggleCategoryVisibility(category) {
     // Implement logic to toggle visibility of specific categories
@@ -982,7 +988,7 @@ function setResponsiveCameraPosition() {
 
 // Function to fetch and set initial simulation time
 function initializeSimulationTime() {
-    return fetch('https://orbital-bbfd.onrender.com/timestamp') // Fetch all timestamps from the server
+    return fetch('https://orbital-bbfd.onrender.com/timestamps') // Fetch all timestamps from the server
         .then(response => {
             if (!response.ok) {
                 throw new Error("Failed to fetch timestamps from server");
@@ -1062,32 +1068,6 @@ function updateEarthRotation() {
         pivot.rotateY(rotationAngle); // Apply Earth's rotation
     }
 }
-
-// function updateTrailGeometry(trail) {
-//     if (!trail.positions.length) return;
-
-//     if (!trail.lineMesh) {
-//         const geometry = new THREE.BufferGeometry();
-//         const material = new THREE.LineBasicMaterial({ color: 0xff0000, opacity: 0.5, transparent: true, alphaHash: true, premultipliedAlpha: true,
-//         });
-//         trail.lineMesh = new THREE.Line(geometry, material);
-//         scene.add(trail.lineMesh);
-//         }
-
-//     const positionsArray = new Float32Array(trail.positions.length * 3);
-//     trail.positions.forEach((pos, i) => {
-//         positionsArray[i * 3] = pos.x;
-//         positionsArray[i * 3 + 1] = pos.y;
-//         positionsArray[i * 3 + 2] = pos.z;
-//     });
-
-//     trail.lineMesh.geometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
-//     trail.lineMesh.geometry.setDrawRange(0, trail.positions.length);
-//     trail.lineMesh.geometry.attributes.position.needsUpdate = true;
-// }
-
-
-
 
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -1683,96 +1663,6 @@ function updateEarthRotation() {
     }
     
 
-    // scale bar
-    // function createScaleBar() {
-    //     const scaleBar = document.createElement("div");
-    //     scaleBar.id = "scale-bar";
-    //     scaleBar.style.position = "absolute";
-    //     scaleBar.style.height = "20px"; // Thickness of the scale bar
-    //     scaleBar.style.backgroundColor = "#ffd700"; // Gold color
-    //     document.body.appendChild(scaleBar);
-    
-    //     // Optional label for the scale bar
-    //     const scaleBarLabel = document.createElement("div");
-    //     scaleBarLabel.id = "scale-bar-label";
-    //     scaleBarLabel.style.position = "absolute";
-    //     scaleBarLabel.style.color = "#ffd700";
-    //     scaleBarLabel.style.fontSize = "12px";
-    //     scaleBarLabel.style.fontFamily = "Arial, sans-serif";
-    //     document.body.appendChild(scaleBarLabel);
-    
-    //     return { scaleBar, scaleBarLabel };
-    // }
-    
-    // Calculate the screen-space radius of Earth and update the scale bar position and length
-    // function updateScaleBar(camera, pivot, sphereRadiusKm, scaleBarElements) {
-    //     const { scaleBar, scaleBarLabel } = scaleBarElements;
-    
-    //     // Project Earth's center to screen space
-    //     const earthCenter = new THREE.Vector3(0, 0, 0).applyMatrix4(pivot.matrixWorld).project(camera);
-    //     const screenCenterX = (earthCenter.x * 0.5 + 0.5) * window.innerWidth;
-    //     const screenCenterY = (1 - (earthCenter.y * 0.5 + 0.5)) * window.innerHeight;
-    
-    //     // Define a 3D point on Earth's surface along the x-axis
-    //     const surfacePoint = new THREE.Vector3(sphereRadiusKm, 0, 0).applyMatrix4(pivot.matrixWorld).project(camera);
-    //     const surfacePointX = (surfacePoint.x * 0.5 + 0.5) * window.innerWidth;
-    //     const surfacePointY = (1 - (surfacePoint.y * 0.5 + 0.5)) * window.innerHeight;
-    
-    //     // Calculate the screen-space radius of Earth
-    //     const earthRadiusScreen = Math.sqrt(
-    //         Math.pow(screenCenterX - surfacePointX, 2) +
-    //         Math.pow(screenCenterY - surfacePointY, 2)
-    //     );
-    
-    //     // Calculate the position at 315 degrees from the Earth's center in screen space
-    //     const angleRadians = (315 * Math.PI) / 180;
-    //     const scaleBarX = screenCenterX + earthRadiusScreen * Math.cos(angleRadians);
-    //     const scaleBarY = screenCenterY + earthRadiusScreen * Math.sin(angleRadians);
-    
-    //     // Update scale bar length based on the screen-space Earth radius
-    //     const scaleBarLengthPx = earthRadiusScreen / 100; // Adjust scale bar length proportionally
-    
-    //     // Set scale bar styles for position and length
-    //     scaleBar.style.width = `${scaleBarLengthPx}px`;
-    //     // scaleBar.style.left = `${scaleBarX}px`;
-    //     // scaleBar.style.top = `${scaleBarY}px`;
-    //     // scaleBar.style.transform = `translate(-50%, -50%) rotate(-45deg)`; // Rotate to 315 degrees
-    
-    //     // Update scale bar label
-    //     // scaleBarLabel.style.left = `${scaleBarX + scaleBarLengthPx / 2}px`;
-    //     // scaleBarLabel.style.top = `${scaleBarY}px`;
-    //     // scaleBarLabel.innerHTML = `${(scaleBarLengthPx * (sphereRadiusKm / earthRadiusScreen)).toFixed(0)} km`; // Approximate real-world length
-    // }
-    
-                
-    // function createScaleBarLabel(scaleBarLengthKm) {
-    //     const scaleBarLabel = document.createElement("div");
-    //     scaleBarLabel.id = "scale-bar-label";
-    //     scaleBarLabel.style.position = "absolute";
-    //     scaleBarLabel.style.color = "#ffd700";
-    //     scaleBarLabel.style.fontSize = "12px";
-    //     scaleBarLabel.style.fontFamily = "Arial, sans-serif";
-    //     scaleBarLabel.innerHTML = `${scaleBarLengthKm.toFixed(0)} km`; // Label showing "6371 km"
-    //     document.body.appendChild(scaleBarLabel);
-    // }
-    
-    // function updateScaleBarLabelPosition(scaleBarLengthKm) {
-    //     const scaleBarLabel = document.getElementById("scale-bar-label");
-    //     if (!scaleBarLabel) return;
-    
-    //     const scaleBarPosition = new THREE.Vector3(scaleBarLengthKm / earthRadiusKm / 2, 0, 0);
-    //     scaleBarPosition.applyMatrix4(pivot.matrixWorld); // Get world position of the scale bar end
-    //     const projectedPosition = scaleBarPosition.project(camera);
-    
-    //     // Convert to screen space
-    //     const screenX = (projectedPosition.x * 0.5 + 0.5) * window.innerWidth;
-    //     const screenY = (1 - (projectedPosition.y * 0.5 + 0.5)) * window.innerHeight;
-    
-    //     // Update label position
-    //     scaleBarLabel.style.left = `${screenX}px`;
-    //     scaleBarLabel.style.top = `${screenY}px`;
-    // }
-    
     
         function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;

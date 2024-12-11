@@ -32,7 +32,7 @@ function animateLoadingText() {
 const stopAnimation = animateLoadingText();
 
 // hide loading overlay when satellites load
-function onTLELoadComplete() {
+function onSatelliteLoadComplete() {
     setTimeout(() => {
         document.getElementById('loadingOverlay').style.display = 'none';
         stopAnimation(); // Stop the loading text animation
@@ -40,4 +40,4 @@ function onTLELoadComplete() {
 }
 
 // init
-orbitalView(defaultContainer, onTLELoadComplete);
+orbitalView(defaultContainer, onSatelliteLoadComplete);
