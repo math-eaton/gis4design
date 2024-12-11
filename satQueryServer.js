@@ -29,7 +29,7 @@ const CELESTRAK_API = 'https://celestrak.org/NORAD/elements/gp.php';
 const SPACETRACK_API = 'https://www.space-track.org';
 const CACHE_DIR = path.join(__dirname, 'cache');
 const GROUPS_FILE = path.join(__dirname, 'groups.json');
-const TIMESTAMPS_FILE = path.join(CACHE_DIR, 'timestamps.json');
+const TIMESTAMPS_FILE = path.join(__dirname, 'timestamps.json');
 const PORT = process.env.PORT || 3000;
 
 let spaceTrackCookie = null;
