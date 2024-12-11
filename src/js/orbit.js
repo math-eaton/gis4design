@@ -16,7 +16,7 @@ import { FlyControls } from 'three/examples/jsm/controls/FlyControls.js';
 // 'W' key toggles wireframe
 // 'R' key toggles rotation
 
-export function orbitalView(containerId, onTLELoadComplete) {
+export function orbitalView(containerId, onGPDataLoadComplete) {
     let scene, camera, renderer, controls, pivot, moonPivot, sunMesh;
     let animationFrameId;
     let tleArray = [];
@@ -213,7 +213,7 @@ export function orbitalView(containerId, onTLELoadComplete) {
     
         addMoon();
         setupChapterControls();
-        loadTLEData();
+        loadGPData();
         loadAllData();
         initializeSlider();
     
@@ -392,64 +392,94 @@ export function orbitalView(containerId, onTLELoadComplete) {
 let satelliteMesh;
 let geostationaryInstancedMesh;
 
-function loadTLEData() {
+function loadGPData() {
     const types = ['PAYLOAD', 'ROCKET BODY', 'DEBRIS'];
+    const cacheFiles = {
+        PAYLOAD: 'cache/payload.json',
+        'ROCKET BODY': 'cache/rocket_body.json',
+        DEBRIS: 'cache/debris.json',
+    };
+
     const fetchPromises = types.map(type =>
         fetch(`https://orbital-bbfd.onrender.com/satellites/${type}`)
             .then(response => {
-                if (!response.ok) throw new Error(`Failed to load ${type} TLE data`);
+                if (!response.ok) throw new Error(`Failed to load ${type} GP data`);
                 return response.json();
             })
-            .then(data => ({ type, data }))
+            .then(data => ({ type, satellites: data })) // Rename `data` for clarity
+            .catch(error => {
+                console.warn(`Error fetching ${type} data from server, attempting local cache:`, error);
+                // Attempt to load from local cache
+                const cacheFile = cacheFiles[type.toUpperCase()];
+                return fetch(cacheFile)
+                    .then(localResponse => {
+                        if (!localResponse.ok) throw new Error(`Failed to load local cache for ${type}`);
+                        return localResponse.json();
+                    })
+                    .then(localData => {
+                        console.log(`Loaded ${type} data from local cache.`);
+                        return { type, satellites: localData };
+                    })
+                    .catch(localError => {
+                        console.error(`Failed to load ${type} data from both server and local cache:`, localError);
+                        return { type, satellites: [] }; // Fallback to an empty array
+                    });
+            })
     );
 
     Promise.all(fetchPromises)
         .then(results => {
             const allSatellites = results.reduce((acc, result) => {
-                acc[result.type] = result.data.satellites;
+                acc[result.type] = result.satellites;
                 return acc;
             }, {});
-            processTLEData(allSatellites); // Pass all satellite data to your visualization loop
+
+            processGPData(allSatellites); // Pass all satellite data to your visualization loop
         })
         .catch(error => {
-            console.warn('Error fetching TLE data from server:', error);
-            console.log('Attempting to load data from local static file...');
-            fetch('orbital/cachedSatellites_celestrak.json')
-                .then(localResponse => {
-                    if (!localResponse.ok) throw new Error('Local file fetch failed');
-                    return localResponse.json();
-                })
-                .then(localData => processTLEData(localData))
-                .catch(localError => {
-                    console.error('Failed to load TLE data from both server and local file:', localError);
-                    onTLELoadComplete(); // Still trigger the callback if loading fails
-                });
+            console.error('Failed to load GP data for all types:', error);
+            onGPDataLoadComplete(); // Trigger callback even if loading fails
         });
 }
 
-function processTLEData(tleData) {
-    // Check if the data is an array or has a `satellites` key
-    tleArray = Array.isArray(tleData) ? tleData : tleData.satellites;
+function processGPData(allSatellites) {
+    console.log('Received allSatellites:', allSatellites);
 
-    if (!Array.isArray(tleArray)) {
-        throw new Error('Invalid TLE data format: Expected an array');
-    }
+    Object.entries(allSatellites).forEach(([type, satellites]) => {
+        console.log(`Processing type: ${type}, Satellites:`, satellites);
+        if (!Array.isArray(satellites)) {
+            console.error(`Expected an array for type ${type}, but got:`, satellites);
+            throw new TypeError(`Satellites for type ${type} is not an array`);
+        }
 
-    // Add metadata for classification
-    tleArray.forEach((sat) => {
-        sat.metadata = {
-            orbitClass: determineOrbitClass(sat),
-            ownerCountry: sat.country || 'Unknown', // Example: Add owner metadata
-            satelliteType: sat.objectType || 'Unknown', // Example: Add type metadata
-        };
+        // Add metadata and propagate TLE for each satellite
+        satellites.forEach(sat => {
+            const satrec = satellite.twoline2satrec(
+                sat.tleLine1.trim(),
+                sat.tleLine2.trim()
+            );
+
+            // Attach metadata for visualization
+            sat.metadata = {
+                satrec, // Store the satrec for propagation
+                orbitClass: determineOrbitClass(sat),
+                ownerCountry: sat.country || 'Unknown',
+                satelliteType: sat.objType || 'Unknown',
+                type, // Include the satellite type (e.g., PAYLOAD, ROCKET BODY, DEBRIS)
+            };
+        });
     });
 
-    console.log("TLE Data with Metadata:", tleArray);
+    // Combine all satellites into a single array for visualization
+    const allSatelliteData = Object.values(allSatellites).flat();
 
-    // Pass the entire array for mesh creation
-    createSatelliteMeshes(tleArray);
+    console.log('All GP Data with Metadata:', allSatelliteData);
 
-    onTLELoadComplete(); // Callback when TLE data is successfully loaded
+    // Create meshes for visualization
+    createSatelliteMeshes(allSatelliteData);
+
+    // Notify that the GP data has been successfully loaded
+    onGPDataLoadComplete();
 }
 
 // Helper function to classify orbit type
@@ -587,17 +617,16 @@ function toggleCategoryVisibility(category) {
 
 
 // satellite material
-function createSatelliteMeshes(tleArray) {
+function createSatelliteMeshes(allSatellites) {
     const material = new THREE.MeshBasicMaterial({
         metalness: 1,
         roughness: 0.2,
         transparent: false,
         wireframe: true,
-        // opacity: 0.8,
     });
 
     // Create a single instanced mesh for all satellites
-    satelliteMesh = createSatelliteInstancedMesh(tleArray, material, currentChapter === 'smallScale');
+    satelliteMesh = createSatelliteInstancedMesh(allSatellites, material, currentChapter === 'smallScale');
 
     // Add the consolidated mesh to the scene
     scene.add(satelliteMesh);
@@ -665,14 +694,9 @@ function isSatelliteVisible(position) {
 }
 
 // create satellite instances (scale dependent appearance)
-function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
-    if (!tleArray || !Array.isArray(tleArray) || tleArray.length === 0) {
-        throw new Error("Invalid TLE array passed to createSatelliteInstancedMesh.");
-    }
+function createSatelliteInstancedMesh(satellites, material, isFixedView = false) {
+    const instanceCount = satellites.length;
 
-    const instanceCount = tleArray.length;
-
-    // Geometry scaling based on view type
     const satelliteGeometry = isFixedView
         ? new THREE.SphereGeometry(0.002, 8, 8) // Smaller, higher resolution for fixed view
         : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for smallScale view
@@ -682,10 +706,9 @@ function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
     const dummy = new THREE.Object3D();
     const gmst = satellite.gstime(simulationTime);
 
-    tleArray.forEach((sat, i) => {
+    satellites.forEach((sat, i) => {
         try {
-            const satrec = satellite.twoline2satrec(sat.tleLine1.trim(), sat.tleLine2.trim());
-            instancedMesh.userData[i] = { satrec, metadata: sat.metadata }; // Store metadata for classification
+            const { satrec, metadata } = sat.metadata;
 
             // Propagate TLE to get the initial position
             const position = propagateSatellitePosition(satrec, gmst, false);
@@ -694,7 +717,6 @@ function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
                 dummy.updateMatrix();
                 instancedMesh.setMatrixAt(i, dummy.matrix);
             } else {
-                // Log and assign a default position if propagation fails
                 console.warn(`Failed to propagate position for satellite: ${sat.name}`);
                 dummy.position.set(0, 0, 0);
                 dummy.updateMatrix();
@@ -702,7 +724,7 @@ function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
             }
 
             // Assign initial color based on classification scheme
-            const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
+            const color = new THREE.Color(getColorByScheme(activeScheme, metadata));
             colors.set(color.toArray(), i * 3);
         } catch (error) {
             console.error(`Error initializing satellite ${sat.name}:`, error);
@@ -715,6 +737,7 @@ function createSatelliteInstancedMesh(tleArray, material, isFixedView = false) {
 
     return instancedMesh;
 }
+
 // Helper function to propagate satellite position
 function propagateSatellitePosition(satrec, gmst, isGeostationary) {
     const positionAndVelocity = satellite.propagate(satrec, simulationTime);
@@ -874,39 +897,75 @@ function setResponsiveCameraPosition() {
     const timeDelta = 1000 / 24; // 1-second increment per frame @ N fps divisor
     let timeMultiplier = 1000; // Overall simulation speed multiplier
 
-    // Function to fetch and set initial simulation time
-    function initializeSimulationTime() {
-        return fetch('https://orbital-bbfd.onrender.com/satellites') // Use the metadata endpoint
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Failed to fetch last cache time");
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (!data.timestamp) {
-                    throw new Error("Timestamp not found in response");
-                }
-                simulationTime = new Date(data.timestamp);
-                document.getElementById("simulation-time").textContent = simulationTime
-                    .toUTCString()
-                    .replace("GMT", "UTC");
-            })
-            .catch(error => {
-                console.error("Error loading cache time:", error);
-                simulationTime = new Date('2024-11-01T00:00:00Z'); // Fallback
-            });
-    }
-            
-    function updateSimulationTime() {
-        simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
-        const displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
-        document.getElementById("simulation-time").textContent = displayTime;
-    
-        // Update Sun's position with new simulation time
-        updateSunPosition(simulationTime, scaleFactor);
-    }
-    
+// Function to fetch and set initial simulation time
+function initializeSimulationTime() {
+    return fetch('https://orbital-bbfd.onrender.com/timestamp') // Fetch all timestamps from the server
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Failed to fetch timestamps from server");
+            }
+            return response.json();
+        })
+        .then(timestamps => {
+            // Use the LATEST timestamp if available, or fallback to PAYLOAD
+            const latestTimestamp = Math.max(...Object.values(timestamps).filter(ts => ts > 0));
+            const payloadTimestamp = timestamps.PAYLOAD || null;
+
+            if (!latestTimestamp && !payloadTimestamp) {
+                throw new Error("No valid timestamps found in server response");
+            }
+
+            simulationTime = new Date(latestTimestamp || payloadTimestamp);
+            document.getElementById("simulation-time").textContent = simulationTime
+                .toUTCString()
+                .replace("GMT", "UTC");
+        })
+        .catch(serverError => {
+            console.error("Error loading timestamps from server, attempting local cache:", serverError);
+
+            // Fallback to local cache
+            return fetch('cache/timestamps.json')
+                .then(localResponse => {
+                    if (!localResponse.ok) {
+                        throw new Error("Failed to fetch timestamps from local cache");
+                    }
+                    return localResponse.json();
+                })
+                .then(timestamps => {
+                    // Use the LATEST timestamp if available, or fallback to PAYLOAD
+                    const latestTimestamp = Math.max(...Object.values(timestamps).filter(ts => ts > 0));
+                    const payloadTimestamp = timestamps.PAYLOAD || null;
+
+                    if (!latestTimestamp && !payloadTimestamp) {
+                        throw new Error("No valid timestamps found in local cache");
+                    }
+
+                    simulationTime = new Date(latestTimestamp || payloadTimestamp);
+                    document.getElementById("simulation-time").textContent = simulationTime
+                        .toUTCString()
+                        .replace("GMT", "UTC");
+                })
+                .catch(localError => {
+                    console.error("Error loading timestamps from local cache, using hardcoded fallback:", localError);
+
+                    // Fallback to hardcoded date
+                    simulationTime = new Date('2024-11-01T00:00:00Z');
+                    document.getElementById("simulation-time").textContent = simulationTime
+                        .toUTCString()
+                        .replace("GMT", "UTC");
+                });
+        });
+}
+
+// Function to update simulation time
+function updateSimulationTime() {
+    simulationTime = new Date(simulationTime.getTime() + timeDelta * timeMultiplier);
+    const displayTime = simulationTime.toUTCString().replace("GMT", "UTC");
+    document.getElementById("simulation-time").textContent = displayTime;
+
+    // Update Sun's position with new simulation time
+    updateSunPosition(simulationTime, scaleFactor);
+}
 
 // Adjust Earth rotation based on centralized simulation time
 function updateEarthRotation() {

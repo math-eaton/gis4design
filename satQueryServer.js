@@ -28,13 +28,31 @@ if (!spacetrackUsername || !spacetrackPassword) {
 
 const port = process.env.PORT || 3000;
 const CACHE_DIR = path.join(__dirname, 'cache');
-const TIMESTAMP_FILES = {
-    PAYLOAD: path.join(CACHE_DIR, 'payload_timestamp.json'),
-    'ROCKET BODY': path.join(CACHE_DIR, 'rocket_body_timestamp.json'),
-    DEBRIS: path.join(CACHE_DIR, 'debris_timestamp.json'),
-};
+const TIMESTAMPS_FILE = path.join(CACHE_DIR, 'timestamps.json');
 
 let spaceTrackCookie = null; // Store the session cookie
+
+// Load or initialize timestamps
+function getTimestamps() {
+    if (fs.existsSync(TIMESTAMPS_FILE)) {
+        return JSON.parse(fs.readFileSync(TIMESTAMPS_FILE, 'utf-8'));
+    }
+    const initialTimestamps = {
+        PAYLOAD: 0,
+        'ROCKET BODY': 0,
+        DEBRIS: 0,
+    };
+    fs.writeFileSync(TIMESTAMPS_FILE, JSON.stringify(initialTimestamps, null, 2));
+    return initialTimestamps;
+}
+
+// Update timestamp for a specific type
+function updateTimestamp(objectType) {
+    const timestamps = getTimestamps();
+    timestamps[objectType] = Date.now();
+    fs.writeFileSync(TIMESTAMPS_FILE, JSON.stringify(timestamps, null, 2));
+}
+
 
 // Login to Space-Track and get a session cookie
 async function loginToSpaceTrack() {
@@ -65,7 +83,8 @@ async function loginToSpaceTrack() {
     }
 }
 
-// Fetch GP Data and Filter by Type
+const UNIVERSAL_TIMESTAMP_FILE = path.join(CACHE_DIR, 'timestamp.json');
+
 async function fetchGPDataByType(objectType) {
     if (!spaceTrackCookie) {
         const loggedIn = await loginToSpaceTrack();
@@ -95,7 +114,7 @@ async function fetchGPDataByType(objectType) {
                 tleLine1: gp.TLE_LINE1 || null,
                 tleLine2: gp.TLE_LINE2 || null,
                 country: gp.COUNTRY_CODE || "Unknown",
-                objType: gp.OBJECT_TYPE || "Unknown", // Keep the original type here
+                objType: gp.OBJECT_TYPE || "Unknown",
             }));
 
         console.log(`Filtered ${filteredData.length} items for ${objectType}`);
@@ -104,9 +123,8 @@ async function fetchGPDataByType(objectType) {
         fs.writeFileSync(cacheFile, JSON.stringify(filteredData, null, 2));
         console.log(`${objectType} Data Cached at ${cacheFile}`);
 
-        // Update the last update time for this type
-        const timestampFile = TIMESTAMP_FILES[objectType];
-        fs.writeFileSync(timestampFile, JSON.stringify({ timestamp: Date.now() }, null, 2));
+        // Update timestamp for this type
+        updateTimestamp(objectType);
 
         return filteredData;
     } catch (error) {
@@ -125,7 +143,7 @@ async function fetchGPDataByType(objectType) {
 
 // Load Cached Data by Type
 function loadCachedDataByType(objectType) {
-    const cacheFile = path.join(CACHE_DIR, `${objectType.toLowerCase().replace(' ', '_')}.json`);
+    const cacheFile = path.join(CACHE_DIR, `${objectType.toLowerCase().replace(/\s+/g, '_')}.json`);
     console.log(`Loading cache from: ${cacheFile}`);
     if (fs.existsSync(cacheFile)) {
         const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
@@ -138,14 +156,11 @@ function loadCachedDataByType(objectType) {
 
 // Check if Cache Needs Update
 function isCacheExpired(objectType) {
-    const timestampFile = TIMESTAMP_FILES[objectType];
-    if (!fs.existsSync(timestampFile)) return true;
-
-    const timestamp = JSON.parse(fs.readFileSync(timestampFile, 'utf-8')).timestamp;
+    const timestamps = getTimestamps();
+    const timestamp = timestamps[objectType];
     const oneHourInMillis = 60 * 60 * 1000;
     return (Date.now() - timestamp) > oneHourInMillis; // Update hourly
 }
-
 
 // Serve Data by Object Type
 app.get('/satellites/:type', async (req, res) => {
@@ -165,15 +180,21 @@ app.get('/satellites/:type', async (req, res) => {
             console.log(`Using cached ${type} data.`);
         }
 
-        // Respond with satellites data and the latest timestamp for this type
-        const timestamp = fs.existsSync(TIMESTAMP_FILES[type.toUpperCase()])
-            ? JSON.parse(fs.readFileSync(TIMESTAMP_FILES[type.toUpperCase()], 'utf-8')).timestamp
-            : null;
-
-        res.json({ timestamp: timestamp || Date.now(), satellites: data });
+        res.json(data); // Only send satellite data
     } catch (error) {
         console.error(`Error fetching ${type} data:`, error);
         res.status(500).send(`Error fetching ${type} data`);
+    }
+});
+
+// Serve Universal Timestamp
+app.get('/timestamp', (req, res) => {
+    try {
+        const timestamps = getTimestamps();
+        res.json(timestamps); // Serve all timestamps
+    } catch (error) {
+        console.error('Error fetching timestamps:', error);
+        res.status(500).send('Error fetching timestamps');
     }
 });
 
