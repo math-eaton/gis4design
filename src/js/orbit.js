@@ -9,7 +9,6 @@ import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls
 import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls.js';
 import { MapControls } from 'three/examples/jsm/controls/MapControls.js';
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls.js';
-import { todo } from 'node:test';
 
 
 //
@@ -404,7 +403,7 @@ function loadSatelliteData() {
   
     
     const groupMajors = [
-        "active", "debris"
+        "active", "debris", "communications"
     ];
 
 
@@ -763,7 +762,7 @@ function createSatelliteInstancedMesh(satellites, material, isFixedView = false)
         ? new THREE.SphereGeometry(0.002, 4, 4) // Smaller, higher resolution for fixed view
         : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for smallScale view
 
-    // todo: tweak conditional material
+    // todo tweak conditional material
     // satelliteMaterial = isFixedView
     // ? new THREE.MeshStandardMaterial({
     //     metalness: 1,

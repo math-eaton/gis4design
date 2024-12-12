@@ -180,14 +180,6 @@ function determineOrbitClass(tleLine1, tleLine2) {
     }
 }
 
-function createSatrec(tleLine1, tleLine2) {
-    try {
-        return satellite.twoline2satrec(tleLine1.trim(), tleLine2.trim());
-    } catch (error) {
-        console.warn("Failed to create Satrec from TLE:", { tleLine1, tleLine2 }, error);
-        return null;
-    }
-}
 
 
 // Endpoint to Serve Group Data
@@ -266,9 +258,6 @@ app.get('/timestamps', (req, res) => {
 
 // Start Server
 app.listen(PORT, () => {
-    initializeTimestamps();
-    recacheAllGroups()
-    .then(() => console.log('Re-caching completed on server startup for expired groups.'))
-    .catch((error) => console.error('Error during re-caching:', error.message));
+    // initializeTimestamps();
     console.log(`Server running at http://localhost:${PORT}/satellites/:group_major`);
 });
