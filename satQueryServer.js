@@ -76,9 +76,10 @@ async function fetchSpaceTrackData() {
             name: gp.OBJECT_NAME,
             tleLine1: gp.TLE_LINE1 || null,
             tleLine2: gp.TLE_LINE2 || null,
+            orbitClass: determineOrbitClass(gp.TLE_LINE1, gp.TLE_LINE2),
             country: gp.COUNTRY_CODE || 'Unknown',
             objType: gp.OBJECT_TYPE || 'Unknown',
-            orbitClass: determineOrbitClass(gp.TLE_LINE1, gp.TLE_LINE2),
+            // satrec: createSatrec(gp.TLE_LINE1, gp.TLE_LINE2),
         }));
     } catch (error) {
         console.error('Error fetching GP data from Space-Track:', error.message);
@@ -178,6 +179,16 @@ function determineOrbitClass(tleLine1, tleLine2) {
         return 'unknown';
     }
 }
+
+function createSatrec(tleLine1, tleLine2) {
+    try {
+        return satellite.twoline2satrec(tleLine1.trim(), tleLine2.trim());
+    } catch (error) {
+        console.warn("Failed to create Satrec from TLE:", { tleLine1, tleLine2 }, error);
+        return null;
+    }
+}
+
 
 // Endpoint to Serve Group Data
 app.get('/satellites/:group_major', async (req, res) => {
