@@ -407,7 +407,7 @@ function loadSatelliteData() {
   
     
     const endpoints = [
-        "100 Brightest", "Space Stations", "Active", "Debris", 
+        "100 Brightest", "Space Stations", "Debris", "Navigation", "Communications", "Scientific"
     ];
 
 
@@ -422,6 +422,10 @@ function loadSatelliteData() {
 
             console.log("Successfully loaded and processed all satellite data.");
             onSatelliteLoadComplete(); // Callback to signal completion
+
+            // Ensure legend initializes with the filtered active scheme
+            updateLegend(activeScheme);
+
         })
         .catch(error => {
             console.error("Failed to load some satellite data:", error);
@@ -498,6 +502,14 @@ function processSatelliteData(tleArray) {
         return;
     }
 
+    const representedClasses = {
+        group_major: new Set(),
+        group_minor: new Set(),
+        orbitClass: new Set(),
+        country: new Set(),
+    };
+
+
     // Add metadata for classification
     tleArray.forEach((sat) => {
         sat.metadata = {
@@ -508,10 +520,19 @@ function processSatelliteData(tleArray) {
             group_major: sat.group_major,
             group_minor: sat.group_minor,
         };
+
+        
+        // Collect represented classes for legend visibility 
+        representedClasses.group_major.add(sat.metadata.group_major);
+        representedClasses.group_minor.add(sat.metadata.group_minor);
+        representedClasses.orbitClass.add(sat.metadata.orbitClass);
+        representedClasses.country.add(sat.metadata.country);
     });
 
 
     // console.log("Processed Satellite Data with Metadata:", tleArray);
+
+    filterClassificationSchemes(representedClasses);
 
     // Pass TLE data for mesh creation
     createSatelliteMeshes(tleArray);
@@ -567,6 +588,7 @@ function createSatrec(tleLine1, tleLine2) {
 // };
 
 
+
 // Transform external config into the classificationSchemes format
 function populateClassificationSchemes(config) {
     const classificationSchemes = {};
@@ -582,6 +604,24 @@ function populateClassificationSchemes(config) {
 
     return classificationSchemes;
 }
+
+function filterClassificationSchemes(representedClasses) {
+    for (const [scheme, { colors }] of Object.entries(classificationSchemes)) {
+        const representedSet = representedClasses[scheme];
+
+        if (!representedSet) continue; // Skip schemes not in representedClasses
+
+        // Remove unrepresented classes from the colors object
+        for (const category of Object.keys(colors)) {
+            if (!representedSet.has(category)) {
+                delete colors[category];
+            }
+        }
+    }
+
+    console.log("Filtered Classification Schemes:", classificationSchemes);
+}
+
 
 // Main Function to Load and Initialize Classification Schemes
 async function initClassificationSchemes(configPath) {
@@ -609,7 +649,6 @@ function getColorByScheme(scheme, sat) {
     const colorCode = colors[category] || 0xff0000; // Default to red if no color is defined
     return new THREE.Color(colorCode); // Pass the color code as a number
 }
-
 
 function applyClassification(instancedMesh, scheme, satellites) {
     if (!instancedMesh || !instancedMesh.count) {
@@ -646,6 +685,7 @@ function applyClassification(instancedMesh, scheme, satellites) {
     
         instancedMesh.setMatrixAt(i, dummy.matrix); // Retain position
         colors.set(color.toArray(), i * 3); // Set color
+        
     });
 
     instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
@@ -677,17 +717,28 @@ function switchClassification(newScheme) {
         return;
     }
 
+    if (activeScheme) {
+        resetSatelliteVisibility(satelliteMesh, activeScheme);
+    }
+
     activeScheme = newScheme;
-    // const filteredSatellites = tleArray.filter(sat => sat.group_major === activeSatType);
-    resetSatelliteVisibility(satelliteMesh); // Ensure all are visible
+    applyClassification(satelliteMesh, activeScheme, tleArray);
+
+
+    resetSatelliteVisibility(satelliteMesh, activeScheme); // Reset visibility for the new scheme
     resetSatelliteColors(satelliteMesh); // Apply colors for the new scheme
 
-    updateSatellitePositions(satelliteMesh); // Recalculate positions
+    updateSatellitePositions(satelliteMesh);
+
+
+    if (currentChapter !== 'smallScale') {
+        refreshSatelliteLines();
+    }
+
 
     updateLegend(activeScheme);
 
 }
-
 
 function updateLegend(activeScheme) {
     const legendContainer = document.getElementById('legend-container');
@@ -703,39 +754,38 @@ function updateLegend(activeScheme) {
 
     const { colors } = classificationSchemes[activeScheme];
 
-    // Sort categories alphabetically
+    // Sort and display only represented categories
     const sortedCategories = Object.keys(colors).sort();
 
-    // Populate legend
     sortedCategories.forEach((category) => {
         const color = colors[category];
         const legendItem = document.createElement('div');
         legendItem.className = 'legend-item';
-    
+
         // Color box
         const colorBox = document.createElement('div');
         colorBox.className = 'legend-color';
         colorBox.style.backgroundColor = `#${parseInt(color).toString(16).padStart(6, '0')}`;
-    
+
         // Label
         const label = document.createElement('span');
         label.textContent = category;
-    
-    
+
         // Add click event to filter satellites
         legendItem.addEventListener('click', () => {
-            console.log(`Clicked on category: ${category}`); // Debugging
+            console.log(`Clicked on category: ${category}`);
             toggleSatelliteFilter(activeScheme, category);
         });
-    
+
         // Append to legend item
         legendItem.appendChild(colorBox);
         legendItem.appendChild(label);
-    
+
         // Append legend item to container
         legendContainer.appendChild(legendItem);
     });
 }
+
 
 function toggleSatelliteFilter(scheme, category) {
     console.log(`Toggling filter for scheme: ${scheme}, category: ${category}`);
@@ -743,43 +793,58 @@ function toggleSatelliteFilter(scheme, category) {
     if (filteredClass === category) {
         console.log("Clearing filter");
         filteredClass = null;
-        resetSatelliteVisibility(satelliteMesh); // Reset visibility
+        resetSatelliteVisibility(scheme); // Reset visibility
     } else {
         console.log(`Filtering by category: ${category}`);
         filteredClass = category;
         filterSatellitesByClass(scheme, category);
     }
 
-    updateSatellitePositions(satelliteMesh); // Ensure positions are updated
+    updateSatelliteVisibility();
 }
 
+function updateSatelliteVisibility() {
+    const dummy = new THREE.Object3D();
 
-function setAllSatellitesVisible(visible) {
     satelliteMesh.userData.forEach((sat, i) => {
-        sat.visible = visible; // Update visibility state
-        updateMaterialVisibility(satelliteMesh, i, visible);
+        if (!sat || !sat.metadata) return;
+
+        // Toggle matrix and visibility
+        if (sat.visible) {
+            satelliteMesh.getMatrixAt(i, dummy.matrix);
+            satelliteMesh.setMatrixAt(i, dummy.matrix); // Restore matrix
+        } else {
+            satelliteMesh.setMatrixAt(i, new THREE.Matrix4()); // Hide satellite
+        }
     });
+
+    satelliteMesh.instanceMatrix.needsUpdate = true; // Ensure rendering updates
 }
+
 
 function filterSatellitesByClass(scheme, category) {
     const { getClass } = classificationSchemes[scheme];
 
     satelliteMesh.userData.forEach((sat, i) => {
-        const satelliteClass = getClass(sat.metadata);
+        let satelliteClass;
+        try {
+            satelliteClass = getClass(sat.metadata)?.toLowerCase() || 'unknown';
+        } catch (error) {
+            console.error(`Error extracting class for satellite ${i}:`, error);
+            satelliteClass = 'unknown';
+        }
 
-        console.log(`Satellite ${i} - Metadata:`, sat.metadata);
-        console.log(`Satellite ${i} - Class: ${satelliteClass}`);
-        console.log(`Filter Category: ${category}`);
-
-        const filterVisible = satelliteClass === category;
-        sat.visible = filterVisible; // Update visibility state
-        updateMaterialVisibility(satelliteMesh, i, filterVisible);
+        const normalizedCategory = category.trim().toLowerCase();
+        sat.visible = satelliteClass === normalizedCategory; // Update visibility
     });
 }
 
 function updateMaterialVisibility(mesh, index, filterVisible) {
     const instance = mesh.userData[index];
     if (!instance) return;
+
+    // Debugging
+    // console.log(`Satellite ${index} - Updating Material Visibility to: ${filterVisible}`);
 
     // Update visibility state directly in the material
     const material = mesh.material;
@@ -795,11 +860,14 @@ function updateMaterialVisibility(mesh, index, filterVisible) {
     mesh.instanceMatrix.needsUpdate = true;
 }
 
-function resetSatelliteVisibility(mesh) {
-    mesh.userData.forEach((sat, i) => {
-        sat.visible = true; // Reset visibility
-        updateMaterialVisibility(mesh, i, true); // Apply visibility to material
+function resetSatelliteVisibility(scheme) {
+    satelliteMesh.userData.forEach((sat) => {
+        if (!sat) return;
+
+        sat.visible = true; // Reset to visible
     });
+
+    updateSatelliteVisibility(); // Apply the reset visibility
 }
 
 
@@ -875,7 +943,7 @@ function isSatelliteVisible(position) {
     }
 
     // Check if the satellite is occluded by the Earth sphere
-    const earthCenter = new THREE.Vector3(0, 0, 0);
+    let earthCenter = new THREE.Vector3(0, 0, 0);
     const directionToSatellite = position.clone().sub(earthCenter).normalize();
     const directionToCamera = camera.position.clone().sub(earthCenter).normalize();
 
@@ -920,6 +988,7 @@ function createSatelliteInstancedMesh(satellites, material, isFixedView = false)
             instancedMesh.userData[i] = {
                 metadata: sat.metadata,
                 visible: true, // Start as visible
+    
             };
         } catch (error) {
             console.error(`Error initializing satellite ${sat.name}:`, error);
@@ -938,6 +1007,7 @@ function createSatelliteInstancedMesh(satellites, material, isFixedView = false)
 function updateSatellitePositions(instancedMesh) {
     const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
     const dummy = new THREE.Object3D();
+    let earthCenter = new THREE.Vector3(0, 0, 0);
 
     for (let i = 0; i < instancedMesh.count; i++) {
         const { metadata, visible } = instancedMesh.userData[i];
@@ -954,6 +1024,12 @@ function updateSatellitePositions(instancedMesh) {
         } else {
             instancedMesh.setMatrixAt(i, new THREE.Matrix4()); // Reset matrix for hidden satellites
         }
+
+        // Update lines in fixed view
+        if (currentChapter !== 'smallScale') {
+            updateSatelliteLine(i, position, earthCenter);
+        }
+        
     }
 
     instancedMesh.instanceMatrix.needsUpdate = true;
@@ -1016,6 +1092,22 @@ function updateSatelliteLine(index, satellitePosition, earthCenter) {
     line.geometry.attributes.position.needsUpdate = true;
 }
             
+function refreshSatelliteLines() {
+    satelliteLines.forEach((line, index) => {
+        const colorArray = satelliteMesh.instanceColor.array;
+
+        // Retrieve the updated satellite color
+        const satelliteColor = new THREE.Color(
+            colorArray[index * 3],
+            colorArray[index * 3 + 1],
+            colorArray[index * 3 + 2]
+        );
+
+        // Update the line material color
+        line.material.color = satelliteColor;
+        line.material.needsUpdate = true; // Ensure the material is refreshed
+    });
+}
 
 
 function setResponsiveCameraPosition() {
@@ -1339,11 +1431,7 @@ function updateEarthRotation() {
         camera.updateProjectionMatrix();
     }
 
-    // Simplify chapter controls
-    // function setupChapterControls() {
-    //     document.getElementById('chapter-smallScale').addEventListener('click', () => switchMode('smallScale'));
-    //     document.getElementById('chapter-largeScale').addEventListener('click', () => switchMode('largeScale'));
-    // }
+
 
     // Apply chapter-specific control settings
     function applyChapterConfig(chapter) {
