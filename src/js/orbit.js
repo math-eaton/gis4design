@@ -9,6 +9,7 @@ import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls
 import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls.js';
 import { MapControls } from 'three/examples/jsm/controls/MapControls.js';
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls.js';
+import { todo } from 'node:test';
 
 
 //
@@ -403,7 +404,7 @@ function loadSatelliteData() {
   
     
     const groupMajors = [
-        "debris"
+        "active", "debris"
     ];
 
 
@@ -540,8 +541,8 @@ const classificationSchemes = {
             US: 0x0000ff,
             PRC: 0xff0000,
             Russia: 0x00ffff,
+            ESA: 0xffff00,
             Unknown: 0x00ff00,
-            ESA: 0xffff00, // European Space Agency
         },
     },
     group_major: {
@@ -679,7 +680,7 @@ function createSatelliteMeshes(allSatellites) {
     // console.log('All satellites passed to createSatelliteMeshes:', allSatellites);
     console.log('Satellite count:', allSatellites.length);
 
-    const material = new THREE.PointsMaterial({
+    const material = new THREE.MeshStandardMaterial({
         metalness: 1,
         roughness: 0.2,
         transparent: false,
@@ -761,6 +762,23 @@ function createSatelliteInstancedMesh(satellites, material, isFixedView = false)
     const satelliteGeometry = isFixedView
         ? new THREE.SphereGeometry(0.002, 4, 4) // Smaller, higher resolution for fixed view
         : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for smallScale view
+
+    // todo: tweak conditional material
+    // satelliteMaterial = isFixedView
+    // ? new THREE.MeshStandardMaterial({
+    //     metalness: 1,
+    //     roughness: 0.2,
+    //     transparent: false,
+    //     wireframe: true,
+    // })
+    // : new THREE.MeshStandardMaterial({
+    //     metalness: 1,
+    //     roughness: 0.2,
+    //     transparent: false,
+    //     // wireframe: true,
+    // });
+
+
 
     const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, material, instanceCount);
     const colors = new Float32Array(instanceCount * 3); // Color buffer for classification
