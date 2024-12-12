@@ -10,7 +10,6 @@ import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonCont
 import { MapControls } from 'three/examples/jsm/controls/MapControls.js';
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls.js';
 
-
 //
 
 // 'W' key toggles wireframe
@@ -29,14 +28,12 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     let currentChapter = 'smallScale'; // Default chapter
     let lastLat, lastLon;
 
-    let scaleBar;
-    // const scaleBarElements = createScaleBar();
+    let classificationSchemes;
 
 
     // toggle defaults
     let isRotationEnabled = true;
     let wireframe = false;
-    let trailsEnabled = false;
 
 
     // const raycaster = new THREE.Raycaster();
@@ -218,6 +215,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         // Load GP data and initialize satellite mesh
         loadSatelliteData();
 
+        // initClassificationSchemes('classification_config.json');
 
                
         loadAllData();
@@ -225,7 +223,9 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     
         window.addEventListener("resize", onWindowResize, false);
         onWindowResize();
-    
+        initClassificationSchemes('classification_config.json');
+
+
         animate();
     }
     
@@ -523,51 +523,102 @@ function createSatrec(tleLine1, tleLine2) {
 }
 
 
-const classificationSchemes = {
-    orbitClass: {
-        getClass: (sat) => sat.orbitClass,
-        colors: {
-            geostationary: 0xffffff,
-            sunSynchronous: 0xffff00,
-            nonGeostationary: 0xff0000,
-            unknown: 0xff00ff,
-        },
-    },
-    country: {
-        getClass: (sat) => sat.country || 'Unknown', // Ensure fallback to 'Unknown' if country is not provided
-        colors: {
-            US: 0x0000ff,
-            PRC: 0xff0000,
-            CIS: 0x00ffff,
-            ESA: 0xffff00,
-            JPN: 0xab1212,
-            Unknown: 0x00ff00,
-        },
-    },
-    group_major: {
-        getClass: (sat) => sat.group_major || 'Unknown',
-        colors: {
-            "Active": 0xff00ff,
-            "Last 30 Days": 0xff0000,
-            "Space Stations": 0x00ff00,
-            "100 Brightest": 0x0000ff,
-            "Debris": 0xffff00,
-            "Weather & Earth Resources": 0xff8800,
-            "Communications": 0x0088ff,
-            "Navigation": 0x88ff00,
-            "Scientific": 0xff00ff,
-            "Miscellaneous": 0x888888,
-            "Unknown": 0xff0000
-        },
-    },
-};
+// const classificationSchemes = {
+//     orbitClass: {
+//         getClass: (sat) => sat.orbitClass,
+//         colors: {
+//             geostationary: 0xffffff,
+//             sunSynchronous: 0xffff00,
+//             nonGeostationary: 0xff0000,
+//             unknown: 0xff00ff,
+//         },
+//     },
+//     country: {
+//         getClass: (sat) => sat.country || 'Unknown', // Ensure fallback to 'Unknown' if country is not provided
+//         colors: {
+//             US: 0x0000ff,
+//             PRC: 0xff0000,
+//             CIS: 0x00ffff,
+//             ESA: 0xffff00,
+//             JPN: 0xab1212,
+//             Unknown: 0x00ff00,
+//         },
+//     },
+//     group_major: {
+//         getClass: (sat) => sat.group_major || 'Unknown',
+//         colors: {
+//             "Active": 0xff00ff,
+//             "Last 30 Days": 0xff0000,
+//             "Space Stations": 0x00ff00,
+//             "100 Brightest": 0x0000ff,
+//             "Debris": 0xffff00,
+//             "Weather & Earth Resources": 0xff8800,
+//             "Communications": 0x0088ff,
+//             "Navigation": 0x88ff00,
+//             "Scientific": 0xff00ff,
+//             "Miscellaneous": 0x888888,
+//             "Unknown": 0xff0000
+//         },
+//     },
+// };
+
+// Fetch external classification config
+async function loadClassificationConfig(configPath) {
+    const response = await fetch(configPath);
+    if (!response.ok) {
+        throw new Error(`Failed to load configuration from ${configPath}: ${response.statusText}`);
+    }
+    return response.json();
+}
+
+// Convert decimal colors to hexadecimal format
+function decimalToHex(decimal) {
+    return `0x${decimal.toString(16).padStart(6, '0')}`;
+}
+
+// Transform external config into the classificationSchemes format
+function populateClassificationSchemes(config) {
+    const classificationSchemes = {};
+
+    for (const [key, value] of Object.entries(config)) {
+        classificationSchemes[key] = {
+            getClass: eval(value.getClass), // Safely parse getClass function
+            colors: Object.fromEntries(
+                Object.entries(value.colors).map(([category, color]) => [category, parseInt(color)])
+            ),
+        };
+    }
+
+    return classificationSchemes;
+}
+
+// Main Function to Load and Initialize Classification Schemes
+async function initClassificationSchemes(configPath) {
+    try {
+        const response = await fetch(configPath);
+        if (!response.ok) {
+            throw new Error(`Failed to load classification config from ${configPath}: ${response.statusText}`);
+        }
+
+        const config = await response.json();
+        classificationSchemes = populateClassificationSchemes(config);
+
+        console.log("Classification schemes initialized:", classificationSchemes);
+    } catch (error) {
+        console.error("Error initializing classification schemes:", error);
+        classificationSchemes = {}; // Fallback to empty object
+    }
+}
+
 
 // Helper to determine color based on scheme
 function getColorByScheme(scheme, sat) {
     const { getClass, colors } = classificationSchemes[scheme];
     const category = getClass(sat);
-    return colors[category] || 0xff0000; // Default to red if no color is defined
+    const colorCode = colors[category] || 0xff0000; // Default to red if no color is defined
+    return new THREE.Color(colorCode); // Pass the color code as a number
 }
+
 
 function applyClassification(instancedMesh, scheme, satellites) {
     if (!instancedMesh || !instancedMesh.count) {
@@ -617,6 +668,11 @@ document.getElementById('orbit-class').addEventListener('click', () => {
 
 document.getElementById('group-major').addEventListener('click', () => {
     switchClassification('group_major');
+});
+
+
+document.getElementById('group-minor').addEventListener('click', () => {
+    switchClassification('group_minor');
 });
 
 document.getElementById('owner-country').addEventListener('click', () => {
