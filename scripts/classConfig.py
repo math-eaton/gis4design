@@ -33,6 +33,6 @@ def generate_config_from_summary(summary_file, output_file):
         json.dump(config, f, indent=4)
     print(f"Configuration file generated at: {output_file}")
 
-summary_file = "/Users/matthewheaton/Documents/GitHub/orbital/cache/summary.json"  # Input summary file
-output_file = "/Users/matthewheaton/Documents/GitHub/orbital/classification_config.json"  # Output config file
+summary_file = "src/config/summary.json"
+output_file = "src/config/classification_config.json" 
 generate_config_from_summary(summary_file, output_file)

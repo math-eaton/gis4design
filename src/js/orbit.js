@@ -39,6 +39,8 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     // const raycaster = new THREE.Raycaster();
     // const cameraDirection = new THREE.Vector3();
 
+    let activeScheme = 'group_major'; // Default color scheme
+
 
     // responsive stuff
     const baseZ = 66; // default z-position value for desktop
@@ -176,6 +178,8 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
 
         initControls();
 
+
+
         // Responsive z-position initialization
         setResponsiveCameraPosition();
 
@@ -214,18 +218,16 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
 
         // Load GP data and initialize satellite mesh
         loadSatelliteData();
-
-        // initClassificationSchemes('classification_config.json');
-
                
         loadAllData();
         initializeSlider();
     
         window.addEventListener("resize", onWindowResize, false);
         onWindowResize();
-        initClassificationSchemes('classification_config.json');
 
-
+        await initClassificationSchemes('src/config/classification_config.json');
+        updateLegend(activeScheme);
+    
         animate();
     }
     
@@ -403,7 +405,7 @@ function loadSatelliteData() {
   
     
     const endpoints = [
-        "100 Brightest", "Space Stations", "Active", "Debris",
+        "100 Brightest", "Space Stations", "Active", "Debris", 
     ];
 
 
@@ -660,7 +662,6 @@ function applyClassification(instancedMesh, scheme, satellites) {
     instancedMesh.instanceMatrix.needsUpdate = true;
 }
 
-let activeScheme = 'group_major'; // Default scheme
 
 document.getElementById('orbit-class').addEventListener('click', () => {
     switchClassification('orbitClass');
@@ -689,6 +690,51 @@ function switchClassification(newScheme) {
     activeScheme = newScheme;
     // const filteredSatellites = tleArray.filter(sat => sat.group_major === activeSatType);
     applyClassification(satelliteMesh, activeScheme, tleArray);
+
+    updateLegend(activeScheme);
+
+}
+
+
+function updateLegend(activeScheme) {
+    const legendContainer = document.getElementById('legend-container');
+
+    // Clear existing legend items
+    legendContainer.innerHTML = '';
+
+    if (!classificationSchemes || !classificationSchemes[activeScheme]) {
+        console.warn(`Scheme '${activeScheme}' not found.`);
+        legendContainer.innerHTML = '<p>No legend available for the selected scheme.</p>';
+        return;
+    }
+
+    const { colors } = classificationSchemes[activeScheme];
+
+    // Sort categories alphabetically
+    const sortedCategories = Object.keys(colors).sort();
+
+    // Populate legend
+    sortedCategories.forEach((category) => {
+        const color = colors[category];
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+
+        // Color box
+        const colorBox = document.createElement('div');
+        colorBox.className = 'legend-color';
+        colorBox.style.backgroundColor = `#${parseInt(color).toString(16).padStart(6, '0')}`;
+
+        // Label
+        const label = document.createElement('span');
+        label.textContent = category;
+
+        // Append to legend item
+        legendItem.appendChild(colorBox);
+        legendItem.appendChild(label);
+
+        // Append legend item to container
+        legendContainer.appendChild(legendItem);
+    });
 }
 
 

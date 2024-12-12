@@ -90,7 +90,7 @@ def main(folder_path, output_file):
     save_summary(summary, output_file)
 
 
-folder_path = "/Users/matthewheaton/Documents/GitHub/orbital/cache"  # Replace with the path to your folder containing JSON files
-output_file = "/Users/matthewheaton/Documents/GitHub/orbital/cache/summary.json"  # Replace with your desired output file name
+folder_path = "cache" 
+output_file = "src/config/summary.json"  
 
 main(folder_path, output_file)
