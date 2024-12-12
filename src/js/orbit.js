@@ -21,6 +21,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     let tleArray = [];
     let sunLine;
     let satrec;
+    let filterVisible;
 
     let orbitControls, mapControls, firstPersonControls, trackballControls, flyControls;
 
@@ -28,7 +29,6 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     let currentChapter = 'smallScale'; // Default chapter
     let lastLat, lastLon;
 
-    let classificationSchemes;
 
 
     // toggle defaults
@@ -39,7 +39,9 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     // const raycaster = new THREE.Raycaster();
     // const cameraDirection = new THREE.Vector3();
 
+    let classificationSchemes;
     let activeScheme = 'group_major'; // Default color scheme
+    let filteredClass = null; // Holds the currently active filter
 
 
     // responsive stuff
@@ -225,7 +227,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         window.addEventListener("resize", onWindowResize, false);
         onWindowResize();
 
-        await initClassificationSchemes('src/config/classification_config.json');
+        await initClassificationSchemes('data/classification_config.json');
         updateLegend(activeScheme);
     
         animate();
@@ -564,19 +566,6 @@ function createSatrec(tleLine1, tleLine2) {
 //     },
 // };
 
-// Fetch external classification config
-async function loadClassificationConfig(configPath) {
-    const response = await fetch(configPath);
-    if (!response.ok) {
-        throw new Error(`Failed to load configuration from ${configPath}: ${response.statusText}`);
-    }
-    return response.json();
-}
-
-// Convert decimal colors to hexadecimal format
-function decimalToHex(decimal) {
-    return `0x${decimal.toString(16).padStart(6, '0')}`;
-}
 
 // Transform external config into the classificationSchemes format
 function populateClassificationSchemes(config) {
@@ -653,7 +642,8 @@ function applyClassification(instancedMesh, scheme, satellites) {
         }
 
         dummy.updateMatrix();
-
+        sat.originalMatrix = dummy.matrix.clone(); // Save the original matrix
+    
         instancedMesh.setMatrixAt(i, dummy.matrix); // Retain position
         colors.set(color.toArray(), i * 3); // Set color
     });
@@ -689,7 +679,10 @@ function switchClassification(newScheme) {
 
     activeScheme = newScheme;
     // const filteredSatellites = tleArray.filter(sat => sat.group_major === activeSatType);
-    applyClassification(satelliteMesh, activeScheme, tleArray);
+    resetSatelliteVisibility(satelliteMesh); // Ensure all are visible
+    resetSatelliteColors(satelliteMesh); // Apply colors for the new scheme
+
+    updateSatellitePositions(satelliteMesh); // Recalculate positions
 
     updateLegend(activeScheme);
 
@@ -718,23 +711,107 @@ function updateLegend(activeScheme) {
         const color = colors[category];
         const legendItem = document.createElement('div');
         legendItem.className = 'legend-item';
-
+    
         // Color box
         const colorBox = document.createElement('div');
         colorBox.className = 'legend-color';
         colorBox.style.backgroundColor = `#${parseInt(color).toString(16).padStart(6, '0')}`;
-
+    
         // Label
         const label = document.createElement('span');
         label.textContent = category;
-
+    
+    
+        // Add click event to filter satellites
+        legendItem.addEventListener('click', () => {
+            console.log(`Clicked on category: ${category}`); // Debugging
+            toggleSatelliteFilter(activeScheme, category);
+        });
+    
         // Append to legend item
         legendItem.appendChild(colorBox);
         legendItem.appendChild(label);
-
+    
         // Append legend item to container
         legendContainer.appendChild(legendItem);
     });
+}
+
+function toggleSatelliteFilter(scheme, category) {
+    console.log(`Toggling filter for scheme: ${scheme}, category: ${category}`);
+
+    if (filteredClass === category) {
+        console.log("Clearing filter");
+        filteredClass = null;
+        resetSatelliteVisibility(satelliteMesh); // Reset visibility
+    } else {
+        console.log(`Filtering by category: ${category}`);
+        filteredClass = category;
+        filterSatellitesByClass(scheme, category);
+    }
+
+    updateSatellitePositions(satelliteMesh); // Ensure positions are updated
+}
+
+
+function setAllSatellitesVisible(visible) {
+    satelliteMesh.userData.forEach((sat, i) => {
+        sat.visible = visible; // Update visibility state
+        updateMaterialVisibility(satelliteMesh, i, visible);
+    });
+}
+
+function filterSatellitesByClass(scheme, category) {
+    const { getClass } = classificationSchemes[scheme];
+
+    satelliteMesh.userData.forEach((sat, i) => {
+        const satelliteClass = getClass(sat.metadata);
+
+        console.log(`Satellite ${i} - Metadata:`, sat.metadata);
+        console.log(`Satellite ${i} - Class: ${satelliteClass}`);
+        console.log(`Filter Category: ${category}`);
+
+        const filterVisible = satelliteClass === category;
+        sat.visible = filterVisible; // Update visibility state
+        updateMaterialVisibility(satelliteMesh, i, filterVisible);
+    });
+}
+
+function updateMaterialVisibility(mesh, index, filterVisible) {
+    const instance = mesh.userData[index];
+    if (!instance) return;
+
+    // Update visibility state directly in the material
+    const material = mesh.material;
+    if (material instanceof THREE.MeshStandardMaterial) {
+        material.visible = filterVisible; // Hide or show the satellite
+    }
+
+    // Maintain position updates
+    const dummy = new THREE.Object3D();
+    mesh.getMatrixAt(index, dummy.matrix);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index, filterVisible ? dummy.matrix : new THREE.Matrix4()); // Reset matrix for hidden satellites
+    mesh.instanceMatrix.needsUpdate = true;
+}
+
+function resetSatelliteVisibility(mesh) {
+    mesh.userData.forEach((sat, i) => {
+        sat.visible = true; // Reset visibility
+        updateMaterialVisibility(mesh, i, true); // Apply visibility to material
+    });
+}
+
+
+function resetSatelliteColors(mesh) {
+    const colors = mesh.instanceColor.array;
+
+    mesh.userData.forEach((sat, i) => {
+        const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
+        colors.set(color.toArray(), i * 3); // Reapply colors
+    });
+
+    mesh.instanceColor.needsUpdate = true;
 }
 
 
@@ -816,58 +893,37 @@ function createSatelliteInstancedMesh(satellites, material, isFixedView = false)
     console.log('Creating instanced mesh. Satellite count:', satellites.length);
 
     const instanceCount = satellites.length;
-
     if (instanceCount === 0) {
         console.error('No satellites to create instanced mesh.');
         return null;
     }
 
-    // todo fix the conditionals - isfixedview correct?
     const satelliteGeometry = isFixedView
-        ? new THREE.SphereGeometry(0.0035, 2, 3) // Smaller, higher resolution for fixed view
-        : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for smallScale view
-
-    // todo tweak conditional material
-    // satelliteMaterial = isFixedView
-    // ? new THREE.MeshStandardMaterial({
-    //     metalness: 1,
-    //     roughness: 0.2,
-    //     transparent: false,
-    //     wireframe: true,
-    // })
-    // : new THREE.MeshStandardMaterial({
-    //     metalness: 1,
-    //     roughness: 0.2,
-    //     transparent: false,
-    //     // wireframe: true,
-    // });
-
-
+        ? new THREE.SphereGeometry(0.0035, 2, 3)
+        : new THREE.SphereGeometry(0.004, 2, 3);
 
     const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, material, instanceCount);
-    const colors = new Float32Array(instanceCount * 3); // Color buffer for classification
+    const colors = new Float32Array(instanceCount * 3); // Color buffer
     const dummy = new THREE.Object3D();
 
-    instancedMesh.userData = []; // Initialize userData as an array
+    instancedMesh.userData = []; // Store metadata and visibility state
 
     satellites.forEach((sat, i) => {
         try {
-            // Initialize the satellite's position
             dummy.position.set(0, 0, 0); // Default position
             dummy.updateMatrix();
             instancedMesh.setMatrixAt(i, dummy.matrix);
 
-            // Assign initial color based on classification scheme
             const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
             colors.set(color.toArray(), i * 3);
 
-            // Store TLE and metadata in userData
             instancedMesh.userData[i] = {
                 metadata: sat.metadata,
+                visible: true, // Start as visible
             };
         } catch (error) {
             console.error(`Error initializing satellite ${sat.name}:`, error);
-            instancedMesh.userData[i] = null; // Explicitly set null for failed initialization
+            instancedMesh.userData[i] = null;
         }
     });
 
@@ -878,91 +934,32 @@ function createSatelliteInstancedMesh(satellites, material, isFixedView = false)
     return instancedMesh;
 }
 
-// Helper function to propagate satellite position
-// function propagateSatellitePosition(satrec, gmst, isGeostationary) {
-//     const positionAndVelocity = satellite.propagate(satrec, simulationTime);
-//     if (!positionAndVelocity.position) return null;
-
-//     const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-//     const altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
-//     const latitude = satellite.degreesLat(positionGd.latitude);
-//     const longitude = satellite.degreesLong(positionGd.longitude);
-
-//     let position = latLonToVector3(latitude, longitude, sphereRadius + altitude);
-
-//     // Apply Earth's rotation for geostationary satellites
-//     if (isGeostationary) {
-//         const rotationAngle = (simulationTime.getTime() / 1000) % 86400 * earthRotationSpeed;
-//         position.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle);
-//     }
-
-//     return position;
-// }
-
-
-const satelliteLines = new Map(); // Map satellite index to its line
 
 function updateSatellitePositions(instancedMesh) {
-    if (!instancedMesh || !instancedMesh.instanceColor) {
-        console.error("InstancedMesh or its color buffer is not initialized.");
-        return;
-    }
-
     const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
     const dummy = new THREE.Object3D();
-    const colors = instancedMesh.instanceColor.array;
-    const earthCenter = new THREE.Vector3(0, 0, 0);
 
     for (let i = 0; i < instancedMesh.count; i++) {
-        const { metadata } = instancedMesh.userData[i];
-        if (!metadata) {
-            console.warn(`Missing metadata for satellite at index ${i}`);
-            continue;
-        }
-        // Dynamically create the satrec
-        let satrec
-        try {
-            satrec = satrec = instancedMesh.userData[i].metadata.satrec;
-        } catch (error) {
-            console.error(`Error creating satrec for satellite at index ${i}:`, error);
-            continue;
-        }
+        const { metadata, visible } = instancedMesh.userData[i];
+        if (!metadata) continue;
 
-        // Propagate satellite position
-        let position = propagateSatellitePosition(satrec, gmst);
-        // console.log(position)
+        const position = propagateSatellitePosition(metadata.satrec, gmst);
         if (!position) continue;
 
-        // Apply Earth's axial tilt compensation
-        // let position = ogPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
-
-        if (instancedMesh) {
-            const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Seconds in a day
-            const rotationAngle = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
-            const tiltedYAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
-            // position.applyAxisAngle(tiltedYAxis, rotationAngle); // Rotate around Earth's tilted Y-axis
-        }
-
-        // Update satellite position in the instanced mesh
         dummy.position.copy(position);
         dummy.updateMatrix();
-        instancedMesh.setMatrixAt(i, dummy.matrix);
 
-        // Update satellite color based on active classification scheme
-        const color = new THREE.Color(getColorByScheme(activeScheme, metadata));
-        colors.set(color.toArray(), i * 3);
-
-        // Update lines in fixed view
-        if (currentChapter !== 'smallScale') {
-            updateSatelliteLine(i, position, earthCenter);
+        if (visible) {
+            instancedMesh.setMatrixAt(i, dummy.matrix); // Update matrix only for visible satellites
+        } else {
+            instancedMesh.setMatrixAt(i, new THREE.Matrix4()); // Reset matrix for hidden satellites
         }
     }
 
     instancedMesh.instanceMatrix.needsUpdate = true;
-    instancedMesh.instanceColor.needsUpdate = true; // Ensure colors are updated
 }
 
-
+const satelliteLines = new Map(); // Map satellite index to its line
 
 function updateSatelliteLine(index, satellitePosition, earthCenter) {
     const isVisible = isSatelliteVisible(satellitePosition);

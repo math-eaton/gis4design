@@ -139,7 +139,7 @@ button {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
   max-height: 80%; /* Prevent overflow if there are too many items */
   overflow-y: auto; /* Scroll if content exceeds max height */
-  z-index: 999; 
+  z-index: 99999; 
   position: absolute;
   right: 2vw;
   top: 5vh;
