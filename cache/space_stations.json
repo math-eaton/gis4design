@@ -1,207 +1,187 @@
 {
-    "group_major": "Space Stations",
-    "data": {
-        "Space Stations": [
-            {
-                "catalogNumber": "25544",
-                "name": "ISS (ZARYA)",
-                "tleLine1": "1 25544U 98067A   24347.68930978  .00019283  00000+0  33842-3 0  9995",
-                "tleLine2": "2 25544  51.6399 151.0098 0007262 333.4429 132.8004 15.50528401486236",
-                "orbitClass": "nonGeostationary",
-                "country": "ISS",
-                "group_minor": "stations",
-                "constellation": "ISS"
-            },
-            {
-                "catalogNumber": "48274",
-                "name": "CSS (TIANHE)",
-                "tleLine1": "1 48274U 21035A   24347.57420018  .00018059  00000+0  22412-3 0  9999",
-                "tleLine2": "2 48274  41.4672  75.8904 0001815 236.7206 123.3459 15.59590653206996",
-                "orbitClass": "nonGeostationary",
-                "country": "PRC",
-                "group_minor": "stations",
-                "constellation": "CSS"
-            },
-            {
-                "catalogNumber": "49044",
-                "name": "ISS (NAUKA)",
-                "tleLine1": "1 49044U 21066A   24347.54139814  .00015582  00000+0  27525-3 0  9995",
-                "tleLine2": "2 49044  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596192159",
-                "orbitClass": "nonGeostationary",
-                "country": "CIS",
-                "group_minor": "stations",
-                "constellation": "ISS"
-            },
-            {
-                "catalogNumber": "49271",
-                "name": "FREGAT DEB",
-                "tleLine1": "1 49271U 11037PF  24347.28983309  .00015695  00000+0  33685-1 0  9998",
-                "tleLine2": "2 49271  51.6412 193.4896 0939235 142.7306 224.2641 12.24172054156953",
-                "orbitClass": "nonGeostationary",
-                "country": "CIS",
-                "group_minor": "stations",
-                "constellation": "FREGAT"
-            },
-            {
-                "catalogNumber": "53239",
-                "name": "CSS (WENTIAN)",
-                "tleLine1": "1 53239U 22085A   24347.57420018  .00018059  00000+0  22412-3 0  9992",
-                "tleLine2": "2 53239  41.4672  75.8904 0001815 236.7206 123.3459 15.59590653136333",
-                "orbitClass": "nonGeostationary",
-                "country": "PRC",
-                "group_minor": "stations",
-                "constellation": "CSS"
-            },
-            {
-                "catalogNumber": "54216",
-                "name": "CSS (MENGTIAN)",
-                "tleLine1": "1 54216U 22143A   24347.57420018  .00018059  00000+0  22412-3 0  9993",
-                "tleLine2": "2 54216  41.4672  75.8904 0001815 236.7206 123.3459 15.59590653120107",
-                "orbitClass": "nonGeostationary",
-                "country": "PRC",
-                "group_minor": "stations",
-                "constellation": "CSS"
-            },
-            {
-                "catalogNumber": "59561",
-                "name": "1998-067WL",
-                "tleLine1": "1 59561U 98067WL  24347.30254850  .07140546  12482-4  42834-3 0  9995",
-                "tleLine2": "2 59561  51.6017 120.4779 0006776 293.4455  66.5859 16.41440710 37339",
-                "orbitClass": "nonGeostationary",
-                "country": "TBD",
-                "group_minor": "stations",
-                "constellation": "1998"
-            },
-            {
-                "catalogNumber": "59624",
-                "name": "SZ-17 MODULE",
-                "tleLine1": "1 59624U 23164C   24347.51690023  .00853286  77919-5  44875-3 0  9999",
-                "tleLine2": "2 59624  41.4632  46.1375 0008638  74.7464 285.4350 16.19086445 35752",
-                "orbitClass": "nonGeostationary",
-                "country": "PRC",
-                "group_minor": "stations",
-                "constellation": "SZ"
-            },
-            {
-                "catalogNumber": "60378",
-                "name": "CYGNUS NG-21",
-                "tleLine1": "1 60378U 24139A   24347.54139814  .00015582  00000+0  27525-3 0  9992",
-                "tleLine2": "2 60378  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596 19600",
-                "orbitClass": "nonGeostationary",
-                "country": "US",
-                "group_minor": "stations",
-                "constellation": "CYGNUS NG"
-            },
-            {
-                "catalogNumber": "60450",
-                "name": "PROGRESS-MS 28",
-                "tleLine1": "1 60450U 24145A   24347.54139814  .00015582  00000+0  27525-3 0  9990",
-                "tleLine2": "2 60450  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596 18374",
-                "orbitClass": "nonGeostationary",
-                "country": "CIS",
-                "group_minor": "stations",
-                "constellation": "PROGRESS"
-            },
-            {
-                "catalogNumber": "60958",
-                "name": "1998-067WY",
-                "tleLine1": "1 60958U 98067WY  24346.82727832  .01746500  24971-2  15896-2 0  9995",
-                "tleLine2": "2 60958  51.6157 140.8390 0011729 293.9918  65.9868 16.12298605 16381",
-                "orbitClass": "nonGeostationary",
-                "country": "TBD",
-                "group_minor": "stations",
-                "constellation": "1998"
-            },
-            {
-                "catalogNumber": "61043",
-                "name": "SOYUZ-MS 26",
-                "tleLine1": "1 61043U 24162A   24347.54139814  .00015582  00000+0  27525-3 0  9998",
-                "tleLine2": "2 61043  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596485281",
-                "orbitClass": "nonGeostationary",
-                "country": "CIS",
-                "group_minor": "stations",
-                "constellation": "SOYUZ"
-            },
-            {
-                "catalogNumber": "61447",
-                "name": "CREW DRAGON 9",
-                "tleLine1": "1 61447U 24178A   24347.54139814  .00015582  00000+0  27525-3 0  9993",
-                "tleLine2": "2 61447  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596 10687",
-                "orbitClass": "nonGeostationary",
-                "country": "US",
-                "group_minor": "stations",
-                "constellation": "CREW"
-            },
-            {
-                "catalogNumber": "61501",
-                "name": "CYSAT-1",
-                "tleLine1": "1 61501U 98067WZ  24346.75398166  .00310187  00000+0  18408-2 0  9999",
-                "tleLine2": "2 61501  51.6279 150.2155 0013176 275.5293  84.4204 15.76466647 10099",
-                "orbitClass": "nonGeostationary",
-                "country": "US",
-                "group_minor": "stations",
-                "constellation": "CYGNUS NG"
-            },
-            {
-                "catalogNumber": "61683",
-                "name": "SHENZHOU-19 (SZ-19)",
-                "tleLine1": "1 61683U 24194A   24347.57420018  .00018059  00000+0  22412-3 0  9997",
-                "tleLine2": "2 61683  41.4672  75.8904 0001815 236.7206 123.3459 15.59590653206838",
-                "orbitClass": "nonGeostationary",
-                "country": "PRC",
-                "group_minor": "stations",
-                "constellation": "SHENZHOU-19"
-            },
-            {
-                "catalogNumber": "61684",
-                "name": "2024-194B",
-                "tleLine1": "1 61684U 24194B   24327.96353995  .00465987  65563-5  48903-3 0  9998",
-                "tleLine2": "2 61684  41.3237 193.5705 0257846 294.4302  62.9836 15.68300172  3788",
-                "orbitClass": "nonGeostationary",
-                "country": "PRC",
-                "group_minor": "stations",
-                "constellation": "2024"
-            },
-            {
-                "catalogNumber": "61791",
-                "name": "DRAGON CRS-31",
-                "tleLine1": "1 61791U 24200A   24347.54139814  .00015582  00000+0  27525-3 0  9991",
-                "tleLine2": "2 61791  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596  5661",
-                "orbitClass": "nonGeostationary",
-                "country": "US",
-                "group_minor": "stations",
-                "constellation": "CREW"
-            },
-            {
-                "catalogNumber": "61983",
-                "name": "TIANZHOU-8",
-                "tleLine1": "1 61983U 24211A   24346.54961290  .00024267  00000+0  30006-3 0  9994",
-                "tleLine2": "2 61983  41.4667  82.1137 0001682 234.9924 125.0756 15.59544297206835",
-                "orbitClass": "nonGeostationary",
-                "country": "PRC",
-                "group_minor": "stations",
-                "constellation": "TIANZHOU"
-            },
-            {
-                "catalogNumber": "62030",
-                "name": "PROGRESS-MS 29",
-                "tleLine1": "1 62030U 24215A   24347.54139814  .00015582  00000+0  27525-3 0  9994",
-                "tleLine2": "2 62030  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596  3093",
-                "orbitClass": "nonGeostationary",
-                "country": "CIS",
-                "group_minor": "stations",
-                "constellation": "PROGRESS"
-            },
-            {
-                "catalogNumber": "62056",
-                "name": "2024-013E",
-                "tleLine1": "1 62056U 24013E   24346.64807345  .00098502  00000+0  86841-3 0  9998",
-                "tleLine2": "2 62056  41.4690  80.1936 0008131  78.4676 281.7078 15.67595151  4667",
-                "orbitClass": "nonGeostationary",
-                "country": "PRC",
-                "group_minor": "stations",
-                "constellation": "2024"
-            }
-        ]
-    }
+  "group_major": "Space Stations",
+  "data": {
+    "Space Stations": [
+      {
+        "catalogNumber": "25544",
+        "name": "ISS (ZARYA)",
+        "tleLine1": "1 25544U 98067A   24347.68930978  .00019283  00000+0  33842-3 0  9995",
+        "tleLine2": "2 25544  51.6399 151.0098 0007262 333.4429 132.8004 15.50528401486236",
+        "orbitClass": "nonGeostationary",
+        "country": "ISS",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "48274",
+        "name": "CSS (TIANHE)",
+        "tleLine1": "1 48274U 21035A   24347.57420018  .00018059  00000+0  22412-3 0  9999",
+        "tleLine2": "2 48274  41.4672  75.8904 0001815 236.7206 123.3459 15.59590653206996",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "49044",
+        "name": "ISS (NAUKA)",
+        "tleLine1": "1 49044U 21066A   24347.54139814  .00015582  00000+0  27525-3 0  9995",
+        "tleLine2": "2 49044  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596192159",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "49271",
+        "name": "FREGAT DEB",
+        "tleLine1": "1 49271U 11037PF  24347.28983309  .00015695  00000+0  33685-1 0  9998",
+        "tleLine2": "2 49271  51.6412 193.4896 0939235 142.7306 224.2641 12.24172054156953",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "53239",
+        "name": "CSS (WENTIAN)",
+        "tleLine1": "1 53239U 22085A   24347.57420018  .00018059  00000+0  22412-3 0  9992",
+        "tleLine2": "2 53239  41.4672  75.8904 0001815 236.7206 123.3459 15.59590653136333",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "54216",
+        "name": "CSS (MENGTIAN)",
+        "tleLine1": "1 54216U 22143A   24347.57420018  .00018059  00000+0  22412-3 0  9993",
+        "tleLine2": "2 54216  41.4672  75.8904 0001815 236.7206 123.3459 15.59590653120107",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "59561",
+        "name": "1998-067WL",
+        "tleLine1": "1 59561U 98067WL  24347.30254850  .07140546  12482-4  42834-3 0  9995",
+        "tleLine2": "2 59561  51.6017 120.4779 0006776 293.4455  66.5859 16.41440710 37339",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "59624",
+        "name": "SZ-17 MODULE",
+        "tleLine1": "1 59624U 23164C   24347.51690023  .00853286  77919-5  44875-3 0  9999",
+        "tleLine2": "2 59624  41.4632  46.1375 0008638  74.7464 285.4350 16.19086445 35752",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "60378",
+        "name": "CYGNUS NG-21",
+        "tleLine1": "1 60378U 24139A   24347.54139814  .00015582  00000+0  27525-3 0  9992",
+        "tleLine2": "2 60378  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596 19600",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "60450",
+        "name": "PROGRESS-MS 28",
+        "tleLine1": "1 60450U 24145A   24347.54139814  .00015582  00000+0  27525-3 0  9990",
+        "tleLine2": "2 60450  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596 18374",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "60958",
+        "name": "1998-067WY",
+        "tleLine1": "1 60958U 98067WY  24346.82727832  .01746500  24971-2  15896-2 0  9995",
+        "tleLine2": "2 60958  51.6157 140.8390 0011729 293.9918  65.9868 16.12298605 16381",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "61043",
+        "name": "SOYUZ-MS 26",
+        "tleLine1": "1 61043U 24162A   24347.54139814  .00015582  00000+0  27525-3 0  9998",
+        "tleLine2": "2 61043  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596485281",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "61447",
+        "name": "CREW DRAGON 9",
+        "tleLine1": "1 61447U 24178A   24347.54139814  .00015582  00000+0  27525-3 0  9993",
+        "tleLine2": "2 61447  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596 10687",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "61501",
+        "name": "CYSAT-1",
+        "tleLine1": "1 61501U 98067WZ  24346.75398166  .00310187  00000+0  18408-2 0  9999",
+        "tleLine2": "2 61501  51.6279 150.2155 0013176 275.5293  84.4204 15.76466647 10099",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "61683",
+        "name": "SHENZHOU-19 (SZ-19)",
+        "tleLine1": "1 61683U 24194A   24347.57420018  .00018059  00000+0  22412-3 0  9997",
+        "tleLine2": "2 61683  41.4672  75.8904 0001815 236.7206 123.3459 15.59590653206838",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "61684",
+        "name": "2024-194B",
+        "tleLine1": "1 61684U 24194B   24327.96353995  .00465987  65563-5  48903-3 0  9998",
+        "tleLine2": "2 61684  41.3237 193.5705 0257846 294.4302  62.9836 15.68300172  3788",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "61791",
+        "name": "DRAGON CRS-31",
+        "tleLine1": "1 61791U 24200A   24347.54139814  .00015582  00000+0  27525-3 0  9991",
+        "tleLine2": "2 61791  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596  5661",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "61983",
+        "name": "TIANZHOU-8",
+        "tleLine1": "1 61983U 24211A   24346.54961290  .00024267  00000+0  30006-3 0  9994",
+        "tleLine2": "2 61983  41.4667  82.1137 0001682 234.9924 125.0756 15.59544297206835",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "62030",
+        "name": "PROGRESS-MS 29",
+        "tleLine1": "1 62030U 24215A   24347.54139814  .00015582  00000+0  27525-3 0  9994",
+        "tleLine2": "2 62030  51.6366 151.7496 0007340 331.9388  28.1205 15.50514596  3093",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "stations"
+      },
+      {
+        "catalogNumber": "62056",
+        "name": "2024-013E",
+        "tleLine1": "1 62056U 24013E   24346.64807345  .00098502  00000+0  86841-3 0  9998",
+        "tleLine2": "2 62056  41.4690  80.1936 0008131  78.4676 281.7078 15.67595151  4667",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "stations"
+      }
+    ]
+  }
 }

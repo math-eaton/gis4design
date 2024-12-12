@@ -106,42 +106,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         orbitControls.minDistance = 5;
         orbitControls.maxDistance = 100;
 
-        // Trackball option large scale
-        trackballControls = new TrackballControls(camera, renderer.domElement);
-        trackballControls.rotateSpeed = 1.25;
-        trackballControls.panSpeed = 0.2;
-        trackballControls.noZoom = false;
-        trackballControls.noPan = false;
-        // trackballControls.noRotate = true;
-        trackballControls.staticMoving = false;
-        trackballControls.dynamicDampingFactor = 0.33;    
-        
 
-        
-    
-        // Initialize MapControls 
-        mapControls = new MapControls(camera, renderer.domElement);
-        // mapControls.enableDamping = true;
-        // mapControls.dampingFactor = 0.3;
-        // mapControls.zoomSpeed = 0.5;
-        // mapControls.enableRotate = true;
-        // mapControls.minDistance = 1;
-        // mapControls.maxDistance = 50;
-
-    
-        // Initialize FirstPersonControls (for fixed)
-        firstPersonControls = new FirstPersonControls(camera, renderer.domElement);
-        firstPersonControls.lookSpeed = 0.1;
-        firstPersonControls.movementSpeed = 5;
-        firstPersonControls.noFly = true;
-        firstPersonControls.lookVertical = true;
-
-        // flycontrol option
-        flyControls = new FlyControls(camera, renderer.domElement);
-        // flyControls.movementSpeed = 100; // Adjust for smooth movement
-        // flyControls.rollSpeed = Math.PI / 24;
-        // flyControls.autoForward = false;
-        // flyControls.dragToLook = true;
         
         // Start with OrbitControls enabled
         enableControls(orbitControls);
@@ -150,10 +115,6 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     function enableControls(activeControls) {
         // Disable all controls by default
         orbitControls.enabled = false;
-        mapControls.enabled = false;
-        firstPersonControls.enabled = false;
-        flyControls.enabled = false;
-        trackballControls.enabled = false; 
     
         // actively enable the specified controls
         if (activeControls) {
@@ -228,7 +189,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         onWindowResize();
 
         await initClassificationSchemes('config/classification_config.json');
-        console.log('Parsed Classification Schemes:', JSON.stringify(classificationSchemes, null, 2));
+        // console.log('Parsed Classification Schemes:', JSON.stringify(classificationSchemes, null, 2));
 
         updateLegend(activeScheme);
     
@@ -402,14 +363,13 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
 // todo: separate loading screen to main.js config
 
 let satelliteMesh;
-let geostationaryInstancedMesh;
 
 function loadSatelliteData() {
 
   
     
     const endpoints = [
-        "100 Brightest", "Space Stations", "Debris", "Navigation", "Communications", "Scientific", "Weather & Earth Resources", "Miscellaneous"
+        "Navigation"
     ];
 
 
@@ -563,7 +523,6 @@ function populateClassificationSchemes(config) {
                 ])
             ),
         };
-        console.log(`sccccc: `, classificationSchemes[key])
     }
 
     return classificationSchemes;
@@ -583,7 +542,6 @@ function filterClassificationSchemes(representedClasses) {
         }
     }
 
-    console.log("Filtered Classification Schemes:", classificationSchemes);
 }
 
 
@@ -724,7 +682,6 @@ function updateLegend(activeScheme) {
     }
 
     const { colors } = schemeConfig;
-    console.log(`Legend Colors for Scheme '${activeScheme}':`, colors);
 
     const sortedCategories = Object.keys(colors).sort();
 
@@ -815,12 +772,10 @@ function filterSatellitesByClass(scheme, category) {
     const { colors } = classificationSchemes[scheme];
     const normalizedCategory = category.trim().toLowerCase();
     if (!colors[normalizedCategory]) {
-        console.warn(`Category '${normalizedCategory}' not found in scheme '${scheme}'.`);
         return;
     }
     satelliteMesh.userData.forEach((sat, i) => {
         const satelliteClass = (sat.metadata[scheme] || 'unknown').toString().trim().toLowerCase();
-        console.log(`Satellite ${i}: Class (${scheme}): '${satelliteClass}', Filter Visible: ${satelliteClass === normalizedCategory}`);
         sat.visible = satelliteClass === normalizedCategory;
     });
     updateSatelliteVisibility();
@@ -854,7 +809,7 @@ function createSatelliteMeshes(allSatellites) {
     // console.log('All satellites passed to createSatelliteMeshes:', allSatellites);
     console.log('Satellite count:', allSatellites.length);
 
-    const material = new THREE.MeshStandardMaterial({
+    const material = new THREE.PointsMaterial({
         metalness: 0.3,
         roughness: 0.2,
         transparent: false,
@@ -1254,10 +1209,6 @@ function updateEarthRotation() {
 
 
         if (orbitControls.enabled) orbitControls.update();
-        // if (mapControls.enabled) mapControls.update();
-        if (firstPersonControls.enabled) firstPersonControls.update(clock.getDelta()); // Requires delta time
-        if (trackballControls.enabled) trackballControls.update(); // Explicit update for TrackballControls
-        // if (flyControls.enabled) flyControls.update(delta); // Pass delta to FlyControls
 
         renderer.render(scene, camera);
         stats.end();
