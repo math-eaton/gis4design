@@ -1,4 +1,1012 @@
 {
   "group_major": "Scientific",
-  "data": {}
+  "data": {
+    "Space & Earth Science Satellites": [
+      {
+        "catalogNumber": "20580",
+        "name": "HST",
+        "tleLine1": "1 20580U 90037B   24346.78272101  .00008583  00000+0  35961-3 0  9991",
+        "tleLine2": "2 20580  28.4676 232.0121 0001930 176.6521 183.4085 15.21718130704337",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "23802",
+        "name": "POLAR",
+        "tleLine1": "1 23802U 96013A   24339.87421716  .00000229  00000+0  00000+0 0  9992",
+        "tleLine2": "2 23802  79.2596 232.9944 5976929 227.9579  62.9521  1.29846741137598",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "25560",
+        "name": "SWAS",
+        "tleLine1": "1 25560U 98071A   24346.33365376  .00005800  00000+0  43122-3 0  9995",
+        "tleLine2": "2 25560  69.8968 207.2068 0005892 355.7766   4.3344 15.03506731413988",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "25867",
+        "name": "CXO",
+        "tleLine1": "1 25867U 99040B   24347.67995738  .00000403  00000+0  00000+0 0  9999",
+        "tleLine2": "2 25867  45.2638 139.9696 8693340 305.0901   0.0820  0.37810292 15235",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "25989",
+        "name": "XMM-NEWTON",
+        "tleLine1": "1 25989U 99066A   24347.90983301  .00000028  00000+0  00000+0 0  9994",
+        "tleLine2": "2 25989  67.0791 290.3708 4982828  74.3438   0.1716  0.50134459 34603",
+        "orbitClass": "nonGeostationary",
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "25994",
+        "name": "TERRA",
+        "tleLine1": "1 25994U 99068A   24346.80696323  .00001087  00000+0  23436-3 0  9993",
+        "tleLine2": "2 25994  98.0267  44.9177 0002897 142.6119 351.6147 14.60304059329086",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26410",
+        "name": "CLUSTER II-FM7 (SAMBA)",
+        "tleLine1": "1 26410U 00041A   24347.79065939  .00001605  00000+0  00000+0 0  9996",
+        "tleLine2": "2 26410 141.4977   3.5193 7935658 218.6937   0.1056  0.44825073 29598",
+        "orbitClass": "nonGeostationary",
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26463",
+        "name": "CLUSTER II-FM5 (RUMBA)",
+        "tleLine1": "1 26463U 00045A   24347.34741360  .00005316  00000+0  00000+0 0  9991",
+        "tleLine2": "2 26463 153.4702  41.9789 8886622 258.5537   0.0393  0.42910680 17753",
+        "orbitClass": "nonGeostationary",
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26464",
+        "name": "CLUSTER II-FM8 (TANGO)",
+        "tleLine1": "1 26464U 00045B   24347.81813187  .00001633  00000+0  00000+0 0  9999",
+        "tleLine2": "2 26464 141.7279   3.8052 7938700 218.8549   0.1068  0.44415644 65518",
+        "orbitClass": "nonGeostationary",
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26702",
+        "name": "ODIN",
+        "tleLine1": "1 26702U 01007A   24346.58748802  .00019925  00000+0  66665-3 0  9993",
+        "tleLine2": "2 26702  97.4664   1.8942 0007699  28.0298 332.1356 15.30981955303969",
+        "orbitClass": "nonGeostationary",
+        "country": "SWED",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26998",
+        "name": "TIMED",
+        "tleLine1": "1 26998U 01055B   24346.52641896  .00003737  00000+0  36414-3 0  9995",
+        "tleLine2": "2 26998  74.0705 265.9649 0002921 257.5203 102.5653 14.92868660248419",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27540",
+        "name": "INTEGRAL",
+        "tleLine1": "1 27540U 02048A   24345.35929097 -.00000220  00000+0  00000+0 0  9997",
+        "tleLine2": "2 27540  90.5431  12.7017 8619909 276.9414 115.6847  0.37576099 24559",
+        "orbitClass": "nonGeostationary",
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27640",
+        "name": "CORIOLIS",
+        "tleLine1": "1 27640U 03001A   24346.56433709  .00000351  00000+0  18658-3 0  9998",
+        "tleLine2": "2 27640  98.7141 350.9780 0014252   8.8476 351.2949 14.19661030135801",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27651",
+        "name": "SORCE",
+        "tleLine1": "1 27651U 03004A   24346.54629645  .00006184  00000+0  52390-3 0  9998",
+        "tleLine2": "2 27651  39.9901 162.8301 0019806  46.4026 313.8406 14.98049168188823",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27843",
+        "name": "MOST",
+        "tleLine1": "1 27843U 03031D   24346.56261982  .00000256  00000+0  13811-3 0  9998",
+        "tleLine2": "2 27843  98.7071 351.0148 0010756  51.9434 308.2712 14.21109047112214",
+        "orbitClass": "sunSynchronous",
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27858",
+        "name": "SCISAT 1",
+        "tleLine1": "1 27858U 03036A   24346.28454160  .00001563  00000+0  21089-3 0  9998",
+        "tleLine2": "2 27858  73.9290 188.9062 0006980  10.0374 350.0940 14.80079632149605",
+        "orbitClass": "nonGeostationary",
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "28485",
+        "name": "SWIFT",
+        "tleLine1": "1 28485U 04047A   24346.23996916  .00024532  00000+0  84788-3 0  9999",
+        "tleLine2": "2 28485  20.5573 346.1657 0006682  66.1631 293.9508 15.27948626101208",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "29108",
+        "name": "CALIPSO",
+        "tleLine1": "1 29108U 06016B   24346.55843400  .00002670  00000+0  48327-3 0  9992",
+        "tleLine2": "2 29108  98.4356 333.1737 0001199  94.7269 265.4071 14.67211337991943",
+        "orbitClass": "sunSynchronous",
+        "country": "FR",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "29479",
+        "name": "HINODE (SOLAR-B)",
+        "tleLine1": "1 29479U 06041A   24346.63274988  .00001708  00000+0  31082-3 0  9990",
+        "tleLine2": "2 29479  98.0822 359.5232 0016626 237.7048 122.2546 14.67310498973805",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "29505",
+        "name": "SHIJIAN-6 02A (SJ-6 02A)",
+        "tleLine1": "1 29505U 06046A   24346.62492132  .00009497  00000+0  62604-3 0  9994",
+        "tleLine2": "2 29505  97.7058  13.6660 0002412 220.4706 139.6343 15.07702504988859",
+        "orbitClass": "sunSynchronous",
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "29506",
+        "name": "SHIJIAN-6 02B (SJ-6 02B)",
+        "tleLine1": "1 29506U 06046B   24346.79733812  .00002791  00000+0  23702-3 0  9992",
+        "tleLine2": "2 29506  97.7237  10.0466 0002363  76.6838 283.4648 14.98699158987928",
+        "orbitClass": "sunSynchronous",
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "33053",
+        "name": "FGRST (GLAST)",
+        "tleLine1": "1 33053U 08029A   24346.60074040  .00006158  00000+0  26898-3 0  9998",
+        "tleLine2": "2 33053  25.5832  68.8036 0009113 308.3437  51.6281 15.19243416911789",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "36395",
+        "name": "SDO",
+        "tleLine1": "1 36395U 10005A   24345.66597174 -.00000062  00000+0  00000+0 0  9992",
+        "tleLine2": "2 36395  33.4915  94.8431 0002012 179.7553 303.2583  1.00270474 54518",
+        "orbitClass": "geosynchronous",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "36508",
+        "name": "CRYOSAT 2",
+        "tleLine1": "1 36508U 10013A   24346.68758428  .00000468  00000+0  11541-3 0  9996",
+        "tleLine2": "2 36508  92.0156 143.9500 0003732  69.7700 290.3908 14.51912022777956",
+        "orbitClass": "nonGeostationary",
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "37389",
+        "name": "X-SAT",
+        "tleLine1": "1 37389U 11015C   24346.79897091  .00000360  00000+0  17133-3 0  9993",
+        "tleLine2": "2 37389  98.3006 341.0904 0014402 160.9266 199.2456 14.24901039709522",
+        "orbitClass": "sunSynchronous",
+        "country": "SING",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "38337",
+        "name": "GCOM-W1 (SHIZUKU)",
+        "tleLine1": "1 38337U 12025A   24346.86135389  .00001593  00000+0  36426-3 0  9997",
+        "tleLine2": "2 38337  98.2223 284.3430 0001698  69.8132 349.5050 14.57010900668596",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "38358",
+        "name": "NUSTAR",
+        "tleLine1": "1 38358U 12031A   24346.58334491  .00007919  00000+0  55089-3 0  9995",
+        "tleLine2": "2 38358   6.0246 194.7023 0009536 218.7892 133.4122 15.00371330  1306",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39089",
+        "name": "NEOSSAT",
+        "tleLine1": "1 39089U 13009D   24346.60164058  .00000484  00000+0  18333-3 0  9997",
+        "tleLine2": "2 39089  98.4007 169.3536 0012199  93.3151 266.9431 14.35428816617463",
+        "orbitClass": "sunSynchronous",
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39091",
+        "name": "BRITE-AUSTRIA",
+        "tleLine1": "1 39091U 13009F   24346.59058372  .00000561  00000+0  20711-3 0  9998",
+        "tleLine2": "2 39091  98.3817 169.3300 0011439  90.1523 270.0974 14.36104045617720",
+        "orbitClass": "sunSynchronous",
+        "country": "ASRA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39197",
+        "name": "IRIS",
+        "tleLine1": "1 39197U 13033A   24346.59168812  .00003263  00000+0  40178-3 0  9994",
+        "tleLine2": "2 39197  97.9546 176.4344 0024935 326.3621  33.6009 14.83447663618390",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39253",
+        "name": "HISAKI (SPRINT-A)",
+        "tleLine1": "1 39253U 13049A   24346.59938428  .00000203  00000+0  18283-3 0  9995",
+        "tleLine2": "2 39253  29.7181 149.2129 0136959 217.3148 141.7843 13.55454455556396",
+        "orbitClass": "nonGeostationary",
+        "country": "JPN",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39265",
+        "name": "CASSIOPE",
+        "tleLine1": "1 39265U 13055A   24346.56443392  .00027841  00000+0  50459-3 0  9991",
+        "tleLine2": "2 39265  80.9477 356.4267 0446583  70.9714 293.9311 14.83657656584560",
+        "orbitClass": "nonGeostationary",
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39422",
+        "name": "STSAT-3",
+        "tleLine1": "1 39422U 13066G   24346.86426681  .00005439  00000+0  46880-3 0  9995",
+        "tleLine2": "2 39422  97.5406 319.6106 0021434 120.9838 239.3494 14.97533348601383",
+        "orbitClass": "sunSynchronous",
+        "country": "SKOR",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39451",
+        "name": "SWARM B",
+        "tleLine1": "1 39451U 13067A   24346.54277165  .00006737  00000+0  28526-3 0  9993",
+        "tleLine2": "2 39451  87.7486 149.4819 0002610  84.0166 276.1377 15.23002652598960",
+        "orbitClass": "nonGeostationary",
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39452",
+        "name": "SWARM A",
+        "tleLine1": "1 39452U 13067B   24346.56430820  .00012799  00000+0  34731-3 0  9995",
+        "tleLine2": "2 39452  87.3403 258.9907 0003745  86.8945 273.2738 15.37475035620964",
+        "orbitClass": "nonGeostationary",
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39453",
+        "name": "SWARM C",
+        "tleLine1": "1 39453U 13067C   24346.56419795  .00012853  00000+0  34880-3 0  9990",
+        "tleLine2": "2 39453  87.3403 257.5801 0003739  86.7560 273.4122 15.37474405620923",
+        "orbitClass": "nonGeostationary",
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40020",
+        "name": "BRITE-CA1 (TORONTO)",
+        "tleLine1": "1 40020U 14033L   24346.61095100  .00002739  00000+0  43611-3 0  9996",
+        "tleLine2": "2 40020  97.9006 117.9103 0080340 244.9645 114.3205 14.70666469561041",
+        "orbitClass": "sunSynchronous",
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40059",
+        "name": "OCO 2",
+        "tleLine1": "1 40059U 14035A   24346.64037555  .00001392  00000+0  31875-3 0  9996",
+        "tleLine2": "2 40059  98.2221 284.8693 0001580  79.1935 280.9441 14.57143642555596",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40119",
+        "name": "BRITE-PL2 (HEWELIUSZ)",
+        "tleLine1": "1 40119U 14049B   24346.26162538  .00003844  00000+0  39423-3 0  9997",
+        "tleLine2": "2 40119  97.8874  85.4196 0015923 137.9070 222.3374 14.90947675558946",
+        "orbitClass": "sunSynchronous",
+        "country": "POL",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40360",
+        "name": "RESURS-P 2",
+        "tleLine1": "1 40360U 14087A   24346.78714166  .00137332  00000+0  55122-3 0  9998",
+        "tleLine2": "2 40360  97.1361  76.9368 0002952 337.5695  22.5447 15.86109227558910",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40482",
+        "name": "MMS 1",
+        "tleLine1": "1 40482U 15011A   24346.91667824 -.00000286  00000+0  00000+0 0  9993",
+        "tleLine2": "2 40482  57.7881   1.1560 8914615 154.6349 330.8432  0.28654500 15880",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40483",
+        "name": "MMS 2",
+        "tleLine1": "1 40483U 15011B   24346.91667824 -.00000286  00000+0  00000+0 0  9994",
+        "tleLine2": "2 40483  57.7871   1.1562 8914228 154.6313 329.3275  0.28667080 15866",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40484",
+        "name": "MMS 3",
+        "tleLine1": "1 40484U 15011C   24346.91667824 -.00000286  00000+0  00000+0 0  9995",
+        "tleLine2": "2 40484  57.7899   1.1552 8914556 154.6368 329.5806  0.28653142 15866",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40485",
+        "name": "MMS 4",
+        "tleLine1": "1 40485U 15011D   24346.91667824 -.00000285  00000+0  00000+0 0  9995",
+        "tleLine2": "2 40485  57.7905   1.1608 8913856 154.6456 319.6193  0.28669469 15865",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40930",
+        "name": "ASTROSAT",
+        "tleLine1": "1 40930U 15052A   24344.10469292  .00003691  00000+0  38630-3 0  9990",
+        "tleLine2": "2 40930   5.9955 185.5612 0007847  30.6556 329.4030 14.80502678497361",
+        "orbitClass": "nonGeostationary",
+        "country": "IND",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "41173",
+        "name": "DAMPE",
+        "tleLine1": "1 41173U 15078A   24346.63076340  .00002746  00000+0  10186-3 0  9992",
+        "tleLine2": "2 41173  97.4405 339.6995 0011078 229.9951 130.0317 15.28419165500074",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "41784",
+        "name": "PISAT",
+        "tleLine1": "1 41784U 16059B   24346.55897123  .00002303  00000+0  41586-3 0  9998",
+        "tleLine2": "2 41784  97.8244   0.5088 0030274 166.5964 193.6052 14.67072324438652",
+        "orbitClass": "sunSynchronous",
+        "country": "IND",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "42758",
+        "name": "HXMT (HUIYAN)",
+        "tleLine1": "1 42758U 17034A   24346.56751676  .00012314  00000+0  57302-3 0  9993",
+        "tleLine2": "2 42758  43.0153   9.6445 0011082 183.8121 176.2645 15.19838287413795",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "42831",
+        "name": "FLYING LAPTOP",
+        "tleLine1": "1 42831U 17042G   24346.83541296  .00005715  00000+0  49965-3 0  9992",
+        "tleLine2": "2 42831  97.3890 157.7923 0011874 190.9783 169.1183 14.97070539403694",
+        "orbitClass": "sunSynchronous",
+        "country": "GER",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "43194",
+        "name": "ZHANGHENG 1 (CSES)",
+        "tleLine1": "1 43194U 18015C   24346.65790019  .00018065  00000+0  81469-3 0  9992",
+        "tleLine2": "2 43194  97.6263 132.3639 0006042 295.0712  64.9895 15.21064535380667",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "46495",
+        "name": "SALSAT",
+        "tleLine1": "1 46495U 20068K   24346.44109238  .00011540  00000+0  56727-3 0  9994",
+        "tleLine2": "2 46495  97.8395 311.0169 0014911  68.2393 292.0425 15.18110537231157",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "49954",
+        "name": "IXPE",
+        "tleLine1": "1 49954U 21121A   24346.91667824  .00009853  00000+0  66464-3 0  9993",
+        "tleLine2": "2 49954   0.2288 150.2987 0008497  48.3509  66.5364 15.02120321164639",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "science"
+      }
+    ],
+    "Geodetic Satellites": [
+      {
+        "catalogNumber": "07646",
+        "name": "STARLETTE",
+        "tleLine1": "1 07646U 75010A   24346.77382366 -.00000142  00000+0  23418-5 0  9997",
+        "tleLine2": "2 07646  49.8224 125.0593 0205562  38.1381 323.3860 13.82338299518112",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "08820",
+        "name": "LAGEOS 1",
+        "tleLine1": "1 08820U 76039A   24345.99679249  .00000030  00000+0  00000+0 0  9997",
+        "tleLine2": "2 08820 109.8528 349.8554 0044047  60.3633 304.1924  6.38664845877815",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "16908",
+        "name": "AJISAI (EGS)",
+        "tleLine1": "1 16908U 86061A   24346.79466359 -.00000100  00000+0 -19681-4 0  9994",
+        "tleLine2": "2 16908  50.0111  45.9810 0011337 213.8262 266.4710 12.44509276411956",
+        "orbitClass": "nonGeostationary",
+        "country": "JPN",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "19751",
+        "name": "COSMOS 1989 (ETALON 1)",
+        "tleLine1": "1 19751U 89001C   24346.60027022 -.00000022  00000+0  00000+0 0  9992",
+        "tleLine2": "2 19751  64.6389  91.1405 0023719 216.3070 155.7926  2.13155972279662",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "20026",
+        "name": "COSMOS 2024 (ETALON 2)",
+        "tleLine1": "1 20026U 89039C   24345.78671841 -.00000039  00000+0  00000+0 0  9990",
+        "tleLine2": "2 20026  65.2545 329.5349 0019850 216.5659 313.7022  2.13204289276702",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "22195",
+        "name": "LAGEOS 2",
+        "tleLine1": "1 22195U 92070B   24346.56904286 -.00000009  00000+0  00000+0 0  9994",
+        "tleLine2": "2 22195  52.6522 255.9040 0137267 305.3394 239.9331  6.47293820759845",
+        "orbitClass": "nonGeostationary",
+        "country": "IT",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "22824",
+        "name": "STELLA",
+        "tleLine1": "1 22824U 93061B   24346.85524906 -.00000010  00000+0  14608-4 0  9999",
+        "tleLine2": "2 22824  98.8546  35.6840 0007170  49.3372  40.0771 14.27443917626138",
+        "orbitClass": "sunSynchronous",
+        "country": "FR",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "27944",
+        "name": "LARETS",
+        "tleLine1": "1 27944U 03042F   24346.79462463  .00000226  00000+0  53046-4 0  9996",
+        "tleLine2": "2 27944  98.3396 128.8507 0011551 325.8500  34.1958 14.63661986132638",
+        "orbitClass": "sunSynchronous",
+        "country": "CIS",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "38077",
+        "name": "LARES",
+        "tleLine1": "1 38077U 12006A   24346.79550345 -.00000042  00000+0 -20536-4 0  9998",
+        "tleLine2": "2 38077  69.4876 155.7833 0010225 216.6683 143.3644 12.54931963587863",
+        "orbitClass": "nonGeostationary",
+        "country": "IT",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "53105",
+        "name": "LARES-2",
+        "tleLine1": "1 53105U 22080A   24346.50540306  .00000024  00000+0  00000+0 0  9992",
+        "tleLine2": "2 53105  70.1372 134.8869 0004836  97.5287 262.5779  6.38965231 56354",
+        "orbitClass": "nonGeostationary",
+        "country": "IT",
+        "group_minor": "geodetic"
+      }
+    ],
+    "Engineering Satellites": [
+      {
+        "catalogNumber": "26958",
+        "name": "PROBA-1",
+        "tleLine1": "1 26958U 01049B   24346.71414279  .00004618  00000+0  33130-3 0  9999",
+        "tleLine2": "2 26958  97.9312 327.1051 0059010 185.7866 174.2684 15.03453589260540",
+        "orbitClass": "sunSynchronous",
+        "country": "ESA",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "27844",
+        "name": "CUTE-1 (CO-55)",
+        "tleLine1": "1 27844U 03031E   24346.57474374  .00000851  00000+0  39188-3 0  9997",
+        "tleLine2": "2 27844  98.6777 351.1950 0009615 356.7291   3.3824 14.23695768113050",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "27848",
+        "name": "CUBESAT XI-IV (CO-57)",
+        "tleLine1": "1 27848U 03031J   24346.01963211  .00000711  00000+0  33450-3 0  9994",
+        "tleLine2": "2 27848  98.6807 350.7836 0009839  14.8235 345.3229 14.23073711112688",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "29252",
+        "name": "GENESIS 1",
+        "tleLine1": "1 29252U 06029A   24346.65801347  .00053767  00000+0  79904-3 0  9999",
+        "tleLine2": "2 29252  64.5094 281.1041 0033716 303.2320  56.5590 15.54186470 18077",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "31789",
+        "name": "GENESIS 2",
+        "tleLine1": "1 31789U 07028A   24346.50808870  .00044145  00000+0  76047-3 0  9994",
+        "tleLine2": "2 31789  64.4846 328.8048 0009796 294.5968  65.4150 15.50763978964774",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "35684",
+        "name": "APRIZESAT 4",
+        "tleLine1": "1 35684U 09041D   24346.61223652  .00001802  00000+0  22903-3 0  9995",
+        "tleLine2": "2 35684  98.2140  38.2677 0043537 311.8909  47.8592 14.82340085829456",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "35686",
+        "name": "APRIZESAT 3",
+        "tleLine1": "1 35686U 09041F   24346.60927281  .00003749  00000+0  35060-3 0  9995",
+        "tleLine2": "2 35686  98.1329 106.2150 0066655  89.8390 271.0466 14.93087387833877",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "36037",
+        "name": "PROBA-2",
+        "tleLine1": "1 36037U 09059B   24346.53777713  .00000848  00000+0  21035-3 0  9994",
+        "tleLine2": "2 36037  98.2302 167.0646 0013124 182.5590 177.5542 14.54295667801274",
+        "orbitClass": "sunSynchronous",
+        "country": "ESA",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "37792",
+        "name": "APRIZESAT 5",
+        "tleLine1": "1 37792U 11044E   24346.72621472  .00002809  00000+0  37835-3 0  9995",
+        "tleLine2": "2 37792  98.2343 254.6353 0053960 341.5822  18.3434 14.79050418717204",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "37793",
+        "name": "APRIZESAT 6",
+        "tleLine1": "1 37793U 11044F   24346.61172483  .00001941  00000+0  28935-3 0  9994",
+        "tleLine2": "2 37793  98.2787 234.1955 0045584  52.5681   8.5372 14.75375538715628",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "39159",
+        "name": "PROBA-V",
+        "tleLine1": "1 39159U 13021A   24346.57771715  .00000231  00000+0  11980-3 0  9990",
+        "tleLine2": "2 39159  98.3119 343.2601 0003420 326.1004  33.9956 14.23395792602495",
+        "orbitClass": "sunSynchronous",
+        "country": "ESA",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "39416",
+        "name": "APRIZESAT 7",
+        "tleLine1": "1 39416U 13066A   24346.83274999  .00003509  00000+0  37483-3 0  9993",
+        "tleLine2": "2 39416  97.6965 300.5613 0035988 240.1235 119.6404 14.88955713598980",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "39425",
+        "name": "APRIZESAT 8",
+        "tleLine1": "1 39425U 13066K   24346.44873725  .00002789  00000+0  32335-3 0  9992",
+        "tleLine2": "2 39425  97.7532 293.8368 0046599 305.2035  54.4822 14.85477641597540",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40014",
+        "name": "BUGSAT-1 (TITA)",
+        "tleLine1": "1 40014U 14033E   24346.56503211  .00008204  00000+0  53351-3 0  9995",
+        "tleLine2": "2 40014  98.1031  37.3873 0031896 257.1529 102.6133 15.07856945572338",
+        "orbitClass": "sunSynchronous",
+        "country": "ARGN",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40016",
+        "name": "SAUDISAT 4",
+        "tleLine1": "1 40016U 14033G   24346.68891391  .00001707  00000+0  23866-3 0  9998",
+        "tleLine2": "2 40016  97.6819 144.0319 0047383  72.1321 288.5050 14.78068836564437",
+        "orbitClass": "sunSynchronous",
+        "country": "SAUD",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40018",
+        "name": "APRIZESAT 9",
+        "tleLine1": "1 40018U 14033J   24346.63341024  .00002120  00000+0  32721-3 0  9998",
+        "tleLine2": "2 40018  97.8264 125.4809 0067948 175.8620 184.3165 14.72821580562316",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40019",
+        "name": "APRIZESAT 10",
+        "tleLine1": "1 40019U 14033K   24346.62057117  .00001825  00000+0  30075-3 0  9996",
+        "tleLine2": "2 40019  97.8915 117.7998 0079447 237.9609 121.3863 14.69633928561236",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40076",
+        "name": "TECHDEMOSAT-1 (TDS-1)",
+        "tleLine1": "1 40076U 14037H   24346.39900851  .00012864  00000+0  10279-2 0  9997",
+        "tleLine2": "2 40076  98.3330 280.3384 0004421 342.2479  17.8588 15.00386660564956",
+        "orbitClass": "sunSynchronous",
+        "country": "UK",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40144",
+        "name": "TIANTUO 2",
+        "tleLine1": "1 40144U 14053B   24346.81978591  .00159494  11303-4  50415-3 0  9995",
+        "tleLine2": "2 40144  97.1018  71.4994 0002620  99.1038 261.0533 15.91299333575917",
+        "orbitClass": "nonGeostationary",
+        "country": "PRC",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "42829",
+        "name": "TECHNOSAT",
+        "tleLine1": "1 42829U 17042E   24346.47976273  .00006325  00000+0  52017-3 0  9996",
+        "tleLine2": "2 42829  97.3846 158.0227 0012327 193.0939 166.9966 14.99399095403714",
+        "orbitClass": "sunSynchronous",
+        "country": "GER",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "42831",
+        "name": "FLYING LAPTOP",
+        "tleLine1": "1 42831U 17042G   24346.83541296  .00005715  00000+0  49965-3 0  9992",
+        "tleLine2": "2 42831  97.3890 157.7923 0011874 190.9783 169.1183 14.97070539403694",
+        "orbitClass": "sunSynchronous",
+        "country": "GER",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "43765",
+        "name": "HAWK-A",
+        "tleLine1": "1 43765U 18099H   24346.60635501  .00007110  00000+0  48435-3 0  9992",
+        "tleLine2": "2 43765  97.4759  38.4623 0010214  43.8183 316.3853 15.06527823329326",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "43794",
+        "name": "HAWK-B",
+        "tleLine1": "1 43794U 18099AN  24346.14232069  .00007242  00000+0  49378-3 0  9998",
+        "tleLine2": "2 43794  97.4759  38.0104 0010270  47.2503 312.9587 15.06487715329246",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "43799",
+        "name": "HAWK-C",
+        "tleLine1": "1 43799U 18099AT  24346.60722703  .00006946  00000+0  47364-3 0  9996",
+        "tleLine2": "2 43799  97.4757  38.3577 0010216  45.3146 314.8912 15.06494896330061",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "46495",
+        "name": "SALSAT",
+        "tleLine1": "1 46495U 20068K   24346.44109238  .00011540  00000+0  56727-3 0  9994",
+        "tleLine2": "2 46495  97.8395 311.0169 0014911  68.2393 292.0425 15.18110537231157",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "47502",
+        "name": "HAWK-2C",
+        "tleLine1": "1 47502U 21006CT  24346.59493682  .00009071  00000+0  36145-3 0  9990",
+        "tleLine2": "2 47502  97.3092  31.8492 0009393  23.7663 336.4007 15.25400910215006",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "47505",
+        "name": "HAWK-2A",
+        "tleLine1": "1 47505U 21006CW  24346.59498563  .00020742  00000+0  82624-3 0  9997",
+        "tleLine2": "2 47505  97.3133  32.2005 0008292  30.5330 329.6389 15.25223755215001",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "47508",
+        "name": "HAWK-2B",
+        "tleLine1": "1 47508U 21006CZ  24346.39846747  .00009080  00000+0  36247-3 0  9991",
+        "tleLine2": "2 47508  97.3010  31.2837 0009554  28.2632 331.9123 15.25336376214972",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "48931",
+        "name": "HAWK-3B",
+        "tleLine1": "1 48931U 21059BE  24346.42209922  .00020774  00000+0  58056-3 0  9997",
+        "tleLine2": "2 48931  97.6456 136.2966 0010136 171.6239 188.5176 15.36674623192176",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "48948",
+        "name": "HAWK-3C",
+        "tleLine1": "1 48948U 21059BX  24346.68243809  .00020434  00000+0  57077-3 0  9990",
+        "tleLine2": "2 48948  97.6706 140.7551 0010878 173.9558 186.1818 15.36686125192216",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "48957",
+        "name": "HAWK-3A",
+        "tleLine1": "1 48957U 21059CG  24346.68231956  .00021550  00000+0  60159-3 0  9995",
+        "tleLine2": "2 48957  97.6584 138.6701 0010915 167.8690 192.2819 15.36692447192217",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52165",
+        "name": "HAWK-4B",
+        "tleLine1": "1 52165U 22033J   24346.14480023  .00040030  00000+0  63688-3 0  9990",
+        "tleLine2": "2 52165  97.3118  70.3254 0005086  27.2413 332.9106 15.53179167150633",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52167",
+        "name": "HAWK-4A",
+        "tleLine1": "1 52167U 22033L   24346.14464642  .00041668  00000+0  66277-3 0  9996",
+        "tleLine2": "2 52167  97.3060  69.6714 0004507  26.6076 333.5407 15.53180874150636",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52170",
+        "name": "HAWK-4C",
+        "tleLine1": "1 52170U 22033P   24346.14446563  .00040814  00000+0  64911-3 0  9997",
+        "tleLine2": "2 52170  97.3113  70.2976 0005901  12.2326 347.9070 15.53180420150637",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52754",
+        "name": "HAWK-5C",
+        "tleLine1": "1 52754U 22057Y   24346.31570871  .00016485  00000+0  56621-3 0  9996",
+        "tleLine2": "2 52754  97.5953 111.3185 0006476 246.6096 113.4463 15.30183221141238",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52756",
+        "name": "HAWK-5B",
+        "tleLine1": "1 52756U 22057AA  24346.57711899  .00015586  00000+0  53532-3 0  9992",
+        "tleLine2": "2 52756  97.5945 110.0198 0006985 241.1366 118.9174 15.30193533141276",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52757",
+        "name": "HAWK-5A",
+        "tleLine1": "1 52757U 22057AB  24346.31531259  .00016643  00000+0  57149-3 0  9998",
+        "tleLine2": "2 52757  97.5948 110.5302 0007284 244.0668 115.9822 15.30185854141232",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "55324",
+        "name": "HAWK-6B",
+        "tleLine1": "1 55324U 23011A   24346.63339492  .00008170  00000+0  43801-3 0  9998",
+        "tleLine2": "2 55324  40.5169 316.4495 0003054 272.0153  88.0304 15.15011534103788",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "55326",
+        "name": "HAWK-6C",
+        "tleLine1": "1 55326U 23011C   24346.30336525  .00008727  00000+0  46717-3 0  9995",
+        "tleLine2": "2 55326  40.4851 316.4432 0003694 281.6167  78.4225 15.15007819103741",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "55327",
+        "name": "HAWK-6A",
+        "tleLine1": "1 55327U 23011D   24346.63289966  .00008186  00000+0  43883-3 0  9998",
+        "tleLine2": "2 55327  40.5015 315.5280 0004192 273.6317  86.4010 15.15007264103798",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "56191",
+        "name": "HAWK-7A",
+        "tleLine1": "1 56191U 23054P   24346.59171553  .00010614  00000+0  44900-3 0  9992",
+        "tleLine2": "2 56191  97.3485 234.1702 0005867 228.8457 131.2274 15.23366619 92688",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "56193",
+        "name": "HAWK-7B",
+        "tleLine1": "1 56193U 23054R   24346.59163342  .00010387  00000+0  43937-3 0  9997",
+        "tleLine2": "2 56193  97.3386 232.6675 0006639 244.4545 115.6006 15.23369801 92687",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "56200",
+        "name": "HAWK-7C",
+        "tleLine1": "1 56200U 23054Y   24346.65721505  .00010317  00000+0  43653-3 0  9992",
+        "tleLine2": "2 56200  97.3390 233.5313 0005721 241.8823 118.1836 15.23367987 92694",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "engineering"
+      }
+    ],
+    "Education Satellites": [
+      {
+        "catalogNumber": "27607",
+        "name": "SAUDISAT 1C (SO-50)",
+        "tleLine1": "1 27607U 02058C   24346.54498884  .00002642  00000+0  35925-3 0  9996",
+        "tleLine2": "2 27607  64.5559  35.8080 0034647  23.7112 336.5580 14.80489369182779",
+        "orbitClass": "nonGeostationary",
+        "country": "SAUD",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "28371",
+        "name": "SAUDISAT 2",
+        "tleLine1": "1 28371U 04025F   24346.52244216  .00000882  00000+0  21071-3 0  9998",
+        "tleLine2": "2 28371  98.5064 322.7245 0024631 191.8146 168.2476 14.55987199 85348",
+        "orbitClass": "sunSynchronous",
+        "country": "SAUD",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "31118",
+        "name": "SAUDISAT 3",
+        "tleLine1": "1 31118U 07012B   24346.56244536  .00000889  00000+0  15394-3 0  9997",
+        "tleLine2": "2 31118  98.0782 288.2578 0014656 180.5123 179.6071 14.70710894946553",
+        "orbitClass": "sunSynchronous",
+        "country": "SAUD",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "41784",
+        "name": "PISAT",
+        "tleLine1": "1 41784U 16059B   24346.55897123  .00002303  00000+0  41586-3 0  9998",
+        "tleLine2": "2 41784  97.8244   0.5088 0030274 166.5964 193.6052 14.67072324438652",
+        "orbitClass": "sunSynchronous",
+        "country": "IND",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "42831",
+        "name": "FLYING LAPTOP",
+        "tleLine1": "1 42831U 17042G   24346.83541296  .00005715  00000+0  49965-3 0  9992",
+        "tleLine2": "2 42831  97.3890 157.7923 0011874 190.9783 169.1183 14.97070539403694",
+        "orbitClass": "sunSynchronous",
+        "country": "GER",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "46495",
+        "name": "SALSAT",
+        "tleLine1": "1 46495U 20068K   24346.44109238  .00011540  00000+0  56727-3 0  9994",
+        "tleLine2": "2 46495  97.8395 311.0169 0014911  68.2393 292.0425 15.18110537231157",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "education"
+      }
+    ]
+  }
 }

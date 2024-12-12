@@ -1,4 +1,1201 @@
 {
   "group_major": "Miscellaneous",
-  "data": {}
+  "data": {
+    "Miscellaneous Military Satellites": [
+      {
+        "catalogNumber": "28492",
+        "name": "HELIOS 2A",
+        "tleLine1": "1 28492U 04049A   24346.62987284  .00004291  00000+0  35402-3 0  9999",
+        "tleLine2": "2 28492  98.3239 351.9676 0009825 348.0506  12.0481 14.99575801 70875",
+        "orbitClass": "sunSynchronous",
+        "country": "FR",
+        "group_minor": "military"
+      },
+      {
+        "catalogNumber": "33751",
+        "name": "SPIRALE A",
+        "tleLine1": "1 33751U 09008C   24346.40468345  .00002799  00000+0  19302-2 0  9992",
+        "tleLine2": "2 33751   2.0728  97.0698 5565672 197.4857 130.5267  4.60602009236569",
+        "orbitClass": "nonGeostationary",
+        "country": "FR",
+        "group_minor": "military"
+      },
+      {
+        "catalogNumber": "33752",
+        "name": "SPIRALE B",
+        "tleLine1": "1 33752U 09008D   24345.44105084  .00012578  00000+0  22390-2 0  9991",
+        "tleLine2": "2 33752   2.0958 336.7366 6747195  71.7208 347.1449  2.98610363151360",
+        "orbitClass": "nonGeostationary",
+        "country": "FR",
+        "group_minor": "military"
+      },
+      {
+        "catalogNumber": "39088",
+        "name": "SAPPHIRE",
+        "tleLine1": "1 39088U 13009C   24346.48135258  .00000436  00000+0  16833-3 0  9992",
+        "tleLine2": "2 39088  98.4075 168.6593 0012395  94.3976 265.8626 14.34920496617303",
+        "orbitClass": "sunSynchronous",
+        "country": "CA",
+        "group_minor": "military"
+      }
+    ],
+    "Radar Calibration Satellites": [
+      {
+        "catalogNumber": "00900",
+        "name": "CALSPHERE 1",
+        "tleLine1": "1 00900U 64063C   24346.67810792  .00001200  00000+0  12307-2 0  9994",
+        "tleLine2": "2 00900  90.2115  59.2199 0027138 161.7174  10.1062 13.75659966995428",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "00902",
+        "name": "CALSPHERE 2",
+        "tleLine1": "1 00902U 64063E   24346.54406434  .00000053  00000+0  66428-4 0  9996",
+        "tleLine2": "2 00902  90.2276  62.9476 0019529  36.9703  29.1691 13.52837025781546",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "01361",
+        "name": "LCS 1",
+        "tleLine1": "1 01361U 65034C   24346.51956065  .00000004  00000+0 -54939-3 0  9992",
+        "tleLine2": "2 01361  32.1447  49.2460 0009783 321.0626  38.9167  9.89307137155154",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "01512",
+        "name": "TEMPSAT 1",
+        "tleLine1": "1 01512U 65065E   24346.60396000  .00000075  00000+0  13154-3 0  9992",
+        "tleLine2": "2 01512  89.9656 213.4249 0069822   1.8862  15.7799 13.33545991886408",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "01520",
+        "name": "CALSPHERE 4A",
+        "tleLine1": "1 01520U 65065H   24346.44561521  .00000212  00000+0  39066-3 0  9998",
+        "tleLine2": "2 01520  89.9337 127.0224 0068511 222.3155 201.3241 13.36142977888895",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "02826",
+        "name": "OPS 5712 (P/L 160)",
+        "tleLine1": "1 02826U 67053A   24346.87558439  .00012580  00000+0  23275-2 0  9993",
+        "tleLine2": "2 02826  69.9220 300.1893 0002665 249.7960 110.2895 14.65493663985430",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "02874",
+        "name": "OPS 5712 (P/L 153)",
+        "tleLine1": "1 02874U 67053H   24346.06111324  .00000113  00000+0  11970-3 0  9994",
+        "tleLine2": "2 02874  69.9729 220.7649 0008654 213.9975 146.0577 13.96685248929545",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "02909",
+        "name": "SURCAL 150B",
+        "tleLine1": "1 02909U 67053J   24346.53754763  .00039748  00000+0  33984-2 0  9999",
+        "tleLine2": "2 02909  69.9331 229.0517 0002911 219.7262 140.3683 14.97426598997411",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "05398",
+        "name": "RIGIDSPHERE 2 (LCS 4)",
+        "tleLine1": "1 05398U 71067E   24346.84840721  .00001995  00000+0  65972-3 0  9994",
+        "tleLine2": "2 05398  87.6218 132.1454 0058955 264.0710  95.3767 14.36597083794778",
+        "orbitClass": "nonGeostationary",
+        "country": "Unknown",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "39490",
+        "name": "COSMOS 2493 (SKRL-756 1)",
+        "tleLine1": "1 39490U 13078A   24346.78100157  .00005523  00000+0  47636-3 0  9995",
+        "tleLine2": "2 39490  82.4154  79.6930 0013555 308.7268  51.2741 14.97063463595482",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "radar"
+      },
+      {
+        "catalogNumber": "39491",
+        "name": "COSMOS 2494 (SKRL-756 2)",
+        "tleLine1": "1 39491U 13078B   24346.80501187  .00006258  00000+0  51062-3 0  9991",
+        "tleLine2": "2 39491  82.4158  71.1289 0017427 274.3548  85.5684 14.99173026595959",
+        "orbitClass": "nonGeostationary",
+        "country": "CIS",
+        "group_minor": "radar"
+      }
+    ],
+    "CubeSats": [
+      {
+        "catalogNumber": "27844",
+        "name": "CUTE-1 (CO-55)",
+        "tleLine1": "1 27844U 03031E   24346.57474374  .00000851  00000+0  39188-3 0  9997",
+        "tleLine2": "2 27844  98.6777 351.1950 0009615 356.7291   3.3824 14.23695768113050",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "27848",
+        "name": "CUBESAT XI-IV (CO-57)",
+        "tleLine1": "1 27848U 03031J   24346.01963211  .00000711  00000+0  33450-3 0  9994",
+        "tleLine2": "2 27848  98.6807 350.7836 0009839  14.8235 345.3229 14.23073711112688",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "28895",
+        "name": "CUBESAT XI-V",
+        "tleLine1": "1 28895U 05043F   24346.32177992  .00004037  00000+0  68639-3 0  9991",
+        "tleLine2": "2 28895  98.2233 122.8954 0015494 154.8196 205.3768 14.69606468 20451",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "32785",
+        "name": "CUTE-1.7+APD II (CO-65)",
+        "tleLine1": "1 32785U 08021C   24346.89379156  .00008432  00000+0  66607-3 0  9997",
+        "tleLine2": "2 32785  97.7701 311.4380 0013096 108.0757 252.1894 15.00867091902161",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "32788",
+        "name": "AAUSAT-II",
+        "tleLine1": "1 32788U 08021F   24346.44858962  .00062759  00000+0  17441-2 0  9991",
+        "tleLine2": "2 32788  97.6042 329.4126 0001141  62.7354 297.4006 15.36641556905441",
+        "orbitClass": "nonGeostationary",
+        "country": "DEN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "32790",
+        "name": "CANX-2",
+        "tleLine1": "1 32790U 08021H   24346.63424486  .00007293  00000+0  60975-3 0  9998",
+        "tleLine2": "2 32790  97.7895 309.7370 0012655 102.0573 258.2068 14.98734320901916",
+        "orbitClass": "sunSynchronous",
+        "country": "CA",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "32791",
+        "name": "SEEDS II (CO-66)",
+        "tleLine1": "1 32791U 08021J   24345.81584944  .00018137  00000+0  10819-2 0  9994",
+        "tleLine2": "2 32791  97.7102 317.0447 0007278  72.5026 287.6998 15.11183538903201",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "35932",
+        "name": "SWISSCUBE",
+        "tleLine1": "1 35932U 09051B   24346.56923300  .00002650  00000+0  55741-3 0  9991",
+        "tleLine2": "2 35932  98.4483 233.3325 0007856 122.4917 237.7043 14.60383676808436",
+        "orbitClass": "sunSynchronous",
+        "country": "SWTZ",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "35933",
+        "name": "BEESAT-1",
+        "tleLine1": "1 35933U 09051C   24346.61608160  .00002245  00000+0  47847-3 0  9990",
+        "tleLine2": "2 35933  98.4413 234.0376 0006090 132.0195 228.1524 14.59937961808582",
+        "orbitClass": "sunSynchronous",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "35935",
+        "name": "ITUPSAT1",
+        "tleLine1": "1 35935U 09051E   24346.62548896  .00002078  00000+0  45470-3 0  9996",
+        "tleLine2": "2 35935  98.4510 233.7254 0008165 142.0223 218.1553 14.58801662808152",
+        "orbitClass": "sunSynchronous",
+        "country": "TURK",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "36799",
+        "name": "TISAT 1",
+        "tleLine1": "1 36799U 10035E   24346.66877513  .00017027  00000+0  10654-2 0  9999",
+        "tleLine2": "2 36799  98.0704 244.3888 0004906  19.3399 340.8013 15.09474901783966",
+        "orbitClass": "sunSynchronous",
+        "country": "SWTZ",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "38767",
+        "name": "AEROCUBE 4.5A",
+        "tleLine1": "1 38767U 12048K   24346.85288551  .00025117  00000+0  96801-3 0  9999",
+        "tleLine2": "2 38767  64.6525  98.9251 0111194 322.9074  36.4402 15.20648536287375",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "38768",
+        "name": "AEROCUBE 4.5B",
+        "tleLine1": "1 38768U 12048L   24346.55904547  .00110804  00000+0  15088-2 0  9992",
+        "tleLine2": "2 38768  64.6455   5.7660 0067813 312.6594  46.8844 15.54232001288671",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39090",
+        "name": "STRAND-1",
+        "tleLine1": "1 39090U 13009E   24346.50386057  .00000885  00000+0  31569-3 0  9994",
+        "tleLine2": "2 39090  98.3766 169.9721 0009889  83.5836 276.6477 14.36511806617710",
+        "orbitClass": "sunSynchronous",
+        "country": "UK",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39091",
+        "name": "BRITE-AUSTRIA",
+        "tleLine1": "1 39091U 13009F   24346.59058372  .00000561  00000+0  20711-3 0  9998",
+        "tleLine2": "2 39091  98.3817 169.3300 0011439  90.1523 270.0974 14.36104045617720",
+        "orbitClass": "sunSynchronous",
+        "country": "ASRA",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39151",
+        "name": "NEE-01 PEGASO",
+        "tleLine1": "1 39151U 13018B   24346.31747152  .00005562  00000+0  60230-3 0  9992",
+        "tleLine2": "2 39151  98.0527 105.6942 0014164 177.8416 182.2863 14.88584312628302",
+        "orbitClass": "sunSynchronous",
+        "country": "ECU",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39161",
+        "name": "ESTCUBE 1",
+        "tleLine1": "1 39161U 13021C   24346.46425504  .00004041  00000+0  56217-3 0  9998",
+        "tleLine2": "2 39161  97.8087  47.5409 0009097  23.6535 336.5093 14.78322740623300",
+        "orbitClass": "sunSynchronous",
+        "country": "EST",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39268",
+        "name": "POPACS 1",
+        "tleLine1": "1 39268U 13055D   24346.31583594  .00047110 -11777-6  62803-3 0  9994",
+        "tleLine2": "2 39268  80.9792 304.7772 0325881 233.3945 123.6904 15.14560959588608",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39269",
+        "name": "POPACS 2",
+        "tleLine1": "1 39269U 13055E   24346.58324541  .00025867  00000+0  54682-3 0  9999",
+        "tleLine2": "2 39269  81.0002  45.5383 0513983 138.3566 225.7998 14.66434706581503",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39270",
+        "name": "POPACS 3",
+        "tleLine1": "1 39270U 13055F   24346.34590285  .00010908  00000+0  29128-3 0  9992",
+        "tleLine2": "2 39270  81.0068 102.8132 0605214 298.4002  55.7450 14.42363837558450",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39417",
+        "name": "ZACUBE-1 (TSHEPISOSAT)",
+        "tleLine1": "1 39417U 13066B   24346.82420791  .00009478  00000+0  89178-3 0  9995",
+        "tleLine2": "2 39417  97.7572 299.4829 0045053 293.1427  66.5048 14.93314122598057",
+        "orbitClass": "sunSynchronous",
+        "country": "SAFR",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39423",
+        "name": "WNISAT-1",
+        "tleLine1": "1 39423U 13066H   24346.49417047  .00002950  00000+0  55904-3 0  9993",
+        "tleLine2": "2 39423  97.6644 166.5549 0167538 171.7256 188.6770 14.56313028586238",
+        "orbitClass": "sunSynchronous",
+        "country": "JPN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39427",
+        "name": "TRITON-1",
+        "tleLine1": "1 39427U 13066M   24346.60565920  .00005099  00000+0  67719-3 0  9998",
+        "tleLine2": "2 39427  97.8404 259.1455 0096424 229.2425 130.0388 14.76989743592569",
+        "orbitClass": "sunSynchronous",
+        "country": "UK",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39428",
+        "name": "DELFI-N3XT",
+        "tleLine1": "1 39428U 13066N   24346.33268930  .00011453  00000+0  12918-2 0  9991",
+        "tleLine2": "2 39428  97.8371 260.5688 0089884 231.8798 127.4289 14.83803620592489",
+        "orbitClass": "sunSynchronous",
+        "country": "NETH",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39430",
+        "name": "GOMX-1",
+        "tleLine1": "1 39430U 13066Q   24346.62248488  .00003752  00000+0  60149-3 0  9995",
+        "tleLine2": "2 39430  97.7045 210.2194 0137026  48.0568 313.2221 14.66132716589027",
+        "orbitClass": "sunSynchronous",
+        "country": "DEN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39440",
+        "name": "CUBEBUG-2 (LO-74)",
+        "tleLine1": "1 39440U 13066AA  24346.80044037  .00008456  00000+0  91328-3 0  9999",
+        "tleLine2": "2 39440  97.8313 287.1947 0067611  53.0810 307.6574 14.86901528595891",
+        "orbitClass": "sunSynchronous",
+        "country": "ARGN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39441",
+        "name": "NEE-02 KRYSAOR",
+        "tleLine1": "1 39441U 13066AB  24346.56705606  .00005004  00000+0  60159-3 0  9993",
+        "tleLine2": "2 39441  97.8391 282.0092 0073165  78.4197 282.5218 14.82471458594191",
+        "orbitClass": "sunSynchronous",
+        "country": "ECU",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39444",
+        "name": "FUNCUBE-1 (AO-73)",
+        "tleLine1": "1 39444U 13066AE  24346.44334978  .00012951  00000+0  10958-2 0  9993",
+        "tleLine2": "2 39444  97.7428 302.8332 0040733 270.7205  88.9349 14.97516590596585",
+        "orbitClass": "sunSynchronous",
+        "country": "UK",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "39446",
+        "name": "UWE-3",
+        "tleLine1": "1 39446U 13066AG  24346.67551254  .00009593  00000+0  97490-3 0  9993",
+        "tleLine2": "2 39446  97.8026 293.2355 0056710 357.1778   2.9112 14.89806912595682",
+        "orbitClass": "sunSynchronous",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40020",
+        "name": "BRITE-CA1 (TORONTO)",
+        "tleLine1": "1 40020U 14033L   24346.61095100  .00002739  00000+0  43611-3 0  9996",
+        "tleLine2": "2 40020  97.9006 117.9103 0080340 244.9645 114.3205 14.70666469561041",
+        "orbitClass": "sunSynchronous",
+        "country": "CA",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40021",
+        "name": "DUCHIFAT-1",
+        "tleLine1": "1 40021U 14033M   24346.50759292  .00023324  00000+0  11727-2 0  9999",
+        "tleLine2": "2 40021  98.0998 340.7774 0008902 206.2965 153.7816 15.17222004570910",
+        "orbitClass": "nonGeostationary",
+        "country": "ISRA",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40024",
+        "name": "NANOSATC-BR1",
+        "tleLine1": "1 40024U 14033Q   24346.47055826  .00016988  00000+0  10237-2 0  9993",
+        "tleLine2": "2 40024  98.0810 327.0370 0003483 316.0376  44.0575 15.10854868569948",
+        "orbitClass": "sunSynchronous",
+        "country": "BRAZ",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40025",
+        "name": "QB50P1",
+        "tleLine1": "1 40025U 14033R   24346.66856386  .00013806  00000+0  96718-3 0  9990",
+        "tleLine2": "2 40025  98.0643 314.1698 0010320 311.8869  48.1475 15.05312505570038",
+        "orbitClass": "sunSynchronous",
+        "country": "BEL",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40032",
+        "name": "QB50P2",
+        "tleLine1": "1 40032U 14033Y   24346.60819300  .00011092  00000+0  81326-3 0  9991",
+        "tleLine2": "2 40032  98.0231 304.5028 0006534 242.1336 117.9227 15.03682270569288",
+        "orbitClass": "sunSynchronous",
+        "country": "BEL",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40037",
+        "name": "PERSEUS-M2",
+        "tleLine1": "1 40037U 14033AD  24346.63198289  .00004503  00000+0  44588-3 0  9993",
+        "tleLine2": "2 40037  97.9399 278.3480 0012027 337.7612  22.3083 14.92311350568775",
+        "orbitClass": "sunSynchronous",
+        "country": "CIS",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40039",
+        "name": "PERSEUS-M1",
+        "tleLine1": "1 40039U 14033AF  24346.61097737  .00004439  00000+0  44089-3 0  9993",
+        "tleLine2": "2 40039  97.9169 273.8557 0011847 336.7637  23.3044 14.92197244568639",
+        "orbitClass": "sunSynchronous",
+        "country": "CIS",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40042",
+        "name": "POLYITAN-1",
+        "tleLine1": "1 40042U 14033AJ  24346.68896160  .00019506  00000+0  11844-2 0  9994",
+        "tleLine2": "2 40042  98.0889 319.4232 0008785 254.1560 105.8699 15.10520111570062",
+        "orbitClass": "sunSynchronous",
+        "country": "UKR",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40043",
+        "name": "TIGRISAT",
+        "tleLine1": "1 40043U 14033AK  24346.34962709  .00004154  00000+0  52671-3 0  9998",
+        "tleLine2": "2 40043  97.7107 141.9036 0054288  85.8503 274.8912 14.81207067563669",
+        "orbitClass": "sunSynchronous",
+        "country": "IRAQ",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40045",
+        "name": "AEROCUBE 6A",
+        "tleLine1": "1 40045U 14033AM  24346.47337114  .00009453  00000+0  10081-2 0  9995",
+        "tleLine2": "2 40045  97.6756 153.6262 0047116  58.1808 302.3984 14.88236711564352",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40046",
+        "name": "AEROCUBE 6B",
+        "tleLine1": "1 40046U 14033AN  24346.46588695  .00009422  00000+0  98130-3 0  9995",
+        "tleLine2": "2 40046  97.6731 152.5026 0045670  52.7328 307.8041 14.89241086564561",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40055",
+        "name": "CANX-4",
+        "tleLine1": "1 40055U 14034C   24346.55586945  .00002613  00000+0  35825-3 0  9999",
+        "tleLine2": "2 40055  98.3777 188.7321 0013134 349.8518  10.2425 14.79313524562799",
+        "orbitClass": "sunSynchronous",
+        "country": "CA",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40056",
+        "name": "CANX-5",
+        "tleLine1": "1 40056U 14034D   24346.55981652  .00002612  00000+0  35807-3 0  9993",
+        "tleLine2": "2 40056  98.3781 188.7488 0013116 349.8751  10.2193 14.79324965553577",
+        "orbitClass": "sunSynchronous",
+        "country": "CA",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40074",
+        "name": "UKUBE-1",
+        "tleLine1": "1 40074U 14037F   24346.59954753  .00014069  00000+0  11406-2 0  9999",
+        "tleLine2": "2 40074  98.3597 288.2563 0002612 124.4258 235.7211 14.99810622565312",
+        "orbitClass": "sunSynchronous",
+        "country": "UK",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40119",
+        "name": "BRITE-PL2 (HEWELIUSZ)",
+        "tleLine1": "1 40119U 14049B   24346.26162538  .00003844  00000+0  39423-3 0  9997",
+        "tleLine2": "2 40119  97.8874  85.4196 0015923 137.9070 222.3374 14.90947675558946",
+        "orbitClass": "sunSynchronous",
+        "country": "POL",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40965",
+        "name": "AEROCUBE 5C",
+        "tleLine1": "1 40965U 15058B   24346.61818310  .00006283  00000+0  53831-3 0  9991",
+        "tleLine2": "2 40965  64.7674 175.7560 0186769 255.0764 102.9600 14.85863315283361",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40966",
+        "name": "AEROCUBE 7",
+        "tleLine1": "1 40966U 15058C   24346.57227935  .00008326  00000+0  67361-3 0  9997",
+        "tleLine2": "2 40966  64.7641 167.7454 0180287 254.7454 103.3664 14.88451770283478",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40967",
+        "name": "FOX-1A (AO-85)",
+        "tleLine1": "1 40967U 15058D   24346.27675841  .00006129  00000+0  53735-3 0  9997",
+        "tleLine2": "2 40967  64.7755 191.3259 0184492 250.8424 107.2636 14.85326012 31264",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40968",
+        "name": "SINOD-D 1",
+        "tleLine1": "1 40968U 15058E   24346.63790954  .00008322  00000+0  68538-3 0  9995",
+        "tleLine2": "2 40968  64.7752 180.9671 0176918 249.7065 108.4955 14.88215315 34183",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40970",
+        "name": "SNAP-3 ALICE",
+        "tleLine1": "1 40970U 15058G   24346.53514729  .00035130  00000+0  18805-2 0  9999",
+        "tleLine2": "2 40970  64.7661 125.5638 0133585 248.2797 110.4059 15.07434362 32400",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40971",
+        "name": "LMRST-SAT",
+        "tleLine1": "1 40971U 15058H   24346.59709438  .00005692  00000+0  49921-3 0  9993",
+        "tleLine2": "2 40971  64.7752 185.9165 0185922 252.1324 105.9432 14.85227255 31318",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40972",
+        "name": "SNAP-3 EDDIE",
+        "tleLine1": "1 40972U 15058J   24346.63019530  .00034929  00000+0  18443-2 0  9995",
+        "tleLine2": "2 40972  64.7634 118.2677 0133740 249.3268 109.3472 15.07883410 34525",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40973",
+        "name": "PROPCUBE 3",
+        "tleLine1": "1 40973U 15058K   24346.64933987  .00007731  00000+0  63910-3 0  9999",
+        "tleLine2": "2 40973  64.7687 171.7296 0181847 253.5789 104.5267 14.87549501 32390",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40974",
+        "name": "BISONSAT",
+        "tleLine1": "1 40974U 15058L   24346.78055685  .00020634  00000+0  13429-2 0  9991",
+        "tleLine2": "2 40974  64.7639 138.0152 0154664 251.4313 106.9949 14.98618736 32305",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40975",
+        "name": "SNAP-3 JIMI",
+        "tleLine1": "1 40975U 15058M   24346.62564903  .00012780  00000+0  95594-3 0  9990",
+        "tleLine2": "2 40975  64.7660 156.6402 0170531 252.6187 105.6216 14.92121056 31453",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40976",
+        "name": "PROPCUBE 1 (FLORA)",
+        "tleLine1": "1 40976U 15058N   24346.33131636  .00005528  00000+0  50400-3 0  9991",
+        "tleLine2": "2 40976  64.7748 203.1797 0184989 253.5919 104.4785 14.83947998 34059",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "40977",
+        "name": "SINOD-D 3",
+        "tleLine1": "1 40977U 15058P   24346.64436980  .00007077  00000+0  60722-3 0  9995",
+        "tleLine2": "2 40977  64.7728 193.4993 0177324 252.7113 105.4529 14.86826537 32377",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "41340",
+        "name": "HORYU-4",
+        "tleLine1": "1 41340U 16012D   24346.45706196  .00025313  00000+0  95813-3 0  9991",
+        "tleLine2": "2 41340  31.0004 253.1596 0009069 340.5801  19.4496 15.25710068485159",
+        "orbitClass": "nonGeostationary",
+        "country": "JPN",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "41849",
+        "name": "RAVAN",
+        "tleLine1": "1 41849U 16067B   24346.50684143  .00022904  00000+0  10067-2 0  9998",
+        "tleLine2": "2 41849  98.0570 175.5621 0011224 140.1278 220.0783 15.21859400442879",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "41850",
+        "name": "CELTEE 1",
+        "tleLine1": "1 41850U 16067C   24346.47109245  .00009393  00000+0  56786-3 0  9997",
+        "tleLine2": "2 41850  98.1058 165.7618 0000972  14.5900 345.5355 15.10903430442154",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "41851",
+        "name": "OPTICUBE 04",
+        "tleLine1": "1 41851U 16067D   24346.07272037  .00005247  00000+0  37086-3 0  9990",
+        "tleLine2": "2 41851  98.0853 158.9035 0017151 178.2897 181.8390 15.05251831441822",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "41852",
+        "name": "AEROCUBE 8D",
+        "tleLine1": "1 41852U 16067E   24346.47237653  .00011796  00000+0  67181-3 0  9995",
+        "tleLine2": "2 41852  98.1102 166.0811 0003725 225.0605 135.0322 15.12990554442156",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "41853",
+        "name": "AEROCUBE 8C",
+        "tleLine1": "1 41853U 16067F   24346.48765769  .00011796  00000+0  67077-3 0  9995",
+        "tleLine2": "2 41853  98.0931 164.2556 0007129 152.0391 208.1222 15.13030291442149",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "41854",
+        "name": "PROMETHEUS 2-1",
+        "tleLine1": "1 41854U 16067G   24346.49013879  .00036675  00000+0  12636-2 0  9998",
+        "tleLine2": "2 41854  98.0927 175.3324 0008851 162.5770 197.5774 15.29896235442712",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "41855",
+        "name": "PROMETHEUS 2-3",
+        "tleLine1": "1 41855U 16067H   24346.49370557  .00036783  00000+0  12710-2 0  9991",
+        "tleLine2": "2 41855  98.0867 174.6536 0007348 173.6518 186.4815 15.29813279442716",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "42846",
+        "name": "CORVUS BC2",
+        "tleLine1": "1 42846U 17042X   24346.48554671  .00006343  00000+0  50597-3 0  9991",
+        "tleLine2": "2 42846  97.3674 162.0829 0011200 176.2301 183.9010 15.00583056404007",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "42847",
+        "name": "CORVUS BC1",
+        "tleLine1": "1 42847U 17042Y   24346.49549773  .00006608  00000+0  52504-3 0  9994",
+        "tleLine2": "2 42847  97.3673 162.5066 0010442 150.7291 209.4521 15.00727737404026",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "43015",
+        "name": "MIRATA",
+        "tleLine1": "1 43015U 17073C   24346.73406403  .00048313  00000+0  15589-2 0  9995",
+        "tleLine2": "2 43015  97.5674 230.9083 0131910   8.8153 351.5355 15.23877483383209",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "43016",
+        "name": "MAKERSAT 0",
+        "tleLine1": "1 43016U 17073D   24346.61917001  .00022043  00000+0  10555-2 0  9994",
+        "tleLine2": "2 43016  97.5451 221.2904 0171280  40.1286 321.2445 15.06861797382540",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "43759",
+        "name": "SIRION PATHFINDER-2",
+        "tleLine1": "1 43759U 18099B   24346.60799697  .00008064  00000+0  54709-3 0  9992",
+        "tleLine2": "2 43759  97.5076  37.9682 0011612  49.5216 310.7022 15.06627051329188",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "43767",
+        "name": "CORVUS BC4",
+        "tleLine1": "1 43767U 18099K   24346.41290140  .00007714  00000+0  53982-3 0  9992",
+        "tleLine2": "2 43767  97.4902  34.3800 0011177  99.4634 260.7856 15.05483877329028",
+        "orbitClass": "sunSynchronous",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "43780",
+        "name": "MOVE-II",
+        "tleLine1": "1 43780U 18099Y   24346.17313156  .00047380  00000+0  14786-2 0  9994",
+        "tleLine2": "2 43780  97.4968  49.1318 0005113  79.6361 280.5457 15.33047234329866",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "43816",
+        "name": "SPACEBEE-7",
+        "tleLine1": "1 43816U 18099BL  24346.14238670  .00027547  00000+0  11911-2 0  9998",
+        "tleLine2": "2 43816  97.5255  48.6526 0008315  38.1831 321.9992 15.22396472329223",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "43818",
+        "name": "SPACEBEE-6",
+        "tleLine1": "1 43818U 18099BN  24346.65178397  .00296233  00000+0  27899-2 0  9997",
+        "tleLine2": "2 43818  97.5097  60.0605 0004952 326.2080  33.8863 15.66147915330171",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "43850",
+        "name": "SHIELDS 1",
+        "tleLine1": "1 43850U 18104B   24346.54481935  .00026519  00000+0  51165-3 0  9995",
+        "tleLine2": "2 43850  85.0192 161.9585 0010215 112.1514 248.0827 15.47626168333495",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "44400",
+        "name": "SONATE",
+        "tleLine1": "1 44400U 19038Q   24346.56487266  .00050268  00000+0  88662-3 0  9999",
+        "tleLine2": "2 44400  97.7126 350.4574 0011350 175.4483 184.6873 15.50175642301395",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "44406",
+        "name": "LUCKY-7",
+        "tleLine1": "1 44406U 19038W   24346.51919267  .01286795  10707-2  14577-2 0  9999",
+        "tleLine2": "2 44406  97.6831 359.9558 0005793 152.6273 207.5315 16.09469439302030",
+        "orbitClass": "nonGeostationary",
+        "country": "CZE",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "44854",
+        "name": "DUCHIFAT-3",
+        "tleLine1": "1 44854U 19089C   24346.51009234  .00034068  00000+0  11976-2 0  9991",
+        "tleLine2": "2 44854  36.9513  43.9568 0010993 148.0813 212.0606 15.28437181275221",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "45727",
+        "name": "M2 PATHFINDER",
+        "tleLine1": "1 45727U 20037E   24346.49301600  .00005846  00000+0  47707-3 0  9999",
+        "tleLine2": "2 45727  97.7763 162.4083 0011013 240.8460 119.1661 14.99777555242495",
+        "orbitClass": "sunSynchronous",
+        "country": "AUS",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "46504",
+        "name": "NETSAT-4",
+        "tleLine1": "1 46504U 20068U   24346.48642608  .00017559  00000+0  76059-3 0  9998",
+        "tleLine2": "2 46504  97.8264 309.4719 0011237 103.4129 256.8360 15.22411397231072",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "46505",
+        "name": "NETSAT-3",
+        "tleLine1": "1 46505U 20068V   24346.41125594  .00016623  00000+0  73666-3 0  9994",
+        "tleLine2": "2 46505  97.8249 308.6773 0010369 111.4140 248.8202 15.21654856231045",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "46506",
+        "name": "NETSAT-1",
+        "tleLine1": "1 46506U 20068W   24346.45954036  .00013699  00000+0  66437-3 0  9998",
+        "tleLine2": "2 46506  97.8273 307.6247 0009032 121.0752 239.1368 15.18598751230973",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "46507",
+        "name": "NETSAT-2",
+        "tleLine1": "1 46507U 20068X   24346.64162676  .00017528  00000+0  76288-3 0  9991",
+        "tleLine2": "2 46507  97.8255 309.2123 0008305 121.1279 239.0771 15.22276362231044",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "47941",
+        "name": "WILDTRACKCUBE-SIMBA",
+        "tleLine1": "1 47941U 21022K   24346.69138038  .00027303  00000+0  88343-3 0  9992",
+        "tleLine2": "2 47941  97.4408 242.8011 0009849 234.0969 125.9359 15.31978103205537",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "47959",
+        "name": "GRBALPHA",
+        "tleLine1": "1 47959U 21022AD  24346.66347637  .00051070  00000+0  11527-2 0  9992",
+        "tleLine2": "2 47959  97.4402 246.4654 0007113 208.5696 151.5163 15.43027831204597",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "48085",
+        "name": "BEESAT-8",
+        "tleLine1": "1 48085U 21022AP  24346.70175156  .00184485  00000+0  19489-2 0  9995",
+        "tleLine2": "2 48085  97.4725 253.3420 0006258 136.5662 223.6090 15.63577011205252",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "49069",
+        "name": "LEDSAT",
+        "tleLine1": "1 49069U 21073D   24346.64903053  .00035245  00000+0  93643-3 0  9996",
+        "tleLine2": "2 49069  97.4168  57.8243 0014680  15.6585 344.5111 15.38071525183595",
+        "orbitClass": "nonGeostationary",
+        "country": "IT",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "53109",
+        "name": "ROBUSTA-1F (MTCUBE 2)",
+        "tleLine1": "1 53109U 22080E   24346.36412725 -.00000003  00000+0  00000+0 0  9991",
+        "tleLine2": "2 53109  70.1183 130.5154 0008376  49.9704 310.1690  6.42584155 56546",
+        "orbitClass": "nonGeostationary",
+        "country": "FR",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "57176",
+        "name": "SITRO-AIS 5 (KATYS)",
+        "tleLine1": "1 57176U 23091L   24346.63333298  .00014045  00000+0  76889-3 0  9991",
+        "tleLine2": "2 57176  97.5891  37.7082 0014835 230.7744 129.2171 15.14255189 80295",
+        "orbitClass": "sunSynchronous",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "57192",
+        "name": "SITRO-AIS 6 (CHIRKIN)",
+        "tleLine1": "1 57192U 23091AC  24346.61384208  .00013391  00000+0  73315-3 0  9998",
+        "tleLine2": "2 57192  97.5892  37.7194 0014577 229.9993 129.9960 15.14266123 80290",
+        "orbitClass": "sunSynchronous",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "57193",
+        "name": "SITRO-AIS 8 (ANOKHIN)",
+        "tleLine1": "1 57193U 23091AD  24346.78594136  .00013944  00000+0  74654-3 0  9991",
+        "tleLine2": "2 57193  97.5885  38.0935 0014316 230.1538 129.8435 15.15055997 80337",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "57194",
+        "name": "SITRO-AIS 7 (FARTUSHNIY)",
+        "tleLine1": "1 57194U 23091AE  24346.56054922  .00014005  00000+0  76868-3 0  9990",
+        "tleLine2": "2 57194  97.5890  37.6276 0014553 231.2909 128.7022 15.14167688 80288",
+        "orbitClass": "sunSynchronous",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "57199",
+        "name": "SITRO-AIS 10 (BURDAEV)",
+        "tleLine1": "1 57199U 23091AK  24346.58119762  .00016465  00000+0  82322-3 0  9995",
+        "tleLine2": "2 57199  97.5900  39.3852 0010091 215.0795 144.9775 15.17476842 80395",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "57201",
+        "name": "SITRO-AIS 9 (SHCHUKIN)",
+        "tleLine1": "1 57201U 23091AM  24346.84751765  .00016531  00000+0  82798-3 0  9994",
+        "tleLine2": "2 57201  97.5895  39.6119 0010063 214.2871 145.7714 15.17414336 80433",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "57204",
+        "name": "SITRO-AIS 12 (SMIRENNIY)",
+        "tleLine1": "1 57204U 23091AQ  24346.65528011  .00016185  00000+0  80633-3 0  9993",
+        "tleLine2": "2 57204  97.5905  39.6240 0010092 208.3982 151.6703 15.17606214 80412",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "57208",
+        "name": "SITRO-AIS 11 (SHEFFER)",
+        "tleLine1": "1 57208U 23091AU  24346.62762164  .00016115  00000+0  79967-3 0  9994",
+        "tleLine2": "2 57208  97.5904  39.6448 0009905 208.5784 151.4907 15.17746414 80419",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "58261",
+        "name": "VERONIKA",
+        "tleLine1": "1 58261U 23174F   24346.66627701  .00044164  00000+0  12345-2 0  9998",
+        "tleLine2": "2 58261  97.4415  61.2708 0008652 336.1527  23.9315 15.36518031 60806",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "58470",
+        "name": "ROBUSTA-1E (ENSO)",
+        "tleLine1": "1 58470U 23185J   24346.80620071  .00034503  00000+0  98559-3 0  9999",
+        "tleLine2": "2 58470  97.4038  52.8018 0009891  13.8914 346.2600 15.35883260 57277",
+        "orbitClass": "nonGeostationary",
+        "country": "FR",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59052",
+        "name": "SITRO-AIS 29",
+        "tleLine1": "1 59052U 24039B   24346.87485948  .00063922  00000+0  12576-2 0  9995",
+        "tleLine2": "2 59052  97.4082 309.6430 0008458 318.7271  41.3339 15.47007686 43860",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59053",
+        "name": "SITRO-AIS 30",
+        "tleLine1": "1 59053U 24039C   24346.64221073  .00061563  00000+0  12340-2 0  9996",
+        "tleLine2": "2 59053  97.4085 309.3375 0009015 320.5545  39.5047 15.46469074 43816",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59054",
+        "name": "SITRO-AIS 31",
+        "tleLine1": "1 59054U 24039D   24346.67230759  .00062343  00000+0  12315-2 0  9990",
+        "tleLine2": "2 59054  97.4080 309.4505 0008759 320.6061  39.4551 15.46893932 43842",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59055",
+        "name": "SITRO-AIS 33",
+        "tleLine1": "1 59055U 24039E   24346.65033825  .00061154  00000+0  12029-2 0  9995",
+        "tleLine2": "2 59055  97.4085 309.4923 0008379 322.1751  37.8909 15.47026068 43830",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59056",
+        "name": "SITRO-AIS 35",
+        "tleLine1": "1 59056U 24039F   24346.64408517  .00063588  00000+0  12480-2 0  9993",
+        "tleLine2": "2 59056  97.4084 309.4950 0008382 323.4746  36.5931 15.47080047 43830",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59057",
+        "name": "SITRO-AIS 32",
+        "tleLine1": "1 59057U 24039G   24346.80317808  .00060074  00000+0  11943-2 0  9994",
+        "tleLine2": "2 59057  97.4087 309.5953 0008579 321.7345  38.3295 15.46719645 43859",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59058",
+        "name": "SITRO-AIS 34",
+        "tleLine1": "1 59058U 24039H   24346.64980376  .00063129  00000+0  12422-2 0  9990",
+        "tleLine2": "2 59058  97.4085 309.4949 0008350 322.1779  37.8883 15.47007343 43836",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59059",
+        "name": "SITRO-AIS 36",
+        "tleLine1": "1 59059U 24039J   24346.62899443  .00061450  00000+0  12031-2 0  9994",
+        "tleLine2": "2 59059  97.4081 309.5168 0008217 323.6984  36.3708 15.47161498 43835",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59060",
+        "name": "SITRO-AIS 49",
+        "tleLine1": "1 59060U 24039K   24346.64674370  .00060770  00000+0  12053-2 0  9996",
+        "tleLine2": "2 59060  97.4090 309.4969 0008420 322.4488  37.6172 15.46786121 43831",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59061",
+        "name": "SITRO-AIS 50",
+        "tleLine1": "1 59061U 24039L   24346.85795129  .00063370  00000+0  12252-2 0  9996",
+        "tleLine2": "2 59061  97.4080 309.8188 0007968 321.7767  38.2917 15.47519986 43878",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59062",
+        "name": "SITRO-AIS 51",
+        "tleLine1": "1 59062U 24039M   24346.66150971  .00064973  00000+0  12521-2 0  9995",
+        "tleLine2": "2 59062  97.4077 309.6211 0007883 323.7207  36.3507 15.47608341 43842",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59063",
+        "name": "SITRO-AIS 52",
+        "tleLine1": "1 59063U 24039N   24346.64314159  .00061707  00000+0  11871-2 0  9993",
+        "tleLine2": "2 59063  97.4085 309.6510 0007865 323.1484  36.9224 15.47672651 43842",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59066",
+        "name": "SITRO-AIS 25",
+        "tleLine1": "1 59066U 24039R   24346.62651248  .00005607  00000+0  49805-3 0  9993",
+        "tleLine2": "2 59066  95.3870 217.6926 0164840  91.0739 270.9373 14.86410928 42432",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59067",
+        "name": "SITRO-AIS 26",
+        "tleLine1": "1 59067U 24039S   24346.63519768  .00005862  00000+0  52207-3 0  9998",
+        "tleLine2": "2 59067  95.3869 217.6842 0165014  91.1304 270.8827 14.86280841 42433",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59068",
+        "name": "SITRO-AIS 27",
+        "tleLine1": "1 59068U 24039T   24346.66735038  .00006674  00000+0  59052-3 0  9999",
+        "tleLine2": "2 59068  95.3872 217.7686 0164450  90.6513 271.3555 14.86560323 42445",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "59071",
+        "name": "SITRO-AIS 28",
+        "tleLine1": "1 59071U 24039U   24346.65933307  .00006291  00000+0  55651-3 0  9997",
+        "tleLine2": "2 59071  95.3872 217.7790 0164250  90.6360 271.3684 14.86602704 42446",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "60237",
+        "name": "GRBBETA",
+        "tleLine1": "1 60237U 24128C   24346.30671430  .00007488  00000+0  61260-3 0  9992",
+        "tleLine2": "2 60237  61.9942 346.8041 0030910  12.5769 347.6084 14.99753272 23130",
+        "orbitClass": "nonGeostationary",
+        "country": "TBD",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "60240",
+        "name": "OOV-CUBE (TUBSAT-30)",
+        "tleLine1": "1 60240U 24128F   24346.40214192  .00005270  00000+0  45276-3 0  9991",
+        "tleLine2": "2 60240  61.9982 347.3153 0028948   8.0178 352.1367 14.98346804 23144",
+        "orbitClass": "nonGeostationary",
+        "country": "GER",
+        "group_minor": "cubesat"
+      },
+      {
+        "catalogNumber": "60243",
+        "name": "ROBUSTA-3A (MEDITERRAN*)",
+        "tleLine1": "1 60243U 24128J   24346.42620542  .00011761  00000+0  94483-3 0  9992",
+        "tleLine2": "2 60243  61.9913 346.7649 0029243   2.3189 357.8031 15.00087517 23150",
+        "orbitClass": "nonGeostationary",
+        "country": "FR",
+        "group_minor": "cubesat"
+      }
+    ],
+    "Other Satellites": [
+      {
+        "catalogNumber": "25160",
+        "name": "CELESTIS-02 & TAURUS R/B",
+        "tleLine1": "1 25160U 98007D   24346.74898262  .00000416  00000+0  24094-3 0  9995",
+        "tleLine2": "2 25160 108.0039 297.2520 0062454 355.4143  70.2780 14.22196334392182",
+        "orbitClass": "nonGeostationary",
+        "country": "US",
+        "group_minor": "other"
+      }
+    ]
+  }
 }

@@ -79,7 +79,6 @@ async function fetchCelesTrakGroupData(apiQuery) {
                 });
             }
         }
-
         return satellites;
     } catch (error) {
         console.error(`Error fetching data for group "${apiQuery}" from CelesTrak:`, error.message);
@@ -106,7 +105,7 @@ async function mergeData(apiQuery) {
             tleLine2: celestrakItem.tleLine2,
             orbitClass: celestrakItem.orbitClass,
             country: spaceTrackItem?.country || 'Unknown',
-            api: celestrakItem.api,
+            group_minor: celestrakItem.api,
         };
     });
 
@@ -123,18 +122,22 @@ async function cacheGroupData(groupMajor) {
     const data = {};
 
     for (const minorGroup of minorGroups) {
-        if (isCacheExpired(minorGroup.api)) {
-            console.log(`Re-caching data for group_minor: "${minorGroup.api}"`);
-            const mergedData = await mergeData(minorGroup.api);
-            data[minorGroup.group_minor] = mergedData; // Group by group_minor
-            timestamps[minorGroup.api] = now; // Update timestamp for the minor group
-        } else {
-            console.log(`Using cached data for group_minor: "${minorGroup.api}"`);
-            const cacheFile = path.join(CACHE_DIR, `${minorGroup.api.toLowerCase()}.json`);
-            if (fs.existsSync(cacheFile)) {
-                const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
-                data[minorGroup.group_minor] = cachedData.data; // Add cached satellites under group_minor
+        try {
+            if (isCacheExpired(minorGroup.api)) {
+                console.log(`Re-caching data for group_minor: "${minorGroup.api}"`);
+                const mergedData = await mergeData(minorGroup.api);
+                data[minorGroup.group_minor] = mergedData; // Add merged data for the specific group_minor
+                timestamps[minorGroup.api] = now; // Update timestamp for the minor group
+            } else {
+                console.log(`Using cached data for group_minor: "${minorGroup.api}"`);
+                const cacheFile = path.join(CACHE_DIR, `${minorGroup.api.toLowerCase()}.json`);
+                if (fs.existsSync(cacheFile)) {
+                    const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+                    data[minorGroup.group_minor] = cachedData; // Load cached data for the group_minor
+                }
             }
+        } catch (error) {
+            console.error(`Error processing group_minor "${minorGroup.api}":`, error.message);
         }
     }
 
@@ -146,7 +149,6 @@ async function cacheGroupData(groupMajor) {
     // Save updated timestamps
     fs.writeFileSync(TIMESTAMPS_FILE, JSON.stringify(timestamps, null, 2));
 }
-
 
 // Determine Orbit Class
 function determineOrbitClass(tleLine1, tleLine2) {
