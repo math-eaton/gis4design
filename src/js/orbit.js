@@ -74,7 +74,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     // stats
     const stats = new Stats()
     stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
-    document.body.appendChild(stats.dom)
+    // document.body.appendChild(stats.dom)
     stats.dom.id = 'statistics';
 
     window.addEventListener('keydown', (event) => {
@@ -606,7 +606,6 @@ function populateClassificationSchemes(config) {
         console.log(`sccccc: `, classificationSchemes[key])
     }
 
-    console.log('Parsed Classification Schemes:', classificationSchemes);
     return classificationSchemes;
 }
 
@@ -730,26 +729,26 @@ function switchClassification(newScheme) {
     }
 
     if (activeScheme) {
-        resetSatelliteVisibility(satelliteMesh, activeScheme);
+        resetSatelliteVisibility(satelliteMesh, activeScheme); // Reset visibility for the old scheme
     }
 
     activeScheme = newScheme;
+
+    // Reapply classification and reset visibility/colors
     applyClassification(satelliteMesh, activeScheme, tleArray);
+    resetSatelliteVisibility(satelliteMesh, activeScheme);
+    resetSatelliteColors(satelliteMesh); 
 
-
-    resetSatelliteVisibility(satelliteMesh, activeScheme); // Reset visibility for the new scheme
-    resetSatelliteColors(satelliteMesh); // Apply colors for the new scheme
-
+    // Update satellite positions
     updateSatellitePositions(satelliteMesh);
 
+    // // Ensure lines inherit the new colors
+    // if (currentChapter !== 'smallScale') {
+    //     refreshSatelliteLines();
+    // }
 
-    if (currentChapter !== 'smallScale') {
-        refreshSatelliteLines();
-    }
-
-
+    // Update legend for the new scheme
     updateLegend(activeScheme);
-
 }
 
 function updateLegend(activeScheme) {
@@ -834,20 +833,16 @@ function resetLegendTransparency(legendContainer) {
 
 
 function toggleSatelliteFilter(scheme, category) {
-    // console.log(`Toggling filter for scheme: ${scheme}, category: ${category}`);
-
     if (filteredClass === category) {
-        // console.log("Clearing filter");
         filteredClass = null;
         resetSatelliteVisibility(scheme); // Reset visibility
     } else {
-        // console.log(`Filtering by category: ${category}`);
         filteredClass = category;
         filterSatellitesByClass(scheme, category);
     }
 
     updateSatelliteVisibility();
-    refreshSatelliteLines(); 
+    refreshSatelliteLines(); // Refresh lines to match visibility
 }
 
 function updateSatelliteVisibility() {
@@ -920,10 +915,10 @@ function resetSatelliteColors(mesh) {
 
     mesh.userData.forEach((sat, i) => {
         const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
-        colors.set(color.toArray(), i * 3); // Reapply colors
+        colors.set(color.toArray(), i * 3); // Update colors
     });
 
-    mesh.instanceColor.needsUpdate = true;
+    mesh.instanceColor.needsUpdate = true; // Trigger color updates in the mesh
 }
 
 
@@ -1137,7 +1132,7 @@ function refreshSatelliteLines() {
         const { metadata, visible } = satelliteMesh.userData[index];
         if (!metadata) return;
 
-        // Check if the satellite is visible and within the frustum
+        // Ensure the satellite is visible and within the frustum
         const isVisible = visible && isSatelliteVisible(satelliteMesh.userData[index].position);
         if (!isVisible) {
             // Hide the line
@@ -1147,7 +1142,7 @@ function refreshSatelliteLines() {
             return;
         }
 
-        // Update line visibility and color
+        // Retrieve the updated satellite color from instanceColor
         const colorArray = satelliteMesh.instanceColor.array;
         const satelliteColor = new THREE.Color(
             colorArray[index * 3],
@@ -1155,12 +1150,12 @@ function refreshSatelliteLines() {
             colorArray[index * 3 + 2]
         );
 
+        // Update line material and visibility
         line.material.color = satelliteColor;
-        line.material.needsUpdate = true; // Ensure the material is refreshed
+        line.material.needsUpdate = true; // Ensure material refresh
         line.visible = true; // Show the line
     });
 }
-
 
 function setResponsiveCameraPosition() {
     const isMobile = window.innerWidth <= 768;
