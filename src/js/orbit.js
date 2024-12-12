@@ -239,7 +239,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         scene.add(directionalLight);
 
     
-        const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5);
+        const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 5.5);
         scene.add(hemiLight);
     
         // Sun object setup (your existing code)
@@ -402,17 +402,16 @@ function loadSatelliteData() {
 
   
     
-    const groupMajors = [
-        "active", "debris"
+    const endpoints = [
+        "100 Brightest", "Space Stations", "Active", "Debris",
     ];
 
 
     // Fetch data for all group_major endpoints in parallel
-    Promise.all(groupMajors.map(groupMajor => loadGroupMajorData(groupMajor)))
+    Promise.all(endpoints.map(groupMajor => loadGroupMajorData(groupMajor)))
         .then(groupDataArrays => {
             // Combine all group data into one array
             const allSatellites = groupDataArrays.flat();
-            console.log("LOADING")
 
             // Process and store data for rendering
             processSatelliteData(allSatellites);
@@ -447,7 +446,6 @@ async function loadGroupMajorData(groupMajor) {
 
         const flattenedData = flattenSatelliteData(groupMajor, data);
         console.log(`Loaded and flattened data for ${groupMajor}`);
-        console.log(flattenedData.length)
         return flattenedData;
     } catch (error) {
         console.warn(`Error loading data for ${groupMajor}:`, error);
@@ -471,8 +469,8 @@ function flattenSatelliteData(groupMajor, groupData) {
                             country: sat.country || 'Unknown',
                             orbitClass: sat.orbitClass || 'Unknown',
                             // objType: sat.objType || 'Unknown',
-                            group_major: groupMajor,
-                            group_minor: groupMinor, // Preserved for future use
+                            group_major: groupMajor || 'Unknown',
+                            group_minor: groupMinor || 'Unknown', // Preserved for future use
                         });
                     } else {
                         console.warn(`Satellite missing TLE data:`, sat);
@@ -508,6 +506,7 @@ function processSatelliteData(tleArray) {
         };
     });
 
+
     // console.log("Processed Satellite Data with Metadata:", tleArray);
 
     // Pass TLE data for mesh creation
@@ -539,32 +538,26 @@ const classificationSchemes = {
         colors: {
             US: 0x0000ff,
             PRC: 0xff0000,
-            Russia: 0x00ffff,
+            CIS: 0x00ffff,
             ESA: 0xffff00,
+            JPN: 0xab1212,
             Unknown: 0x00ff00,
         },
     },
     group_major: {
-        getClass: (sat) => sat.group_major,
+        getClass: (sat) => sat.group_major || 'Unknown',
         colors: {
+            "Active": 0xff00ff,
             "Last 30 Days": 0xff0000,
             "Space Stations": 0x00ff00,
             "100 Brightest": 0x0000ff,
-            Debris: 0xffff00,
+            "Debris": 0xffff00,
             "Weather & Earth Resources": 0xff8800,
-            Communications: 0x0088ff,
-            Navigation: 0x88ff00,
-            Scientific: 0xff00ff,
-            Miscellaneous: 0x888888,
-        },
-    },
-    satelliteType: {
-        getClass: (sat) => sat.objType || 'Unknown', // Example: "PAYLOAD", "ROCKET BODY", "DEBRIS"
-        colors: {
-            PAYLOAD: 0x00ff00,
-            "ROCKET BODY": 0x0000ff,
-            DEBRIS: 0xff0000,
-            Unknown: 0xffff00,
+            "Communications": 0x0088ff,
+            "Navigation": 0x88ff00,
+            "Scientific": 0xff00ff,
+            "Miscellaneous": 0x888888,
+            "Unknown": 0xff0000
         },
     },
 };
@@ -573,7 +566,7 @@ const classificationSchemes = {
 function getColorByScheme(scheme, sat) {
     const { getClass, colors } = classificationSchemes[scheme];
     const category = getClass(sat);
-    return colors[category] || 0xff0000; // Default to white if no color is defined
+    return colors[category] || 0xff0000; // Default to red if no color is defined
 }
 
 function applyClassification(instancedMesh, scheme, satellites) {
@@ -596,7 +589,7 @@ function applyClassification(instancedMesh, scheme, satellites) {
             return;
         }
 
-        const colorHex = getColorByScheme(scheme, sat.metadata);
+        const colorHex = getColorByScheme(activeScheme, sat.metadata);
         const color = new THREE.Color(colorHex);
 
         try {
@@ -638,40 +631,9 @@ function switchClassification(newScheme) {
     }
 
     activeScheme = newScheme;
-    const filteredSatellites = tleArray.filter(sat => sat.group_major === activeSatType);
-    applyClassification(satelliteMesh, activeScheme, filteredSatellites);
+    // const filteredSatellites = tleArray.filter(sat => sat.group_major === activeSatType);
+    applyClassification(satelliteMesh, activeScheme, tleArray);
 }
-
-let activeSatType = 'Active'; // Default satellite type
-
-// function switchSatType(newType) {
-//     if (!satelliteMesh) {
-//         console.error("Satellite mesh is not initialized. Cannot switch satellite type.");
-//         return;
-//     }
-
-//     activeSatType = newType;
-
-//     // Filter satellites based on the selected type
-//     const filteredSatellites = tleArray.filter(sat => sat.objType === activeSatType);
-
-//     // Recreate the instanced mesh with the filtered satellites
-//     scene.remove(satelliteMesh); // Remove the existing mesh
-//     satelliteMesh = createSatelliteInstancedMesh(filteredSatellites, satelliteMesh.material, currentChapter === 'smallScale');
-//     scene.add(satelliteMesh); // Add the updated mesh back to the scene
-
-//     // Reapply the active classification scheme to the updated mesh
-//     applyClassification(satelliteMesh, activeScheme, filteredSatellites);
-
-//     console.log(`Switched to satellite type: ${activeSatType}`);
-// }
-
-
-function toggleCategoryVisibility(category) {
-    // Implement logic to toggle visibility of specific categories
-    console.log(`Toggling visibility for ${category}`);
-}
-
 
 
 // satellite material
@@ -680,10 +642,10 @@ function createSatelliteMeshes(allSatellites) {
     console.log('Satellite count:', allSatellites.length);
 
     const material = new THREE.MeshStandardMaterial({
-        metalness: 1,
+        metalness: 0.3,
         roughness: 0.2,
         transparent: false,
-        // wireframe: true,
+        wireframe: true,
     });
 
     satelliteMesh = createSatelliteInstancedMesh(allSatellites, material, currentChapter === 'smallScale');
@@ -758,8 +720,9 @@ function createSatelliteInstancedMesh(satellites, material, isFixedView = false)
         return null;
     }
 
+    // todo fix the conditionals - isfixedview correct?
     const satelliteGeometry = isFixedView
-        ? new THREE.SphereGeometry(0.002, 4, 4) // Smaller, higher resolution for fixed view
+        ? new THREE.SphereGeometry(0.0035, 2, 3) // Smaller, higher resolution for fixed view
         : new THREE.SphereGeometry(0.004, 2, 3); // Larger, lower resolution for smallScale view
 
     // todo tweak conditional material
@@ -798,8 +761,6 @@ function createSatelliteInstancedMesh(satellites, material, isFixedView = false)
 
             // Store TLE and metadata in userData
             instancedMesh.userData[i] = {
-                tleLine1: sat.tleLine1,
-                tleLine2: sat.tleLine2,
                 metadata: sat.metadata,
             };
         } catch (error) {
@@ -866,18 +827,18 @@ function updateSatellitePositions(instancedMesh) {
         }
 
         // Propagate satellite position
-        let ogPosition = propagateSatellitePosition(satrec, gmst);
+        let position = propagateSatellitePosition(satrec, gmst);
         // console.log(position)
-        if (!ogPosition) continue;
+        if (!position) continue;
 
         // Apply Earth's axial tilt compensation
-        let position = ogPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
+        // let position = ogPosition.applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
 
         if (instancedMesh) {
             const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Seconds in a day
             const rotationAngle = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
             const tiltedYAxis = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), earthTilt);
-            position.applyAxisAngle(tiltedYAxis, rotationAngle); // Rotate around Earth's tilted Y-axis
+            // position.applyAxisAngle(tiltedYAxis, rotationAngle); // Rotate around Earth's tilted Y-axis
         }
 
         // Update satellite position in the instanced mesh
@@ -983,7 +944,7 @@ function setResponsiveCameraPosition() {
 
     
     let simulationTime; // Starting time for the simulation
-    const timeDelta = 1000 / 24; // 1-second increment per frame @ N fps divisor
+    const timeDelta = 1000 / 20; // 1-second increment per frame @ N fps divisor
     let timeMultiplier = 1000; // Overall simulation speed multiplier
 
 // Function to fetch and set initial simulation time
@@ -1083,7 +1044,7 @@ function updateEarthRotation() {
   let clock = new THREE.Clock();
   let delta = 0;
   // N fps
-  const framerate = 24;
+  const framerate = 20;
   let interval = 1 / framerate;
 
 
@@ -1583,7 +1544,7 @@ function updateEarthRotation() {
             // console.log("Distance Compression Factor:", distanceCompressionFactor);
         
             // Update positions dynamically
-            if (satelliteMesh) debounce(updateSatellitePositions(satelliteMesh, false),50);
+            if (satelliteMesh) debounce(updateSatellitePositions(satelliteMesh, false),10);
             // if (geostationaryInstancedMesh) debounce(updateSatellitePositions(geostationaryInstancedMesh, true),50);
         });
         
@@ -1631,7 +1592,7 @@ function updateEarthRotation() {
     
             // Update satellite positions only if the satelliteMesh is defined
             if (satelliteMesh) {
-                debounce(updateSatellitePositions(satelliteMesh),50);
+                debounce(updateSatellitePositions(satelliteMesh),10);
             
             }
         });
