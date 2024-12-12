@@ -403,7 +403,7 @@ function loadSatelliteData() {
   
     
     const groupMajors = [
-        "active", "debris", "communications"
+        "active", "debris"
     ];
 
 
@@ -470,7 +470,7 @@ function flattenSatelliteData(groupMajor, groupData) {
                             tleLine2: sat.tleLine2,
                             country: sat.country || 'Unknown',
                             orbitClass: sat.orbitClass || 'Unknown',
-                            objType: sat.objType || 'Unknown',
+                            // objType: sat.objType || 'Unknown',
                             group_major: groupMajor,
                             group_minor: groupMinor, // Preserved for future use
                         });
@@ -638,11 +638,11 @@ function switchClassification(newScheme) {
     }
 
     activeScheme = newScheme;
-    const filteredSatellites = tleArray.filter(sat => sat.objType === activeSatType);
+    const filteredSatellites = tleArray.filter(sat => sat.group_major === activeSatType);
     applyClassification(satelliteMesh, activeScheme, filteredSatellites);
 }
 
-let activeSatType = 'PAYLOAD'; // Default satellite type
+let activeSatType = 'Active'; // Default satellite type
 
 // function switchSatType(newType) {
 //     if (!satelliteMesh) {

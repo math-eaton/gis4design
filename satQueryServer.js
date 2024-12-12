@@ -203,13 +203,13 @@ app.get('/satellites/:group_major', async (req, res) => {
 // Re-cache all data on server startup
 async function recacheAllGroups() {
     const now = Date.now();
-    const fourHoursInMillis = 4 * 60 * 60 * 1000;
+    const eightHours = 8 * 60 * 60 * 1000 + 1;
 
     // Find the oldest timestamp across all groups
     const timestamps = JSON.parse(fs.existsSync(TIMESTAMPS_FILE) ? fs.readFileSync(TIMESTAMPS_FILE, 'utf-8') : '{}');
     const oldestTimestamp = Math.min(...Object.values(timestamps));
 
-    if (now - oldestTimestamp > fourHoursInMillis) {
+    if (now - oldestTimestamp > eightHours) {
         console.log('Triggering re-caching at the major group level.');
         const majorGroups = [...new Set(groups.map((g) => g.group_major))];
         for (const majorGroup of majorGroups) {
@@ -238,8 +238,8 @@ function isCacheExpired(apiQuery) {
     console.log(`Checking if cache is expired for: ${apiQuery}`);
     const timestamps = JSON.parse(fs.existsSync(TIMESTAMPS_FILE) ? fs.readFileSync(TIMESTAMPS_FILE, 'utf-8') : '{}');
     const lastUpdated = timestamps[apiQuery] || 0;
-    const fourHoursInMillis = 4 * 60 * 60 * 1000;
-    return Date.now() - lastUpdated > fourHoursInMillis;
+    const eightHours = 4 * 60 * 60 * 1000;
+    return Date.now() - lastUpdated > eightHours;
 }
 
 app.get('/timestamps', (req, res) => {
@@ -258,6 +258,9 @@ app.get('/timestamps', (req, res) => {
 
 // Start Server
 app.listen(PORT, () => {
-    // initializeTimestamps();
+    initializeTimestamps();
+    recacheAllGroups()
+    .then(() => console.log('Re-caching completed on server startup for expired groups.'))
+    .catch((error) => console.error('Error during re-caching:', error.message));
     console.log(`Server running at http://localhost:${PORT}/satellites/:group_major`);
 });
