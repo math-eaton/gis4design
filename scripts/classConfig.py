@@ -1,5 +1,4 @@
 import json
-import random
 
 def generate_unique_colors(categories):
     """
@@ -24,7 +23,6 @@ def generate_config_from_summary(summary_file, output_file):
     for key in ["group_major", "group_minor", "country", "orbitClass"]:
         unique_values = summary.get(key, {}).keys()
         config[key] = {
-            "getClass": f"(sat) => sat.{key} || 'Unknown'",
             "colors": generate_unique_colors(unique_values),
         }
 
@@ -33,6 +31,6 @@ def generate_config_from_summary(summary_file, output_file):
         json.dump(config, f, indent=4)
     print(f"Configuration file generated at: {output_file}")
 
-summary_file = "src/config/summary.json"
-output_file = "src/config/classification_config.json" 
+summary_file = "public/config/summary.json"
+output_file = "public/config/classification_config.json" 
 generate_config_from_summary(summary_file, output_file)

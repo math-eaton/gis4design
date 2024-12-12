@@ -91,6 +91,6 @@ def main(folder_path, output_file):
 
 
 folder_path = "cache" 
-output_file = "src/config/summary.json"  
+output_file = "public/config/summary.json"  
 
 main(folder_path, output_file)

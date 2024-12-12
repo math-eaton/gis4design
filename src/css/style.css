@@ -153,21 +153,39 @@ button {
 
 }
 
+/* Legend item */
 .legend-item {
   display: flex;
   align-items: center;
-  margin-bottom: 8px; /* Space between legend items */
+  margin-bottom: 8px;
+    cursor: url('../cursor/point.cur'), auto;;
 }
 
 .legend-item:last-child {
-  margin-bottom: 0; /* Remove bottom margin for the last item */
+  margin-bottom: 0;
 }
 
+/* Default color patch */
 .legend-color {
-  width: 20px; /* Size of the color box */
+  width: 20px;
   height: 20px;
-  margin-right: 10px; /* Space between color box and label */
-  border: 1px solid white; /* Add a border for better visibility */
+  margin-right: 10px;
+  border: 1px solid #000;
+  border-radius: 50%;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  opacity: 1;
+    cursor: url('../cursor/point.cur'), auto;;
+}
+
+/* Transparent state for non-active patches */
+.legend-item.inactive .legend-color {
+  opacity: 0.5; 
+  filter: contrast(0.2);
+}
+
+/* Reset to normal when no active filter */
+.legend-item:not(.inactive) .legend-color {
+  opacity: 1;
 }
 
 
@@ -365,7 +383,7 @@ label{
   margin-top: -0.33em; /* Center the thumb on the track */
   border: 1px solid rgba(255, 255, 255, 0.8); /* Thin white border for thumb */
   background: black; /* No background fill */
-  cursor: pointer;
+  cursor: url('../cursor/point.cur'), auto;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border-radius: 2px;
 }
@@ -380,7 +398,7 @@ label{
   height: 1em;
   border: 1px solid rgba(255, 255, 255, 0.8);
   background: none;
-  cursor: pointer;
+  cursor: url('../cursor/point.cur'), auto;
   margin-top: -0.1em; /* Center the thumb on the track */
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border-radius: 2px;
@@ -396,7 +414,7 @@ label{
   height: 1em;
   border: 1px solid rgba(255, 255, 255, 0.8);
   background: none;
-  cursor: pointer;
+  cursor: url('../cursor/point.cur'), auto;;
 }
 
 /* Media query for mobile devices */
@@ -451,7 +469,7 @@ label{
     background: black; /* Existing background */
     border: 1px solid rgba(255, 255, 255, 0.8); /* Existing border */
     border-radius: 2px;
-    cursor: pointer;
+      cursor: url('../cursor/point.cur'), auto;;
     position: relative;
     z-index: 2; /* Ensure thumb is on top */
 }
@@ -476,7 +494,7 @@ label{
     border: 1px solid rgba(255, 255, 255, 0.8);
     background: black;
     border-radius: 2px;
-    cursor: pointer;
+      cursor: url('../cursor/point.cur'), auto;;
     position: relative;
     z-index: 2;
 }
