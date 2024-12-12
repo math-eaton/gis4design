@@ -4,12 +4,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as satellite from 'satellite.js';
 import Stats from 'stats.js'
 import { createNoise2D } from 'simplex-noise';
-// import { Earcut } from 'three/src/extras/Earcut.js';
-import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
-import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls.js';
-import { MapControls } from 'three/examples/jsm/controls/MapControls.js';
-import { FlyControls } from 'three/examples/jsm/controls/FlyControls.js';
-
 //
 
 // 'W' key toggles wireframe
@@ -369,7 +363,7 @@ function loadSatelliteData() {
   
     
     const endpoints = [
-        "Navigation"
+        "Navigation", "Communications", "Scientific", "Space Stations", "Weather & Earth Resources", "Debris",
     ];
 
 

@@ -267,6 +267,10 @@ label{
 
 }
 
+#scaling-slider-container{
+  visibility: hidden;
+}
+
 #exaggeration-slider{
 
   width: 8vw;
