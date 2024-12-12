@@ -40,7 +40,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     // const cameraDirection = new THREE.Vector3();
 
     let classificationSchemes;
-    let activeScheme = 'group_major'; // Default color scheme
+    let activeScheme = 'orbitClass'; // Default color scheme
     let filteredClass = null; // Holds the currently active filter
 
 
@@ -409,7 +409,7 @@ function loadSatelliteData() {
   
     
     const endpoints = [
-        "100 Brightest", "Space Stations", "Debris", "Navigation", "Communications", "Scientific"
+        "100 Brightest", "Space Stations", "Debris", "Navigation", "Communications", "Scientific", "Weather & Earth Resources", "Miscellaneous"
     ];
 
 
@@ -549,46 +549,6 @@ function createSatrec(tleLine1, tleLine2) {
 }
 
 
-// const classificationSchemes = {
-//     orbitClass: {
-//         getClass: (sat) => sat.orbitClass,
-//         colors: {
-//             geostationary: 0xffffff,
-//             sunSynchronous: 0xffff00,
-//             nonGeostationary: 0xff0000,
-//             unknown: 0xff00ff,
-//         },
-//     },
-//     country: {
-//         getClass: (sat) => sat.country || 'Unknown', // Ensure fallback to 'Unknown' if country is not provided
-//         colors: {
-//             US: 0x0000ff,
-//             PRC: 0xff0000,
-//             CIS: 0x00ffff,
-//             ESA: 0xffff00,
-//             JPN: 0xab1212,
-//             Unknown: 0x00ff00,
-//         },
-//     },
-//     group_major: {
-//         getClass: (sat) => sat.group_major || 'Unknown',
-//         colors: {
-//             "Active": 0xff00ff,
-//             "Last 30 Days": 0xff0000,
-//             "Space Stations": 0x00ff00,
-//             "100 Brightest": 0x0000ff,
-//             "Debris": 0xffff00,
-//             "Weather & Earth Resources": 0xff8800,
-//             "Communications": 0x0088ff,
-//             "Navigation": 0x88ff00,
-//             "Scientific": 0xff00ff,
-//             "Miscellaneous": 0x888888,
-//             "Unknown": 0xff0000
-//         },
-//     },
-// };
-
-
 
 // Transform external config into the classificationSchemes format
 function populateClassificationSchemes(config) {
@@ -657,7 +617,7 @@ function getColorByScheme(scheme, sat) {
         return new THREE.Color(0xff0000); // Default to red
     }
 
-    console.log(`Scheme: ${scheme}, Category: ${category}, Color: ${colorCode}`);
+    // console.log(`Scheme: ${scheme}, Category: ${category}, Color: ${colorCode}`);
     return new THREE.Color(colorCode);
 }
 
@@ -747,6 +707,7 @@ function switchClassification(newScheme) {
     //     refreshSatelliteLines();
     // }
 
+    // switchClassification(activeScheme);
     // Update legend for the new scheme
     updateLegend(activeScheme);
 }
@@ -780,8 +741,7 @@ function updateLegend(activeScheme) {
         label.textContent = category;
 
         legendItem.addEventListener('click', () => {
-            console.log(`Clicked on category: ${category}`);
-            toggleSatelliteFilter(activeScheme, category);
+            handleLegendInteraction(activeScheme, category, legendItem);
         });
 
         legendItem.appendChild(colorBox);
@@ -790,35 +750,36 @@ function updateLegend(activeScheme) {
     });
 }
 
-function handleLegendClick(scheme, category, clickedItem) {
+function handleLegendInteraction(scheme, category, clickedItem) {
     const legendContainer = document.getElementById('legend-container');
     const activeItem = legendContainer.querySelector('.legend-item.active');
 
-    // If the clicked item is already active, clear the filter
     if (activeItem === clickedItem) {
+        // If already active, clear the filter
         clickedItem.classList.remove('active');
-        resetLegendTransparency(legendContainer); // Reset all patches to normal
-        toggleSatelliteFilter(scheme, null); // Clear the filter
+        resetLegendTransparency(legendContainer);
+        resetSatelliteVisibility(scheme); // Reset all satellite visibility
     } else {
-        // Remove active state from the previous item
+        // Update legend CSS
         if (activeItem) {
             activeItem.classList.remove('active');
         }
-
-        // Set the clicked item as active
         clickedItem.classList.add('active');
-
-        // Make non-active patches transparent
         setLegendTransparency(legendContainer, clickedItem);
 
-        toggleSatelliteFilter(scheme, category); // Apply the filter
+        // Filter satellites based on the selected category
+        filterSatellitesByClass(scheme, category);
     }
+
+    // Update satellite visibility and lines
+    updateSatelliteVisibility();
+    refreshSatelliteLines();
 }
 
 function setLegendTransparency(legendContainer, activeItem) {
     legendContainer.querySelectorAll('.legend-item').forEach((item) => {
         if (item !== activeItem) {
-            item.classList.add('inactive'); // Mark non-active items as inactive
+            item.classList.add('inactive'); // Make non-active items transparent
         } else {
             item.classList.remove('inactive'); // Keep the active item fully visible
         }
@@ -827,23 +788,10 @@ function setLegendTransparency(legendContainer, activeItem) {
 
 function resetLegendTransparency(legendContainer) {
     legendContainer.querySelectorAll('.legend-item').forEach((item) => {
-        item.classList.remove('inactive'); // Remove the inactive class from all items
+        item.classList.remove('inactive'); // Reset all items to fully visible
     });
 }
 
-
-function toggleSatelliteFilter(scheme, category) {
-    if (filteredClass === category) {
-        filteredClass = null;
-        resetSatelliteVisibility(scheme); // Reset visibility
-    } else {
-        filteredClass = category;
-        filterSatellitesByClass(scheme, category);
-    }
-
-    updateSatelliteVisibility();
-    refreshSatelliteLines(); // Refresh lines to match visibility
-}
 
 function updateSatelliteVisibility() {
     const dummy = new THREE.Object3D();
@@ -876,27 +824,6 @@ function filterSatellitesByClass(scheme, category) {
         sat.visible = satelliteClass === normalizedCategory;
     });
     updateSatelliteVisibility();
-}
-
-function updateMaterialVisibility(mesh, index, filterVisible) {
-    const instance = mesh.userData[index];
-    if (!instance) return;
-
-    // Debugging
-    // console.log(`Satellite ${index} - Updating Material Visibility to: ${filterVisible}`);
-
-    // Update visibility state directly in the material
-    const material = mesh.material;
-    if (material instanceof THREE.MeshStandardMaterial) {
-        material.visible = filterVisible; // Hide or show the satellite
-    }
-
-    // Maintain position updates
-    const dummy = new THREE.Object3D();
-    mesh.getMatrixAt(index, dummy.matrix);
-    dummy.updateMatrix();
-    mesh.setMatrixAt(index, filterVisible ? dummy.matrix : new THREE.Matrix4()); // Reset matrix for hidden satellites
-    mesh.instanceMatrix.needsUpdate = true;
 }
 
 function resetSatelliteVisibility(scheme) {
@@ -967,29 +894,31 @@ const cameraViewProjectionMatrix = new THREE.Matrix4();
 function isSatelliteVisible(position) {
     camera.updateMatrixWorld(); // Ensure the camera matrix is up-to-date
 
-    // Create an expanded frustum matrix
-    const bufferFactor = .5; // Add a -N% buffer
+    // Dynamically calculate buffer factor based on scene scale
+    const sceneScale = 1000; // Adjust based on your scene's scale
+    const bufferFactor = sceneScale > 500 ? 1.2 : 1.0; // Increase buffer for larger scales
+
+    // Use a clone of the projection matrix
     const projectionMatrixWithBuffer = camera.projectionMatrix.clone();
-    projectionMatrixWithBuffer.elements[0] *= bufferFactor; // Left/Right
-    projectionMatrixWithBuffer.elements[5] *= bufferFactor; // Top/Bottom
+    projectionMatrixWithBuffer.scale(new THREE.Vector3(bufferFactor, bufferFactor, 1)); // Apply buffer scaling
 
     cameraViewProjectionMatrix.multiplyMatrices(projectionMatrixWithBuffer, camera.matrixWorldInverse);
     frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
 
-    // Check if the satellite is within the expanded frustum
+    // Check if the satellite is within the frustum
     if (!frustum.containsPoint(position)) {
         return false;
     }
 
-    // Check if the satellite is occluded by the Earth sphere
-    let earthCenter = new THREE.Vector3(0, 0, 0);
+    // Additional occlusion logic for Earth sphere
+    const earthCenter = new THREE.Vector3(0, 0, 0);
     const directionToSatellite = position.clone().sub(earthCenter).normalize();
     const directionToCamera = camera.position.clone().sub(earthCenter).normalize();
 
-    // If the angle between the satellite's direction and the camera's direction is >90 degrees, it's occluded
+    // Check if the angle between the satellite and camera directions is valid
     const dotProduct = directionToSatellite.dot(directionToCamera);
-    if (dotProduct < 0) {
-        return false; // Satellite is occluded
+    if (dotProduct < 0.1) { // Adjust threshold for occlusion
+        return false;
     }
 
     return true;
@@ -1076,7 +1005,7 @@ function updateSatellitePositions(instancedMesh) {
 const satelliteLines = new Map(); // Map satellite index to its line
 
 function updateSatelliteLine(index, satellitePosition, earthCenter, isSatelliteVisibleByFilter) {
-    const isVisible = isSatelliteVisibleByFilter && isSatelliteVisible(satellitePosition);
+    const isVisible = isSatelliteVisibleByFilter;
 
     if (!isVisible) {
         // Remove line if it's no longer visible
