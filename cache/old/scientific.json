@@ -1,0 +1,1392 @@
+{
+  "group_major": "Scientific",
+  "data": {
+    "Space & Earth Science Satellites": [
+      {
+        "catalogNumber": "20580",
+        "name": "HST",
+        "tleLine1": "1 20580U 90037B   24347.83205507  .00007924  00000+0  33122-3 0  9999",
+        "tleLine2": "2 20580  28.4674 224.9382 0001880 190.3082 169.7473 15.21734202704238",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "23802",
+        "name": "POLAR",
+        "tleLine1": "1 23802U 96013A   24346.80573566  .00000195  00000+0  00000+0 0  9996",
+        "tleLine2": "2 23802  79.2637 232.9246 5981336 227.7205  63.2106  1.29846708137687",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "25560",
+        "name": "SWAS",
+        "tleLine1": "1 25560U 98071A   24347.59771668  .00004613  00000+0  34440-3 0  9993",
+        "tleLine2": "2 25560  69.8963 203.9783 0005899 353.9441   6.1647 15.03518496414176",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "25867",
+        "name": "CXO",
+        "tleLine1": "1 25867U 99040B   24347.67995738  .00000403  00000+0  00000+0 0  9999",
+        "tleLine2": "2 25867  45.2638 139.9696 8693340 305.0901   0.0820  0.37810292 15235",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "25989",
+        "name": "XMM-NEWTON",
+        "tleLine1": "1 25989U 99066A   24347.90983301  .00000028  00000+0  00000+0 0  9994",
+        "tleLine2": "2 25989  67.0791 290.3708 4982828  74.3438   0.1716  0.50134459 34603",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "25994",
+        "name": "TERRA",
+        "tleLine1": "1 25994U 99068A   24348.15667362  .00000889  00000+0  19328-3 0  9998",
+        "tleLine2": "2 25994  98.0265  46.2251 0002977 139.8136 245.7461 14.60306275329284",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26410",
+        "name": "CLUSTER II-FM7 (SAMBA)",
+        "tleLine1": "1 26410U 00041A   24347.79065939  .00001605  00000+0  00000+0 0  9996",
+        "tleLine2": "2 26410 141.4977   3.5193 7935658 218.6937   0.1056  0.44825073 17843",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26463",
+        "name": "CLUSTER II-FM5 (RUMBA)",
+        "tleLine1": "1 26463U 00045A   24347.34741360  .00005316  00000+0  00000+0 0  9991",
+        "tleLine2": "2 26463 153.4702  41.9789 8886622 258.5537   0.0393  0.42910680 17753",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26464",
+        "name": "CLUSTER II-FM8 (TANGO)",
+        "tleLine1": "1 26464U 00045B   24347.81813187  .00001633  00000+0  00000+0 0  9999",
+        "tleLine2": "2 26464 141.7279   3.8052 7938700 218.8549   0.1068  0.44415644 17852",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26702",
+        "name": "ODIN",
+        "tleLine1": "1 26702U 01007A   24347.63322784  .00017473  00000+0  58444-3 0  9999",
+        "tleLine2": "2 26702  97.4659   2.9465 0007623  24.6028 335.5575 15.31020433304120",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "SWED",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "26998",
+        "name": "TIMED",
+        "tleLine1": "1 26998U 01055B   24347.73265937  .00002998  00000+0  29285-3 0  9993",
+        "tleLine2": "2 26998  74.0706 263.5454 0002917 255.6105 104.4755 14.92876557248455",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27540",
+        "name": "INTEGRAL",
+        "tleLine1": "1 27540U 02048A   24345.35929097 -.00000220  00000+0  00000+0 0  9997",
+        "tleLine2": "2 27540  90.5431  12.7017 8619909 276.9414 115.6847  0.37576099 24559",
+        "orbitClass": [
+          "highEarthOrbit",
+          "polarOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27640",
+        "name": "CORIOLIS",
+        "tleLine1": "1 27640U 03001A   24347.62152070  .00000302  00000+0  16363-3 0  9992",
+        "tleLine2": "2 27640  98.7140 352.0183 0014189   5.8322 354.3017 14.19661631135959",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27651",
+        "name": "SORCE",
+        "tleLine1": "1 27651U 03004A   24347.87959889  .00005312  00000+0  45166-3 0  9996",
+        "tleLine2": "2 27651  39.9900 155.2895 0019640  56.3881 303.8782 14.98063912189023",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27843",
+        "name": "MOST",
+        "tleLine1": "1 27843U 03031D   24347.90035687  .00000217  00000+0  12010-3 0  9995",
+        "tleLine2": "2 27843  98.7071 352.3332 0010706  48.3573 311.8519 14.21109668112407",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "27858",
+        "name": "SCISAT 1",
+        "tleLine1": "1 27858U 03036A   24347.63637935  .00001314  00000+0  17806-3 0  9997",
+        "tleLine2": "2 27858  73.9289 186.2261 0007050   7.0145 353.1128 14.80082612149802",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "28485",
+        "name": "SWIFT",
+        "tleLine1": "1 28485U 04047A   24347.28461969  .00023093  00000+0  79590-3 0  9996",
+        "tleLine2": "2 28485  20.5574 338.5853 0006791  79.0501 281.0701 15.27997944101369",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "29108",
+        "name": "CALIPSO",
+        "tleLine1": "1 29108U 06016B   24347.92236962  .00002280  00000+0  41405-3 0  9990",
+        "tleLine2": "2 29108  98.4355 334.5769 0001212  95.2754 264.8587 14.67217809992141",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "FR",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "29479",
+        "name": "HINODE (SOLAR-B)",
+        "tleLine1": "1 29479U 06041A   24347.99660411  .00001447  00000+0  26452-3 0  9995",
+        "tleLine2": "2 29479  98.0821   0.8682 0016685 233.1073 126.8603 14.67314117974001",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "JPN",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "29505",
+        "name": "SHIJIAN-6 02A (SJ-6 02A)",
+        "tleLine1": "1 29505U 06046A   24348.15136433  .00007811  00000+0  51541-3 0  9999",
+        "tleLine2": "2 29505  97.7053  15.1954 0002451 210.2031 149.9056 15.07729473989083",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "29506",
+        "name": "SHIJIAN-6 02B (SJ-6 02B)",
+        "tleLine1": "1 29506U 06046B   24348.13265640  .00002141  00000+0  18299-3 0  9995",
+        "tleLine2": "2 29506  97.7232  11.3690 0002375  76.4758 283.6729 14.98704971988123",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "33053",
+        "name": "FGRST (GLAST)",
+        "tleLine1": "1 33053U 08029A   24347.58596163  .00005368  00000+0  23257-3 0  9999",
+        "tleLine2": "2 33053  25.5835  62.0121 0009160 320.3760  39.6107 15.19253762911719",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "36395",
+        "name": "SDO",
+        "tleLine1": "1 36395U 10005A   24345.66597174 -.00000062  00000+0  00000+0 0  9992",
+        "tleLine2": "2 36395  33.4915  94.8431 0002012 179.7553 303.2583  1.00270474 54518",
+        "orbitClass": [
+          "geosynchronous",
+          "highEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "36508",
+        "name": "CRYOSAT 2",
+        "tleLine1": "1 36508U 10013A   24347.92813589  .00000375  00000+0  92287-4 0  9998",
+        "tleLine2": "2 36508  92.0157 144.2488 0003665  68.2298 291.9299 14.51912826778095",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "polarOrbit",
+          "circularOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "37389",
+        "name": "X-SAT",
+        "tleLine1": "1 37389U 11015C   24348.13316248  .00000302  00000+0  14668-3 0  9999",
+        "tleLine2": "2 37389  98.3005 342.3521 0014485 157.1090 203.0739 14.24901844709717",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "SING",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "38337",
+        "name": "GCOM-W1 (SHIZUKU)",
+        "tleLine1": "1 38337U 12025A   24347.88808293  .00001319  00000+0  30338-3 0  9993",
+        "tleLine2": "2 38337  98.2224 285.3563 0001677  69.3086 332.2700 14.57012871668742",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "JPN",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "38358",
+        "name": "NUSTAR",
+        "tleLine1": "1 38358U 12031A   24348.00002315  .00019855  00000+0  14698-2 0  9993",
+        "tleLine2": "2 38358   6.0250 184.2009 0010223 235.8150 229.1372 15.00382617  1301",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39089",
+        "name": "NEOSSAT",
+        "tleLine1": "1 39089U 13009D   24348.06546153  .00000389  00000+0  15026-3 0  9999",
+        "tleLine2": "2 39089  98.4007 170.7794 0012208  89.3880 270.8705 14.35429922617670",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39091",
+        "name": "BRITE-AUSTRIA",
+        "tleLine1": "1 39091U 13009F   24347.56600620  .00000480  00000+0  17918-3 0  9990",
+        "tleLine2": "2 39091  98.3817 170.2790 0011433  87.5053 272.7442 14.36104868617874",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "ASRA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39197",
+        "name": "IRIS",
+        "tleLine1": "1 39197U 13033A   24347.60345870  .00003013  00000+0  37141-3 0  9997",
+        "tleLine2": "2 39197  97.9544 177.4423 0024860 322.9667  36.9830 14.83453652618524",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39253",
+        "name": "HISAKI (SPRINT-A)",
+        "tleLine1": "1 39253U 13049A   24347.85145338  .00000183  00000+0  15654-3 0  9991",
+        "tleLine2": "2 39253  29.7185 142.8480 0136974 227.4613 131.4322 13.55454740556569",
+        "orbitClass": [
+          "mediumEarthOrbit"
+        ],
+        "country": "JPN",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39265",
+        "name": "CASSIOPE",
+        "tleLine1": "1 39265U 13055A   24348.11549970  .00025370  00000+0  45967-3 0  9996",
+        "tleLine2": "2 39265  80.9473 354.6627 0446196  66.0695 298.6578 14.83742211584772",
+        "orbitClass": [
+          "mediumEarthOrbit"
+        ],
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39422",
+        "name": "STSAT-3",
+        "tleLine1": "1 39422U 13066G   24348.13380940  .00004562  00000+0  39391-3 0  9999",
+        "tleLine2": "2 39422  97.5407 320.8359 0021617 116.9089 243.4345 14.97544566601570",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "SKOR",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39451",
+        "name": "SWARM B",
+        "tleLine1": "1 39451U 13067A   24347.92257524  .00005557  00000+0  23498-3 0  9995",
+        "tleLine2": "2 39451  87.7484 149.0676 0002585  84.3886 275.7655 15.23018544599173",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "polarOrbit",
+          "circularOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39452",
+        "name": "SWARM A",
+        "tleLine1": "1 39452U 13067B   24347.86603966  .00010367  00000+0  28091-3 0  9993",
+        "tleLine2": "2 39452  87.3407 258.5180 0003735  86.2107 273.9573 15.37504486621160",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "polarOrbit",
+          "circularOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "39453",
+        "name": "SWARM C",
+        "tleLine1": "1 39453U 13067C   24347.86592997  .00010461  00000+0  28348-3 0  9995",
+        "tleLine2": "2 39453  87.3407 257.1075 0003743  86.1198 274.0484 15.37504007621125",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "polarOrbit",
+          "circularOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40020",
+        "name": "BRITE-CA1 (TORONTO)",
+        "tleLine1": "1 40020U 14033L   24347.83562789  .00002282  00000+0  36474-3 0  9995",
+        "tleLine2": "2 40020  97.9007 119.0980 0080373 240.9840 118.3296 14.70672193561222",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "CA",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40059",
+        "name": "OCO 2",
+        "tleLine1": "1 40059U 14035A   24347.87639827  .00001148  00000+0  26472-3 0  9998",
+        "tleLine2": "2 40059  98.2222 286.0894 0001579  78.7747 281.3629 14.57146098555768",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40119",
+        "name": "BRITE-PL2 (HEWELIUSZ)",
+        "tleLine1": "1 40119U 14049B   24348.14077612  .00003127  00000+0  32165-3 0  9994",
+        "tleLine2": "2 40119  97.8874  87.2975 0016028 132.2033 228.0549 14.90959747559317",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "POL",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40360",
+        "name": "RESURS-P 2",
+        "tleLine1": "1 40360U 14087A   24348.11189254  .00130572  00000+0  51579-3 0  9992",
+        "tleLine2": "2 40360  97.1368  78.3205 0002964 330.8023  29.3083 15.86456725559120",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "CIS",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40482",
+        "name": "MMS 1",
+        "tleLine1": "1 40482U 15011A   24348.16668981 -.00000548  00000+0  00000+0 0  9998",
+        "tleLine2": "2 40482  57.8553   1.0885 8920889 154.6629  99.1792  0.28518405 15884",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40483",
+        "name": "MMS 2",
+        "tleLine1": "1 40483U 15011B   24348.16668981 -.00000548  00000+0  00000+0 0  9999",
+        "tleLine2": "2 40483  57.8545   1.0895 8920809 154.6623  97.6805  0.28517353 15860",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40484",
+        "name": "MMS 3",
+        "tleLine1": "1 40484U 15011C   24348.16668981 -.00000548  00000+0  00000+0 0  9990",
+        "tleLine2": "2 40484  57.8563   1.0878 8920759 154.6631  97.9194  0.28517836 15865",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40485",
+        "name": "MMS 4",
+        "tleLine1": "1 40485U 15011D   24348.16668981 -.00000548  00000+0  00000+0 0  9991",
+        "tleLine2": "2 40485  57.8507   1.0940 8919932 154.6588  88.0316  0.28518747 15865",
+        "orbitClass": [
+          "highEarthOrbit",
+          "highlyEllipticalOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "40930",
+        "name": "ASTROSAT",
+        "tleLine1": "1 40930U 15052A   24347.20346792  .00002982  00000+0  29599-3 0  9999",
+        "tleLine2": "2 40930   5.9952 163.3217 0007551  78.9900 281.1077 14.80517806497828",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "IND",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "41173",
+        "name": "DAMPE",
+        "tleLine1": "1 41173U 15078A   24348.13655179  .00002202  00000+0  82197-4 0  9991",
+        "tleLine2": "2 41173  97.4403 341.2035 0011198 223.9744 136.0605 15.28426303500307",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "41784",
+        "name": "PISAT",
+        "tleLine1": "1 41784U 16059B   24347.85485099  .00001872  00000+0  33943-3 0  9995",
+        "tleLine2": "2 41784  97.8241   1.7457 0030368 162.5395 197.6862 14.67077207438849",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "IND",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "42758",
+        "name": "HXMT (HUIYAN)",
+        "tleLine1": "1 42758U 17034A   24348.14477100  .00009744  00000+0  45545-3 0  9995",
+        "tleLine2": "2 42758  43.0150   0.8437 0011277 193.2947 166.7606 15.19872307414033",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "42831",
+        "name": "FLYING LAPTOP",
+        "tleLine1": "1 42831U 17042G   24347.90483408  .00004900  00000+0  42898-3 0  9994",
+        "tleLine2": "2 42831  97.3892 158.8037 0011945 187.2622 172.8430 14.97080989403858",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "GER",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "43194",
+        "name": "ZHANGHENG 1 (CSES)",
+        "tleLine1": "1 43194U 18015C   24348.17093513  .00016094  00000+0  72526-3 0  9990",
+        "tleLine2": "2 43194  97.6265 133.8964 0006087 289.1499  70.9076 15.21114655380893",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "PRC",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "46495",
+        "name": "SALSAT",
+        "tleLine1": "1 46495U 20068K   24347.89116096  .00009157  00000+0  45067-3 0  9990",
+        "tleLine2": "2 46495  97.8394 312.5187 0014858  63.9393 296.3367 15.18140470231379",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "GER",
+        "group_minor": "science"
+      },
+      {
+        "catalogNumber": "49954",
+        "name": "IXPE",
+        "tleLine1": "1 49954U 21121A   24348.16668981  .00009711  00000+0  65386-3 0  9992",
+        "tleLine2": "2 49954   0.2294 141.1688 0008431  63.7274 349.2458 15.02139522164820",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "science"
+      }
+    ],
+    "Geodetic Satellites": [
+      {
+        "catalogNumber": "07646",
+        "name": "STARLETTE",
+        "tleLine1": "1 07646U 75010A   24347.85824452 -.00000149  00000+0 -29798-5 0  9999",
+        "tleLine2": "2 07646  49.8225 120.7789 0205568  41.7206 319.9162 13.82338320518272",
+        "orbitClass": [
+          "mediumEarthOrbit"
+        ],
+        "country": "Unknown",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "08820",
+        "name": "LAGEOS 1",
+        "tleLine1": "1 08820U 76039A   24347.24421404  .00000026  00000+0  00000+0 0  9990",
+        "tleLine2": "2 08820 109.8528 350.2823 0044046  60.0876 292.2661  6.38664847877889",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "Unknown",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "16908",
+        "name": "AJISAI (EGS)",
+        "tleLine1": "1 16908U 86061A   24348.18012948 -.00000100  00000+0 -17247-4 0  9996",
+        "tleLine2": "2 16908  50.0112  41.7208 0011334 217.4099 353.6226 12.44509273412125",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "JPN",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "19751",
+        "name": "COSMOS 1989 (ETALON 1)",
+        "tleLine1": "1 19751U 89001C   24347.53859545 -.00000030  00000+0  00000+0 0  9997",
+        "tleLine2": "2 19751  64.6393  91.1082 0023715 216.3058 155.8272  2.13155979279617",
+        "orbitClass": [
+          "highEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "CIS",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "20026",
+        "name": "COSMOS 2024 (ETALON 2)",
+        "tleLine1": "1 20026U 89039C   24347.66613090 -.00000054  00000+0  00000+0 0  9998",
+        "tleLine2": "2 20026  65.2536 329.4706 0019850 216.5436 316.2307  2.13204295276746",
+        "orbitClass": [
+          "highEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "CIS",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "22195",
+        "name": "LAGEOS 2",
+        "tleLine1": "1 22195U 92070B   24347.91304862 -.00000009  00000+0  00000+0 0  9998",
+        "tleLine2": "2 22195  52.6517 255.0548 0137253 305.9349 131.8050  6.47293842759734",
+        "orbitClass": [
+          "mediumEarthOrbit"
+        ],
+        "country": "IT",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "22824",
+        "name": "STELLA",
+        "tleLine1": "1 22824U 93061B   24348.17650101 -.00000020  00000+0  10680-4 0  9990",
+        "tleLine2": "2 22824  98.8544  37.0219 0007119  45.8855 349.3399 14.27443996626321",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "FR",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "27944",
+        "name": "LARETS",
+        "tleLine1": "1 27944U 03042F   24348.16186912  .00000178  00000+0  43729-4 0  9994",
+        "tleLine2": "2 27944  98.3397 130.2341 0011476 321.2917  38.7461 14.63662527132833",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "CIS",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "38077",
+        "name": "LARES",
+        "tleLine1": "1 38077U 12006A   24348.15044228 -.00000031  00000+0  47260-4 0  9998",
+        "tleLine2": "2 38077  69.4883 153.4689 0010171 215.4915 144.5436 12.54932026588033",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "IT",
+        "group_minor": "geodetic"
+      },
+      {
+        "catalogNumber": "53105",
+        "name": "LARES-2",
+        "tleLine1": "1 53105U 22080A   24346.66192066  .00000023  00000+0  00000+0 0  9994",
+        "tleLine2": "2 53105  70.1360 134.8330 0004778  96.8122 263.2935  6.38965181 56366",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "IT",
+        "group_minor": "geodetic"
+      }
+    ],
+    "Engineering Satellites": [
+      {
+        "catalogNumber": "26958",
+        "name": "PROBA-1",
+        "tleLine1": "1 26958U 01049B   24348.17835501  .00004084  00000+0  29342-3 0  9993",
+        "tleLine2": "2 26958  97.9315 328.6050 0059110 180.8933 179.2196 15.03465443260769",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "27844",
+        "name": "CUTE-1 (CO-55)",
+        "tleLine1": "1 27844U 03031E   24347.98033080  .00000715  00000+0  33222-3 0  9990",
+        "tleLine2": "2 27844  98.6776 352.5816 0009532 352.5929   7.5107 14.23697704113259",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "JPN",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "27848",
+        "name": "CUBESAT XI-IV (CO-57)",
+        "tleLine1": "1 27848U 03031J   24347.70707304  .00000617  00000+0  29302-3 0  9996",
+        "tleLine2": "2 27848  98.6806 352.4471 0009746  10.0453 350.0918 14.23075980112923",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "JPN",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "29252",
+        "name": "GENESIS 1",
+        "tleLine1": "1 29252U 06029A   24347.94487465  .00047267  00000+0  70033-3 0  9995",
+        "tleLine2": "2 29252  64.5097 276.6556 0033619 302.9364  56.8545 15.54316020 18211",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "31789",
+        "name": "GENESIS 2",
+        "tleLine1": "1 31789U 07028A   24348.18469466  .00038425  00000+0  65989-3 0  9991",
+        "tleLine2": "2 31789  64.4844 323.0328 0009743 294.7140  65.2984 15.50900303965090",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "35684",
+        "name": "APRIZESAT 4",
+        "tleLine1": "1 35684U 09041D   24347.62475811  .00001603  00000+0  20445-3 0  9991",
+        "tleLine2": "2 35684  98.2137  39.3069 0043492 308.5340  51.1977 14.82343206829601",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "35686",
+        "name": "APRIZESAT 3",
+        "tleLine1": "1 35686U 09041F   24347.61451559  .00003267  00000+0  30617-3 0  9995",
+        "tleLine2": "2 35686  98.1332 107.2543 0066729  86.6009 274.2840 14.93093877834022",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "36037",
+        "name": "PROBA-2",
+        "tleLine1": "1 36037U 09059B   24347.56981371  .00000735  00000+0  18368-3 0  9995",
+        "tleLine2": "2 36037  98.2302 168.0800 0013183 179.3695 180.7520 14.54296994801425",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "37792",
+        "name": "APRIZESAT 5",
+        "tleLine1": "1 37792U 11044E   24347.74098254  .00002377  00000+0  32140-3 0  9998",
+        "tleLine2": "2 37792  98.2346 255.6742 0053874 338.3096  21.5832 14.79055297717210",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "37793",
+        "name": "APRIZESAT 6",
+        "tleLine1": "1 37793U 11044F   24348.18846237  .00001547  00000+0  23228-3 0  9995",
+        "tleLine2": "2 37793  98.2789 235.8090 0045521  47.6731 103.0314 14.75380892716009",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "39159",
+        "name": "PROBA-V",
+        "tleLine1": "1 39159U 13021A   24347.98361049  .00000191  00000+0  10223-3 0  9995",
+        "tleLine2": "2 39159  98.3118 344.5883 0003350 320.9931  39.1007 14.23396449602690",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "ESA",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "39416",
+        "name": "APRIZESAT 7",
+        "tleLine1": "1 39416U 13066A   24348.10959929  .00002569  00000+0  27596-3 0  9997",
+        "tleLine2": "2 39416  97.6968 301.8025 0036076 235.7794 124.0004 14.88961942599172",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "39425",
+        "name": "APRIZESAT 8",
+        "tleLine1": "1 39425U 13066K   24347.79592622  .00002590  00000+0  30067-3 0  9995",
+        "tleLine2": "2 39425  97.7536 295.1487 0046511 300.6683  58.9952 14.85484319597748",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40014",
+        "name": "BUGSAT-1 (TITA)",
+        "tleLine1": "1 40014U 14033E   24347.89223380  .00006973  00000+0  45404-3 0  9999",
+        "tleLine2": "2 40014  98.1032  38.7858 0031821 252.4786 107.2963 15.07876887572539",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "ARGN",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40016",
+        "name": "SAUDISAT 4",
+        "tleLine1": "1 40016U 14033G   24347.90746027  .00001482  00000+0  20818-3 0  9993",
+        "tleLine2": "2 40016  97.6826 145.1947 0047335  68.2458 292.3782 14.78071533564598",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "SAUD",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40018",
+        "name": "APRIZESAT 9",
+        "tleLine1": "1 40018U 14033J   24347.85630322  .00001734  00000+0  26897-3 0  9992",
+        "tleLine2": "2 40018  97.8266 126.6599 0068058 171.9264 188.3057 14.72826056562497",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40019",
+        "name": "APRIZESAT 10",
+        "tleLine1": "1 40019U 14033K   24347.84611057  .00001603  00000+0  26522-3 0  9996",
+        "tleLine2": "2 40019  97.8923 118.9852 0079497 234.0150 125.3667 14.69637095561416",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40076",
+        "name": "TECHDEMOSAT-1 (TDS-1)",
+        "tleLine1": "1 40076U 14037H   24347.79949022  .00009969  00000+0  79751-3 0  9998",
+        "tleLine2": "2 40076  98.3330 281.8381 0004323 335.4270  24.6745 15.00417285565166",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "UK",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "40144",
+        "name": "TIANTUO 2",
+        "tleLine1": "1 40144U 14053B   24348.14019014  .00156204  10970-4  48317-3 0  9992",
+        "tleLine2": "2 40144  97.1013  72.8829 0002595  93.2506 266.9065 15.91724428576126",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "PRC",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "42829",
+        "name": "TECHNOSAT",
+        "tleLine1": "1 42829U 17042E   24348.08140219  .00005227  00000+0  43052-3 0  9997",
+        "tleLine2": "2 42829  97.3844 159.5420 0012468 186.8719 173.2336 14.99416538403955",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "GER",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "42831",
+        "name": "FLYING LAPTOP",
+        "tleLine1": "1 42831U 17042G   24347.90483408  .00004900  00000+0  42898-3 0  9994",
+        "tleLine2": "2 42831  97.3892 158.8037 0011945 187.2622 172.8430 14.97080989403858",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "GER",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "43765",
+        "name": "HAWK-A",
+        "tleLine1": "1 43765U 18099H   24347.73548267  .00005565  00000+0  37993-3 0  9998",
+        "tleLine2": "2 43765  97.4756  39.5581 0010090  40.3075 319.8899 15.06541142329498",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "43794",
+        "name": "HAWK-B",
+        "tleLine1": "1 43794U 18099AN  24347.40431955  .00006076  00000+0  41481-3 0  9994",
+        "tleLine2": "2 43794  97.4756  39.2352 0010162  43.5421 316.6607 15.06503678329431",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "43799",
+        "name": "HAWK-C",
+        "tleLine1": "1 43799U 18099AT  24347.40427646  .00006594  00000+0  44974-3 0  9996",
+        "tleLine2": "2 43799  97.4755  39.1313 0010143  42.9476 317.2542 15.06505737330180",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "46495",
+        "name": "SALSAT",
+        "tleLine1": "1 46495U 20068K   24347.89116096  .00009157  00000+0  45067-3 0  9990",
+        "tleLine2": "2 46495  97.8394 312.5187 0014858  63.9393 296.3367 15.18140470231379",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "GER",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "47502",
+        "name": "HAWK-2C",
+        "tleLine1": "1 47502U 21006CT  24348.10369419  .00007630  00000+0  30431-3 0  9990",
+        "tleLine2": "2 47502  97.3091  33.3232 0009265  19.2313 340.9273 15.25424760215233",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "47505",
+        "name": "HAWK-2A",
+        "tleLine1": "1 47505U 21006CW  24347.11983947  .00001850  00000+0  76418-4 0  9995",
+        "tleLine2": "2 47505  97.3130  32.7146 0008264  26.8199 333.3465 15.25213521215084",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "47508",
+        "name": "HAWK-2B",
+        "tleLine1": "1 47508U 21006CZ  24347.12008000  .00008133  00000+0  32490-3 0  9999",
+        "tleLine2": "2 47508  97.3008  31.9878 0009474  25.7346 334.4362 15.25348759215080",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "48931",
+        "name": "HAWK-3B",
+        "tleLine1": "1 48931U 21059BE  24347.85466237  .00017164  00000+0  47948-3 0  9996",
+        "tleLine2": "2 48931  97.6456 137.7858 0010291 166.6694 193.4824 15.36726935192396",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "48948",
+        "name": "HAWK-3C",
+        "tleLine1": "1 48948U 21059BX  24347.39872037  .00018330  00000+0  51196-3 0  9998",
+        "tleLine2": "2 48948  97.6706 141.5025 0010887 171.4293 188.7138 15.36712419192321",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "48957",
+        "name": "HAWK-3A",
+        "tleLine1": "1 48957U 21059CG  24347.85440736  .00018018  00000+0  50290-3 0  9993",
+        "tleLine2": "2 48957  97.6581 139.8903 0011065 163.7474 196.4126 15.36734835192397",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52165",
+        "name": "HAWK-4B",
+        "tleLine1": "1 52165U 22033J   24347.69097141  .00033557  00000+0  53224-3 0  9997",
+        "tleLine2": "2 52165  97.3125  71.9018 0004953  22.0819 338.0647 15.53301428150871",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52167",
+        "name": "HAWK-4A",
+        "tleLine1": "1 52167U 22033L   24347.17543948  .00040497  00000+0  64228-3 0  9990",
+        "tleLine2": "2 52167  97.3065  70.7217 0004442  23.3654 336.7800 15.53267998150798",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52170",
+        "name": "HAWK-4C",
+        "tleLine1": "1 52170U 22033P   24347.69063673  .00032862  00000+0  52121-3 0  9999",
+        "tleLine2": "2 52170  97.3119  71.8739 0005759   6.6911 353.4418 15.53300528150872",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52754",
+        "name": "HAWK-5C",
+        "tleLine1": "1 52754U 22057Y   24347.62356138  .00015646  00000+0  53688-3 0  9997",
+        "tleLine2": "2 52754  97.5959 112.6561 0006537 241.7862 118.2718 15.30227357141438",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52756",
+        "name": "HAWK-5B",
+        "tleLine1": "1 52756U 22057AA  24347.36183050  .00014650  00000+0  50303-3 0  9996",
+        "tleLine2": "2 52756  97.5949 110.8224 0007001 237.9046 122.1515 15.30218257141396",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "52757",
+        "name": "HAWK-5A",
+        "tleLine1": "1 52757U 22057AB  24347.62316548  .00014366  00000+0  49320-3 0  9997",
+        "tleLine2": "2 52757  97.5954 111.8678 0007347 239.0083 121.0436 15.30225264141435",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "55324",
+        "name": "HAWK-6B",
+        "tleLine1": "1 55324U 23011A   24347.95177842  .00007099  00000+0  38169-3 0  9993",
+        "tleLine2": "2 55324  40.5167 308.8543 0003004 276.0527  83.9937 15.15031394103983",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "55326",
+        "name": "HAWK-6C",
+        "tleLine1": "1 55326U 23011C   24348.14909839  .00007158  00000+0  38463-3 0  9999",
+        "tleLine2": "2 55326  40.4854 305.8046 0003590 289.0629  70.9788 15.15036035104022",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "55327",
+        "name": "HAWK-6A",
+        "tleLine1": "1 55327U 23011D   24348.08312330  .00007152  00000+0  38444-3 0  9990",
+        "tleLine2": "2 55327  40.5014 307.1713 0004116 279.7535  80.2807 15.15029400104018",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "56191",
+        "name": "HAWK-7A",
+        "tleLine1": "1 56191U 23054P   24347.64268801  .00009871  00000+0  41755-3 0  9990",
+        "tleLine2": "2 56191  97.3489 235.1993 0005953 223.9986 136.0778 15.23388321 92848",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "56193",
+        "name": "HAWK-7B",
+        "tleLine1": "1 56193U 23054R   24347.64260727  .00008533  00000+0  36139-3 0  9995",
+        "tleLine2": "2 56193  97.3389 233.6952 0006708 240.1413 119.9158 15.23385243 92844",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      },
+      {
+        "catalogNumber": "56200",
+        "name": "HAWK-7C",
+        "tleLine1": "1 56200U 23054Y   24348.16798231  .00009275  00000+0  39242-3 0  9990",
+        "tleLine2": "2 56200  97.3395 235.0088 0005791 234.9523 125.1171 15.23398177 92923",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "US",
+        "group_minor": "engineering"
+      }
+    ],
+    "Education Satellites": [
+      {
+        "catalogNumber": "27607",
+        "name": "SAUDISAT 1C (SO-50)",
+        "tleLine1": "1 27607U 02058C   24347.55821869  .00002202  00000+0  30255-3 0  9994",
+        "tleLine2": "2 27607  64.5558  32.6862 0034760  23.3637 336.9037 14.80493868182922",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "SAUD",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "28371",
+        "name": "SAUDISAT 2",
+        "tleLine1": "1 28371U 04025F   24348.17177780  .00000707  00000+0  17116-3 0  9993",
+        "tleLine2": "2 28371  98.5065 324.4053 0024742 186.6694 173.4178 14.55989463 85587",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "SAUD",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "31118",
+        "name": "SAUDISAT 3",
+        "tleLine1": "1 31118U 07012B   24347.78708037  .00000746  00000+0  13045-3 0  9996",
+        "tleLine2": "2 31118  98.0783 289.4716 0014750 176.6130 183.5179 14.70712609946683",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "SAUD",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "41784",
+        "name": "PISAT",
+        "tleLine1": "1 41784U 16059B   24347.85485099  .00001872  00000+0  33943-3 0  9995",
+        "tleLine2": "2 41784  97.8241   1.7457 0030368 162.5395 197.6862 14.67077207438849",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "IND",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "42831",
+        "name": "FLYING LAPTOP",
+        "tleLine1": "1 42831U 17042G   24347.90483408  .00004900  00000+0  42898-3 0  9994",
+        "tleLine2": "2 42831  97.3892 158.8037 0011945 187.2622 172.8430 14.97080989403858",
+        "orbitClass": [
+          "sunSynchronous",
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "GER",
+        "group_minor": "education"
+      },
+      {
+        "catalogNumber": "46495",
+        "name": "SALSAT",
+        "tleLine1": "1 46495U 20068K   24347.89116096  .00009157  00000+0  45067-3 0  9990",
+        "tleLine2": "2 46495  97.8394 312.5187 0014858  63.9393 296.3367 15.18140470231379",
+        "orbitClass": [
+          "mediumEarthOrbit",
+          "circularOrbit"
+        ],
+        "country": "GER",
+        "group_minor": "education"
+      }
+    ]
+  }
+}

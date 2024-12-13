@@ -3,7 +3,7 @@ import json
 def generate_unique_colors(categories):
     """
     Generate unique colors for a set of categories.
-    Colors are in hexadecimal format (e.g., 0xff0000).
+    Colors are in hexadecimal string format (e.g., "#ff0000").
     """
     colors = {}
     palette = [
@@ -11,7 +11,8 @@ def generate_unique_colors(categories):
         0x888888, 0x880000, 0x008800, 0x000088, 0xff8800, 0x88ff00,
     ]
     for i, category in enumerate(categories):
-        colors[category] = palette[i % len(palette)]
+        # Convert to hex string with # prefix
+        colors[category] = f"#{palette[i % len(palette)]:06x}"
     return colors
 
 def generate_config_from_summary(summary_file, output_file):
