@@ -286,6 +286,22 @@ app.get('/satellites', async (req, res) => {
     }
 });
 
+app.get('/timestamp', (req, res) => {
+    if (!fs.existsSync(TIMESTAMP_FILE)) {
+        // If timestamp.json doesn't exist, return a default response or null
+        return res.json({ lastCached: null });
+    }
+
+    try {
+        const timestampData = JSON.parse(fs.readFileSync(TIMESTAMP_FILE, 'utf-8'));
+        res.json(timestampData);
+    } catch (error) {
+        console.error('Error reading timestamp file:', error);
+        res.status(500).send('Error reading timestamp file.');
+    }
+});
+
+
 app.listen(PORT, async () => {
     initializeTimestamp();
     console.log("Server starting...");
