@@ -1047,54 +1047,47 @@ function setResponsiveCameraPosition() {
 
 // Function to fetch and set initial simulation time
 function initializeSimulationTime() {
-    return fetch('https://orbital-bbfd.onrender.com/timestamps') // Fetch all timestamps from the server
+    return fetch('https://orbital-bbfd.onrender.com/timestamp') // Fetch timestamp from the server
         .then(response => {
             if (!response.ok) {
-                throw new Error("Failed to fetch timestamps from server");
+                throw new Error("Failed to fetch timestamp from server");
             }
             return response.json();
         })
         .then(timestamps => {
-            // Use the LATEST timestamp if available, or fallback to PAYLOAD
-            const latestTimestamp = Math.max(...Object.values(timestamps).filter(ts => ts > 0));
-            const payloadTimestamp = timestamps.PAYLOAD || null;
-
-            if (!latestTimestamp && !payloadTimestamp) {
-                throw new Error("No valid timestamps found in server response");
+            // Check if we have a valid lastCached timestamp
+            if (!timestamps || typeof timestamps.lastCached !== 'number') {
+                throw new Error("No valid lastCached timestamp found in server response");
             }
 
-            simulationTime = new Date(latestTimestamp || payloadTimestamp);
+            simulationTime = new Date(timestamps.lastCached);
             document.getElementById("simulation-time").textContent = simulationTime
                 .toUTCString()
                 .replace("GMT", "UTC");
         })
         .catch(serverError => {
-            console.error("Error loading timestamps from server, attempting local cache:", serverError);
+            console.error("Error loading timestamp from server, attempting local cache:", serverError);
 
             // Fallback to local cache
             return fetch('cache/timestamp.json')
                 .then(localResponse => {
                     if (!localResponse.ok) {
-                        throw new Error("Failed to fetch timestamps from local cache");
+                        throw new Error("Failed to fetch timestamp from local cache");
                     }
                     return localResponse.json();
                 })
                 .then(timestamps => {
-                    // Use the LATEST timestamp if available, or fallback to PAYLOAD
-                    const latestTimestamp = Math.max(...Object.values(timestamps).filter(ts => ts > 0));
-                    const payloadTimestamp = timestamps.PAYLOAD || null;
-
-                    if (!latestTimestamp && !payloadTimestamp) {
-                        throw new Error("No valid timestamps found in local cache");
+                    if (!timestamps || typeof timestamps.lastCached !== 'number') {
+                        throw new Error("No valid lastCached timestamp found in local cache");
                     }
 
-                    simulationTime = new Date(latestTimestamp || payloadTimestamp);
+                    simulationTime = new Date(timestamps.lastCached);
                     document.getElementById("simulation-time").textContent = simulationTime
                         .toUTCString()
                         .replace("GMT", "UTC");
                 })
                 .catch(localError => {
-                    console.error("Error loading timestamps from local cache, using hardcoded fallback:", localError);
+                    console.error("Error loading timestamp from local cache, using hardcoded fallback:", localError);
 
                     // Fallback to hardcoded date
                     simulationTime = new Date('2024-11-01T00:00:00Z');
