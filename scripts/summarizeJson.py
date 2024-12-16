@@ -4,33 +4,25 @@ from collections import defaultdict
 
 
 def load_and_flatten_json(folder_path):
-
     flattened_data = []
-    ignored_files = {"timestamps.json", "spacetrack_static.json"}
+    # ignored_files = {"timestamps.json", "spacetrack_static.json"}
+    process_files = {"consolidated_satellites.json"}
 
     for filename in os.listdir(folder_path):
-        print(f"Processing file: {filename}")  # Debugging print
-        if filename in ignored_files or not filename.endswith(".json"):
-            print(f"Ignored file: {filename}")  # Debugging print
-            continue
+        if filename in process_files and filename.endswith(".json"):
+            print(f"Processing file: {filename}")  # Debugging print
 
-        file_path = os.path.join(folder_path, filename)
+            file_path = os.path.join(folder_path, filename)
 
-        with open(file_path, "r") as f:
-            data = json.load(f)
-            print(f"Loaded file: {filename}")  # Debugging print
+            with open(file_path, "r") as f:
+                data = json.load(f)
+                print(f"Loaded file: {filename}")  # Debugging print
 
-            group_major = data.get("group_major", "Unknown")
-            if not isinstance(data.get("data"), dict):
-                print(f"Invalid structure in file: {filename}")  # Debugging print
-                continue
-
-            for group_minor, satellites in data["data"].items():
-                if not isinstance(satellites, list):
-                    print(f"Invalid satellites list under group_minor {group_minor} in {filename}")  # Debugging print
+                if not isinstance(data, list):
+                    print(f"Invalid structure in file: {filename}")  # Debugging print
                     continue
 
-                for satellite in satellites:
+                for satellite in data:
                     catalog_number = satellite.get("catalogNumber")
                     if catalog_number:
                         flattened_data.append({
@@ -38,12 +30,17 @@ def load_and_flatten_json(folder_path):
                             "name": satellite.get("name", "Unknown"),
                             "tleLine1": satellite.get("tleLine1"),
                             "tleLine2": satellite.get("tleLine2"),
-                            "orbitClass": satellite.get("orbitClass", "Unknown"),
+                            "constellation": satellite.get("constellation") or "Unknown",
+                            "orbitClass": satellite.get("orbitClass", []),
                             "country": satellite.get("country", "Unknown"),
-                            "group_major": group_major,
-                            "group_minor": group_minor,
+                            "group_major": satellite.get("group_major", []),
+                            "group_minor": satellite.get("group_minor", []),
                         })
-    print(f"Flattened data size: {len(flattened_data)}")  # Debugging print
+        elif filename not in process_files:
+            print(f"Not processing file: {filename}")  # Debugging print
+
+        print(f"Flattened data size: {len(flattened_data)}")  # Debugging print
+
     return flattened_data
 
 
@@ -53,18 +50,24 @@ def summarize_data(flattened_data):
         "group_minor": defaultdict(int),
         "country": defaultdict(int),
         "orbitClass": defaultdict(int),
+        "constellation": defaultdict(int),
         "duplicates": 0
     }
 
     catalog_number_counts = defaultdict(int)
 
-
     for sat in flattened_data:
-        summary["group_major"][sat["group_major"]] += 1
-        summary["group_minor"][sat["group_minor"]] += 1
-        summary["country"][sat["country"]] += 1
-        summary["orbitClass"][sat["orbitClass"]] += 1
+        for group in sat["group_major"]:
+            summary["group_major"][group] += 1
 
+        for minor in sat["group_minor"]:
+            summary["group_minor"][minor] += 1
+
+        for orbit in sat["orbitClass"]:
+            summary["orbitClass"][orbit] += 1
+
+        summary["country"][sat["country"]] += 1
+        summary["constellation"][sat["constellation"]] += 1
 
         catalog_number = sat["catalogNumber"]
         catalog_number_counts[catalog_number] += 1
@@ -73,16 +76,19 @@ def summarize_data(flattened_data):
 
     return summary
 
+
 def save_summary(summary, output_file):
     summary["group_major"] = dict(summary["group_major"])
     summary["group_minor"] = dict(summary["group_minor"])
     summary["country"] = dict(summary["country"])
     summary["orbitClass"] = dict(summary["orbitClass"])
+    summary["constellation"] = dict(summary["constellation"])
 
     with open(output_file, "w") as f:
         json.dump(summary, f, indent=4)
 
     print(f"Summary saved to {output_file}")
+
 
 def main(folder_path, output_file):
     flattened_data = load_and_flatten_json(folder_path)
@@ -90,7 +96,7 @@ def main(folder_path, output_file):
     save_summary(summary, output_file)
 
 
-folder_path = "cache" 
-output_file = "public/config/summary.json"  
+folder_path = "cache"
+output_file = "public/config/summary.json"
 
 main(folder_path, output_file)

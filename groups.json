@@ -15,11 +15,6 @@
       "group_major": "100 Brightest"
     },
     {
-      "api": "active",
-      "group_minor": "Active",
-      "group_major": "Active"
-    },
-    {
       "api": "analyst",
       "group_minor": "Analyst",
       "group_major": "Analyst"

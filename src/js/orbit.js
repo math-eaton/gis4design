@@ -225,6 +225,15 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         sunPivot.add(sunMesh);
         sunPivot.add(directionalLight);
 
+        const sunLineMaterial = new THREE.LineBasicMaterial({ color: 0xffff00 });
+        const sunLineGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0), // Earth's center
+            sunMesh.position // Sun's position
+        ]);
+        const sunLine = new THREE.Line(sunLineGeometry, sunLineMaterial);
+        scene.add(sunLine);
+
+
     }
 
         // Calculate Julian Date
@@ -352,27 +361,21 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     }
         
 
-// Load TLE data from cached JSON file
-// with loading screen
-// todo: separate loading screen to main.js config
-
+// Load sat data from cached JSON file
 let satelliteMesh;
 
 function loadSatelliteData() {
+    const endpoint = "https://orbital-bbfd.onrender.com/satellites";
 
-  
-    
-    const endpoints = [
-        "Navigation", "Communications", "Scientific", "Space Stations", "Weather & Earth Resources", "Debris",
-    ];
-
-
-    // Fetch data for all group_major endpoints in parallel
-    Promise.all(endpoints.map(groupMajor => loadGroupMajorData(groupMajor)))
-        .then(groupDataArrays => {
-            // Combine all group data into one array
-            const allSatellites = groupDataArrays.flat();
-
+    // Fetch consolidated satellite data
+    fetch(endpoint)
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(`Failed to load data from ${endpoint}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then((allSatellites) => {
             // Process and store data for rendering
             processSatelliteData(allSatellites);
 
@@ -381,79 +384,29 @@ function loadSatelliteData() {
 
             // Ensure legend initializes with the filtered active scheme
             updateLegend(activeScheme);
-
         })
-        .catch(error => {
-            console.error("Failed to load some satellite data:", error);
+        .catch((error) => {
+            console.error("Failed to load satellite data:", error);
             console.log("Attempting to load data from local cache...");
 
             // Fallback to local cache
-            fetch('cache/active.json')
-                .then(localResponse => {
-                    if (!localResponse.ok) throw new Error('Local cache fetch failed');
+            fetch('cache/consolidated_satellites.json')
+                .then((localResponse) => {
+                    if (!localResponse.ok) throw new Error("Local cache fetch failed");
+                    onSatelliteLoadComplete();
                     return localResponse.json();
                 })
                 .then(processSatelliteData)
-                .catch(localError => {
+                .catch((localError) => {
                     console.error("Failed to load satellite data from both server and local cache:", localError);
                     onSatelliteLoadComplete(); // Trigger callback even if loading fails
                 });
         });
 }
 
-async function loadGroupMajorData(groupMajor) {
-    const endpoint = `https://orbital-bbfd.onrender.com/satellites/${groupMajor}`;
-    try {
-        const response = await fetch(endpoint);
-        if (!response.ok) throw new Error(`Failed to load data for ${groupMajor}`);
-        const data = await response.json();
 
-        const flattenedData = flattenSatelliteData(groupMajor, data);
-        console.log(`Loaded and flattened data for ${groupMajor}`);
-        return flattenedData;
-    } catch (error) {
-        console.warn(`Error loading data for ${groupMajor}:`, error);
-        return []; // Return an empty array if fetching fails
-    }
-}
-
-function flattenSatelliteData(groupMajor, groupData) {
-    const tleArray = [];
-
-    // Ensure `data` exists and is structured correctly
-    if (groupData.data && typeof groupData.data === 'object') {
-        Object.entries(groupData.data).forEach(([groupMinor, satellites]) => {
-            if (Array.isArray(satellites)) {
-                satellites.forEach((sat) => {
-                    if (sat.tleLine1 && sat.tleLine2) {
-                        tleArray.push({
-                            name: sat.name || 'Unknown',
-                            tleLine1: sat.tleLine1,
-                            tleLine2: sat.tleLine2,
-                            country: sat.country || 'Unknown',
-                            orbitClass: sat.orbitClass || 'Unknown',
-                            // objType: sat.objType || 'Unknown',
-                            group_major: groupMajor || 'Unknown',
-                            group_minor: groupMinor || 'Unknown', // Preserved for future use
-                        });
-                    } else {
-                        console.warn(`Satellite missing TLE data:`, sat);
-                    }
-                });
-            } else {
-                console.warn(`Expected an array of satellites under group_minor: ${groupMinor}, but got:`, satellites);
-            }
-        });
-    } else {
-        console.warn(`Expected a 'data' object for group_major: ${groupMajor}, but got:`, groupData.data);
-    }
-
-    return tleArray;
-}
-
-
-function processSatelliteData(tleArray) {
-    if (!Array.isArray(tleArray) || tleArray.length === 0) {
+function processSatelliteData(allSatellites) {
+    if (!Array.isArray(allSatellites) || allSatellites.length === 0) {
         console.error("No valid satellite data to process.");
         return;
     }
@@ -463,34 +416,39 @@ function processSatelliteData(tleArray) {
         group_minor: new Set(),
         orbitClass: new Set(),
         country: new Set(),
+        constellation: new Set(),
     };
 
-
     // Add metadata for classification
-    tleArray.forEach((sat) => {
+    allSatellites.forEach((sat) => {
         sat.metadata = {
             satrec: createSatrec(sat.tleLine1, sat.tleLine2), // Generate satrec for propagation
-            orbitClass: sat.orbitClass.toLowerCase(),
+            orbitClass: sat.orbitClass.map((oc) => oc.toLowerCase()), // Normalize orbit classes
             country: sat.country.toLowerCase(),
-            group_major: sat.group_major.toLowerCase(),
-            group_minor: sat.group_minor.toLowerCase(),
+            group_major: sat.group_major.map((gm) => gm.toLowerCase()),
+            group_minor: sat.group_minor.map((gm) => gm.toLowerCase()),
+            constellation: sat.constellation ? sat.constellation.toLowerCase() : null,
         };
 
-        
-        // Collect represented classes for legend visibility 
-        representedClasses.group_major.add(sat.metadata.group_major);
-        representedClasses.group_minor.add(sat.metadata.group_minor);
-        representedClasses.orbitClass.add(sat.metadata.orbitClass);
+        // console.log(sat.metadata.orbitClass)
+
+
+        // Collect represented classes for legend visibility
+        sat.metadata.orbitClass.forEach((oc) => representedClasses.orbitClass.add(oc));
+        sat.metadata.group_major.forEach((gm) => representedClasses.group_major.add(gm));
+        sat.metadata.group_minor.forEach((gm) => representedClasses.group_minor.add(gm));
+        if (sat.metadata.constellation) {
+            representedClasses.constellation.add(sat.metadata.constellation);
+        }
         representedClasses.country.add(sat.metadata.country);
     });
 
-
-    // console.log("Processed Satellite Data with Metadata:", tleArray);
-
+    // Filter the classification schemes based on available data
     filterClassificationSchemes(representedClasses);
 
+
     // Pass TLE data for mesh creation
-    createSatelliteMeshes(tleArray);
+    createSatelliteMeshes(allSatellites);
 }
 
 function createSatrec(tleLine1, tleLine2) {
@@ -503,7 +461,6 @@ function createSatrec(tleLine1, tleLine2) {
 }
 
 
-
 // Transform external config into the classificationSchemes format
 function populateClassificationSchemes(config) {
     const classificationSchemes = {};
@@ -511,10 +468,21 @@ function populateClassificationSchemes(config) {
     for (const [key, value] of Object.entries(config)) {
         classificationSchemes[key] = {
             colors: Object.fromEntries(
-                Object.entries(value.colors).map(([category, color]) => [
-                    category.trim().toLowerCase(), // Normalize category keys
-                    parseInt(color, 10) || 0xff0000, // Ensure colors are valid integers
-                ])
+                Object.entries(value.colors).map(([category, color]) => {
+                    // Normalize category keys
+                    const normalizedCategory = category.trim().toLowerCase();
+
+                    // Validate and parse color
+                    let parsedColor;
+                    if (typeof color === "string" && /^#?[0-9A-Fa-f]{6}$/.test(color)) {
+                        parsedColor = parseInt(color.replace("#", ""), 16); // Convert hex to integer
+                    } else {
+                        console.warn(`Invalid color '${color}' for category '${category}'. Defaulting to red.`);
+                        parsedColor = 0xff0000; // Default to red
+                    }
+
+                    return [normalizedCategory, parsedColor];
+                })
             ),
         };
     }
@@ -561,16 +529,22 @@ async function initClassificationSchemes(configPath) {
 // Helper to determine color based on scheme
 function getColorByScheme(scheme, sat) {
     const { colors } = classificationSchemes[scheme];
-    const category = (sat[scheme] || 'unknown').toString().trim().toLowerCase();
-    const colorCode = colors[category];
 
-    if (!colorCode) {
-        console.warn(`No color found for category '${category}' in scheme '${scheme}'. Defaulting to red.`);
-        return new THREE.Color(0xff0000); // Default to red
+    // Handle multiple classifications (e.g., arrays) or a missing scheme gracefully
+    const categories = Array.isArray(sat[scheme]) 
+        ? sat[scheme] 
+        : (sat[scheme] ? [sat[scheme]] : []);
+    const normalizedCategories = categories.map((cat) => (cat || 'unknown').toString().trim().toLowerCase());
+
+    // Attempt to find a matching color for any category
+    for (const category of normalizedCategories) {
+        if (colors[category]) {
+            return new THREE.Color(colors[category]);
+        }
     }
 
-    // console.log(`Scheme: ${scheme}, Category: ${category}, Color: ${colorCode}`);
-    return new THREE.Color(colorCode);
+    console.warn(`No color found for categories '${normalizedCategories}' in scheme '${scheme}'. Defaulting to red.`);
+    return new THREE.Color(0xff00ff); // Default to red
 }
 
 function applyClassification(instancedMesh, scheme, satellites) {
@@ -593,8 +567,7 @@ function applyClassification(instancedMesh, scheme, satellites) {
             return;
         }
 
-        const colorHex = getColorByScheme(activeScheme, sat.metadata);
-        const color = new THREE.Color(colorHex);
+        const color = getColorByScheme(scheme, sat.metadata);
 
         try {
             instancedMesh.getMatrixAt(i, dummy.matrix); // Safely get the matrix
@@ -605,10 +578,9 @@ function applyClassification(instancedMesh, scheme, satellites) {
 
         dummy.updateMatrix();
         sat.originalMatrix = dummy.matrix.clone(); // Save the original matrix
-    
+
         instancedMesh.setMatrixAt(i, dummy.matrix); // Retain position
         colors.set(color.toArray(), i * 3); // Set color
-        
     });
 
     instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
@@ -768,12 +740,22 @@ function filterSatellitesByClass(scheme, category) {
     if (!colors[normalizedCategory]) {
         return;
     }
+
     satelliteMesh.userData.forEach((sat, i) => {
-        const satelliteClass = (sat.metadata[scheme] || 'unknown').toString().trim().toLowerCase();
-        sat.visible = satelliteClass === normalizedCategory;
+        const classifications = Array.isArray(sat.metadata[scheme])
+            ? sat.metadata[scheme]
+            : [sat.metadata[scheme]];
+
+        const matches = classifications.some(
+            (classification) => classification.toString().trim().toLowerCase() === normalizedCategory
+        );
+
+        sat.visible = matches;
     });
+
     updateSatelliteVisibility();
 }
+
 
 function resetSatelliteVisibility(scheme) {
     satelliteMesh.userData.forEach((sat) => {
@@ -803,7 +785,7 @@ function createSatelliteMeshes(allSatellites) {
     // console.log('All satellites passed to createSatelliteMeshes:', allSatellites);
     console.log('Satellite count:', allSatellites.length);
 
-    const material = new THREE.PointsMaterial({
+    const material = new THREE.MeshStandardMaterial({
         metalness: 0.3,
         roughness: 0.2,
         transparent: false,
@@ -1090,7 +1072,7 @@ function initializeSimulationTime() {
             console.error("Error loading timestamps from server, attempting local cache:", serverError);
 
             // Fallback to local cache
-            return fetch('cache/timestamps.json')
+            return fetch('cache/timestamp.json')
                 .then(localResponse => {
                     if (!localResponse.ok) {
                         throw new Error("Failed to fetch timestamps from local cache");
@@ -1189,7 +1171,7 @@ function updateEarthRotation() {
         updateSunDistance();
 
         // Sync Sun's position dynamically
-        updateSunPosition(simulationTime, scaleFactor);
+        // updateSunPosition(simulationTime, scaleFactor);
 
 
         if (currentChapter === 'fixed') {
