@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import * as satellite from 'satellite.js';
+import { spawn } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,7 +23,7 @@ if (process.env.NODE_ENV !== 'production') {
 const CELESTRAK_API = 'https://celestrak.org/NORAD/elements/gp.php';
 const CACHE_DIR = path.join(__dirname, 'cache');
 const TIMESTAMP_FILE = path.join(CACHE_DIR, 'timestamp.json');
-const CONSOLIDATED_CACHE_FILE = path.join(CACHE_DIR, 'consolidated_data.json');
+const CONSOLIDATED_CACHE_FILE = path.join(CACHE_DIR, 'consolidated_satellites.json');
 const PORT = process.env.PORT || 3000;
 
 // Ensure cache directory exists
@@ -48,7 +49,7 @@ function determineOrbitClass(tleLine1, tleLine2) {
         const orbitClasses = [];
 
         if (Math.abs(inclination) < 0.1 && Math.abs(period - 1436) < 1) orbitClasses.push('geostationary');
-        if (Math.abs(period - 1436) < 10) orbitClasses.push('geosynchronous');
+        // if (Math.abs(period - 1436) < 10) orbitClasses.push('geosynchronous');
         if (Math.abs(inclination - 98) < 2 && Math.abs(period - 100) < 5) orbitClasses.push('sunSynchronous');
 
         // Classify non-geostationary orbits by altitude
@@ -58,24 +59,77 @@ function determineOrbitClass(tleLine1, tleLine2) {
         if (altitude > 35786) orbitClasses.push('highEarthOrbit'); // HEO (altitude > 35786 km)
 
         // Additional classifications
-        if (Math.abs(inclination - 90) < 5) orbitClasses.push('polarOrbit'); // Polar Orbits (inclination close to 90°)
-        if (eccentricity > 0.1 && period > 600) orbitClasses.push('highlyEllipticalOrbit'); // Highly Elliptical Orbit (HEO)
-        if (Math.abs(inclination - 63.4) < 1 && Math.abs(period - 720) < 10) orbitClasses.push('molniyaOrbit'); // Molniya Orbit
-        if (eccentricity < 0.01) orbitClasses.push('circularOrbit'); // Circular Orbit
-        if (Math.abs(inclination) < 0.1 && period > 1436) orbitClasses.push('graveyardOrbit'); // Graveyard Orbit
+        // if (Math.abs(inclination - 90) < 5) orbitClasses.push('polarOrbit'); // Polar Orbits (inclination close to 90°)
+        // if (eccentricity > 0.1 && period > 600) orbitClasses.push('highlyEllipticalOrbit'); // Highly Elliptical Orbit (HEO)
+        // if (Math.abs(inclination - 63.4) < 1 && Math.abs(period - 720) < 10) orbitClasses.push('molniyaOrbit'); // Molniya Orbit
+        // if (eccentricity < 0.01) orbitClasses.push('circularOrbit'); // Circular Orbit
+        // if (Math.abs(inclination) < 0.1 && period > 1436) orbitClasses.push('graveyardOrbit'); // Graveyard Orbit
 
-        return orbitClasses.length > 0 ? orbitClasses : ['nonGeostationary'];
+        return orbitClasses.length > 0 ? orbitClasses : ['other'];
     } catch {
         return ['unknown'];
     }
 }
 
-// Fetch Space-Track Data
+// Preprocess Space-Track data using Python script
+async function preprocessSpaceTrackData(spaceTrackData) {
+    const outputFile = path.join(CACHE_DIR, 'spacetrack_processed.json');
+
+    // Check if the processed file already exists
+    if (fs.existsSync(outputFile)) {
+        console.log("cleaned output exists");
+        const processedData = JSON.parse(fs.readFileSync(outputFile, 'utf-8'));
+        return processedData;
+    }
+
+    // If it doesn't exist, then run the preprocessing
+    const inputFile = path.join(CACHE_DIR, 'spacetrack_raw.json');
+
+    // Write raw spaceTrackData to a file
+    fs.writeFileSync(inputFile, JSON.stringify(spaceTrackData, null, 2));
+
+    // Run Python script
+    await runPythonPreprocessing(inputFile, outputFile, 'scripts/cleanCountry.py');
+
+    // Read back the processed data
+    const processedData = JSON.parse(fs.readFileSync(outputFile, 'utf-8'));
+    return processedData;
+}
+
+// Run a generic Python preprocessing script
+function runPythonPreprocessing(inputFile, outputFile, scriptPath) {
+    return new Promise((resolve, reject) => {
+        const pythonProcess = spawn('python3', [scriptPath, inputFile, outputFile]);
+
+        pythonProcess.stdout.on('data', (data) => {
+            console.log(`Python STDOUT: ${data.toString()}`);
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            console.error(`Python STDERR: ${data.toString()}`);
+        });
+
+        pythonProcess.on('close', (code) => {
+            if (code === 0) {
+                resolve();
+            } else {
+                reject(new Error(`Python process exited with code ${code}`));
+            }
+        });
+    });
+}
+
+// Fetch Space-Track Data (after preprocessing)
 async function fetchSpaceTrackData() {
-    return staticSpaceTrackData.map((gp) => ({
+    // Convert staticSpaceTrackData into a simpler form
+    const simpleData = staticSpaceTrackData.map((gp) => ({
         catalogNumber: gp.catalogNumber,
         country: gp.country || 'Unknown',
     }));
+
+    // Preprocess the data via Python before returning
+    const processedData = await preprocessSpaceTrackData(simpleData);
+    return processedData;
 }
 
 // Fetch CelesTrak Data
@@ -110,7 +164,6 @@ async function fetchCelesTrakGroupData(apiQuery) {
     }
 }
 
-// Map of constellations to their minor groups
 const CONSTELLATIONS = new Set([
     "starlink",
     "oneweb",
@@ -128,9 +181,9 @@ const CONSTELLATIONS = new Set([
 // Consolidate Data
 async function consolidateData() {
     console.log("Starting data consolidation...");
-    const allData = {};
     const spaceTrackData = await fetchSpaceTrackData();
-    console.log("Space-Track data loaded successfully.");
+    console.log("Space-Track data preprocessed and loaded successfully.");
+    const allData = {};
 
     for (const group of groups) {
         const celestrakData = await fetchCelesTrakGroupData(group.api);
@@ -147,25 +200,24 @@ async function consolidateData() {
                     tleLine1: celestrakItem.tleLine1,
                     tleLine2: celestrakItem.tleLine2,
                     orbitClass: new Set(celestrakItem.orbitClass),
-                    country: spaceTrackItem?.country || "Unknown",
+                    ISO3: spaceTrackItem?.country || "Unknown",
+                    country: spaceTrackItem?.country_full || "Unknown",
+                    continent: spaceTrackItem?.continent || "Unknown",                
                     group_major: new Set(),
                     group_minor: new Set(),
-                    constellation: null // Default to null
+                    constellation: null
                 };
             }
 
-            // Merge orbitClass and group_major
             celestrakItem.orbitClass.forEach((oc) => allData[catalogNumber].orbitClass.add(oc));
             allData[catalogNumber].group_major.add(group.group_major);
 
-            // Merge group_minor, excluding "active" if it is in group_major
             if (group.group_major !== "Active") {
                 allData[catalogNumber].group_minor.add(group.api);
             }
 
-            // Assign constellation if group.api is in CONSTELLATIONS
             if (CONSTELLATIONS.has(group.api)) {
-                allData[catalogNumber].constellation = group.api; // Set to the constellation name
+                allData[catalogNumber].constellation = group.api;
             }
         });
     }
@@ -176,7 +228,7 @@ async function consolidateData() {
         orbitClass: Array.from(sat.orbitClass),
         group_major: Array.from(sat.group_major),
         group_minor: Array.from(sat.group_minor),
-        constellation: sat.constellation // Include the constellation attribute
+        constellation: sat.constellation
     }));
 }
 
@@ -184,7 +236,7 @@ function initializeTimestamp() {
     if (!fs.existsSync(TIMESTAMP_FILE)) {
         console.log('No timestamp file found. Creating a new one.');
         const initialTimestamp = groups.reduce((acc, group) => {
-            acc[group.api] = 0; // Initialize all timestamp to 0
+            acc[group.api] = 0; 
             return acc;
         }, {});
         fs.writeFileSync(TIMESTAMP_FILE, JSON.stringify(initialTimestamp, null, 2));
@@ -192,19 +244,16 @@ function initializeTimestamp() {
     }
 }
 
-
-// Save Consolidated Data to Cache
 async function saveConsolidatedDataToCache() {
     const consolidatedData = await consolidateData();
-    const now = Date.now();
 
+    const now = Date.now();
+    // After consolidation, we can write directly since it's already preprocessed at the source step
     fs.writeFileSync(CONSOLIDATED_CACHE_FILE, JSON.stringify(consolidatedData, null, 2));
     fs.writeFileSync(TIMESTAMP_FILE, JSON.stringify({ lastCached: now }, null, 2));
     console.log(`Consolidated data cached at ${new Date(now).toISOString()}`);
 }
 
-
-// Check if Cache is Expired
 function isCacheExpired() {
     if (!fs.existsSync(TIMESTAMP_FILE)) {
         console.log("No timestamp file found. Cache is expired.");
@@ -219,8 +268,6 @@ function isCacheExpired() {
     return isExpired;
 }
 
-
-// Endpoint to Serve Consolidated Data
 app.get('/satellites', async (req, res) => {
     try {
         console.log("Received request to /satellites endpoint.");
@@ -239,7 +286,6 @@ app.get('/satellites', async (req, res) => {
     }
 });
 
-// Start Server
 app.listen(PORT, async () => {
     initializeTimestamp();
     console.log("Server starting...");
