@@ -363,7 +363,6 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
 
 // Load sat data from cached JSON file
 let satelliteMesh;
-
 function loadSatelliteData() {
     const endpoint = "https://orbital-bbfd.onrender.com/satellites";
 
@@ -376,13 +375,14 @@ function loadSatelliteData() {
             return response.json();
         })
         .then((allSatellites) => {
-            // Process and store data for rendering
-            processSatelliteData(allSatellites);
+            // Normalize into array for compatibility
+            const satelliteArray = Array.isArray(allSatellites) ? allSatellites : allSatellites.data;
+
+            processSatelliteData(satelliteArray);
 
             console.log("Successfully loaded and processed all satellite data.");
             onSatelliteLoadComplete(); // Callback to signal completion
 
-            // Ensure legend initializes with the filtered active scheme
             updateLegend(activeScheme);
         })
         .catch((error) => {
@@ -393,16 +393,25 @@ function loadSatelliteData() {
             fetch('cache/consolidated_satellites.json')
                 .then((localResponse) => {
                     if (!localResponse.ok) throw new Error("Local cache fetch failed");
-                    onSatelliteLoadComplete();
                     return localResponse.json();
                 })
-                .then(processSatelliteData)
+                .then((localAllSatellites) => {
+                    // Normalize local data
+                    const satelliteArray = Array.isArray(localAllSatellites) 
+                        ? localAllSatellites 
+                        : localAllSatellites.data;
+
+                    processSatelliteData(satelliteArray);
+
+                    onSatelliteLoadComplete();
+                })
                 .catch((localError) => {
                     console.error("Failed to load satellite data from both server and local cache:", localError);
                     onSatelliteLoadComplete(); // Trigger callback even if loading fails
                 });
         });
 }
+
 
 
 function processSatelliteData(allSatellites) {
