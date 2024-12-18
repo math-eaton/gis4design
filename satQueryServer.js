@@ -250,7 +250,7 @@ async function saveConsolidatedDataToCache() {
     const now = Date.now();
     // After consolidation, we can write directly since it's already preprocessed at the source step
     fs.writeFileSync(CONSOLIDATED_CACHE_FILE, JSON.stringify(consolidatedData, null, 2));
-    fs.writeFileSync(TIMESTAMP_FILE, JSON.stringify({ lastCached: now }, null, 2));
+    fs.writeFileSync(TIMESTAMP_FILE, JSON.stringify({ lastCached: now }));
     console.log(`Consolidated data cached at ${new Date(now).toISOString()}`);
 }
 

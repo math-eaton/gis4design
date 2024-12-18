@@ -363,6 +363,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
 
 // Load sat data from cached JSON file
 let satelliteMesh;
+
 function loadSatelliteData() {
     const endpoint = "https://orbital-bbfd.onrender.com/satellites";
 
@@ -375,6 +376,7 @@ function loadSatelliteData() {
             return response.json();
         })
         .then((allSatellites) => {
+            console.log("LOADING SAT...")
             // Normalize into array for compatibility
             const satelliteArray = Array.isArray(allSatellites) ? allSatellites : allSatellites.data;
 
@@ -455,6 +457,8 @@ function processSatelliteData(allSatellites) {
     // Filter the classification schemes based on available data
     filterClassificationSchemes(representedClasses);
 
+    // Precompute colors for each scheme once.
+    precomputeSatelliteColors(allSatellites);
 
     // Pass TLE data for mesh creation
     createSatelliteMeshes(allSatellites);
@@ -527,7 +531,7 @@ async function initClassificationSchemes(configPath) {
         const config = await response.json();
         classificationSchemes = populateClassificationSchemes(config);
 
-        console.log("Classification schemes initialized:", classificationSchemes);
+        // console.log("Classification schemes initialized:", classificationSchemes);
     } catch (error) {
         console.error("Error initializing classification schemes:", error);
         classificationSchemes = {}; // Fallback to empty object
@@ -556,6 +560,38 @@ function getColorByScheme(scheme, sat) {
     return new THREE.Color(0xff00ff); // Default to red
 }
 
+function precomputeSatelliteColors(allSatellites) {
+    allSatellites.forEach((sat) => {
+        if (!sat.metadata) return;
+
+        sat.metadata.precomputedColors = {};
+
+        // For each scheme, compute and store the color once
+        for (const scheme in classificationSchemes) {
+            const color = getPrecomputedColorForScheme(scheme, sat.metadata);
+            // Store as a simple [r,g,b] array for easy application later
+            sat.metadata.precomputedColors[scheme] = color.toArray();
+        }
+    });
+}
+
+function getPrecomputedColorForScheme(scheme, metadata) {
+    const { colors } = classificationSchemes[scheme];
+    const categories = Array.isArray(metadata[scheme]) 
+        ? metadata[scheme] 
+        : (metadata[scheme] ? [metadata[scheme]] : []);
+    const normalizedCategories = categories.map((cat) => (cat || 'unknown').trim().toLowerCase());
+
+    for (const category of normalizedCategories) {
+        if (colors[category]) {
+            return new THREE.Color(colors[category]);
+        }
+    }
+
+    console.warn(`No color found for categories '${normalizedCategories}' in scheme '${scheme}'. Defaulting to magenta.`);
+    return new THREE.Color(0xff00ff); // Default fallback
+}
+
 function applyClassification(instancedMesh, scheme, satellites) {
     if (!instancedMesh || !instancedMesh.count) {
         console.error("InstancedMesh is not properly initialized.");
@@ -576,7 +612,12 @@ function applyClassification(instancedMesh, scheme, satellites) {
             return;
         }
 
-        const color = getColorByScheme(scheme, sat.metadata);
+        // Retrieve precomputed color array [r, g, b] directly
+        const colorArray = sat.metadata.precomputedColors[scheme];
+        if (!colorArray) {
+            console.warn(`No precomputed color found for scheme ${scheme} on satellite index ${i}. Using default magenta.`);
+            colorArray = [1.0, 0.0, 1.0]; // fallback if needed
+        }
 
         try {
             instancedMesh.getMatrixAt(i, dummy.matrix); // Safely get the matrix
@@ -589,7 +630,7 @@ function applyClassification(instancedMesh, scheme, satellites) {
         sat.originalMatrix = dummy.matrix.clone(); // Save the original matrix
 
         instancedMesh.setMatrixAt(i, dummy.matrix); // Retain position
-        colors.set(color.toArray(), i * 3); // Set color
+        colors.set(colorArray, i * 3); // Set color from precomputed array
     });
 
     instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
@@ -781,11 +822,12 @@ function resetSatelliteColors(mesh) {
     const colors = mesh.instanceColor.array;
 
     mesh.userData.forEach((sat, i) => {
-        const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
-        colors.set(color.toArray(), i * 3); // Update colors
+        if (!sat || !sat.metadata) return;
+        const colorArray = sat.metadata.precomputedColors[activeScheme] || [1.0, 0.0, 1.0]; // default magenta if missing
+        colors.set(colorArray, i * 3); 
     });
 
-    mesh.instanceColor.needsUpdate = true; // Trigger color updates in the mesh
+    mesh.instanceColor.needsUpdate = true;
 }
 
 
@@ -1418,7 +1460,7 @@ function updateEarthRotation() {
 
             // Wait for all GeoJSON data to be loaded
             await Promise.all(geoJsonPromises);
-            console.log("All GeoJSON data loaded successfully.");
+            // console.log("All GeoJSON data loaded successfully.");
         } catch (error) {
             console.error("Failed to load some GeoJSON data:", error);
         }
