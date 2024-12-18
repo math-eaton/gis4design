@@ -431,6 +431,11 @@ function processSatelliteData(allSatellites) {
         constellation: new Set(),
     };
 
+    // Initialize counts for each classification scheme
+    for (const scheme in classificationSchemes) {
+        classificationSchemes[scheme].counts = {};
+    }    
+
     // Add metadata for classification
     allSatellites.forEach((sat) => {
         sat.metadata = {
@@ -442,7 +447,18 @@ function processSatelliteData(allSatellites) {
             constellation: sat.constellation ? sat.constellation.toLowerCase() : null,
         };
 
-        // console.log(sat.metadata.orbitClass)
+        // Count occurrences for each classification scheme
+        for (const scheme in classificationSchemes) {
+            const categories = Array.isArray(sat.metadata[scheme])
+                ? sat.metadata[scheme]
+                : [sat.metadata[scheme]];
+            categories.forEach((category) => {
+                if (!category) return;
+                const normalizedCategory = category.toLowerCase();
+                classificationSchemes[scheme].counts[normalizedCategory] =
+                    (classificationSchemes[scheme].counts[normalizedCategory] || 0) + 1;
+            });
+        }
 
 
         // Collect represented classes for legend visibility
@@ -483,22 +499,24 @@ function populateClassificationSchemes(config) {
         classificationSchemes[key] = {
             colors: Object.fromEntries(
                 Object.entries(value.colors).map(([category, color]) => {
-                    // Normalize category keys
                     const normalizedCategory = category.trim().toLowerCase();
-
-                    // Validate and parse color
                     let parsedColor;
                     if (typeof color === "string" && /^#?[0-9A-Fa-f]{6}$/.test(color)) {
-                        parsedColor = parseInt(color.replace("#", ""), 16); // Convert hex to integer
+                        parsedColor = parseInt(color.replace("#", ""), 16);
                     } else {
                         console.warn(`Invalid color '${color}' for category '${category}'. Defaulting to red.`);
-                        parsedColor = 0xff0000; // Default to red
+                        parsedColor = 0xff0000;
                     }
-
                     return [normalizedCategory, parsedColor];
                 })
             ),
+            counts: {}, // Initialize counts for all categories
         };
+
+        // Add all categories from colors to counts with default 0
+        for (const category of Object.keys(classificationSchemes[key].colors)) {
+            classificationSchemes[key].counts[category] = 0;
+        }
     }
 
     return classificationSchemes;
@@ -698,21 +716,35 @@ function updateLegend(activeScheme) {
         return;
     }
 
-    const { colors } = schemeConfig;
+    const { colors, counts } = schemeConfig;
 
-    const sortedCategories = Object.keys(colors).sort();
+    const commaSeparator = new Intl.NumberFormat();
 
+    // Sort categories based on the active scheme
+    const sortedCategories = Object.keys(colors).sort((a, b) => {
+        if (activeScheme === 'group_minor') {
+            // Sort by descending counts
+            return (counts[b] || 0) - (counts[a] || 0);
+        } else {
+            // Sort alphabetically for other schemes
+            return a.localeCompare(b);
+        }
+    });
+
+    // Generate legend items
     sortedCategories.forEach((category) => {
         const color = colors[category];
+        const count = counts?.[category] || 0; // Default to 0 if count is undefined
+
         const legendItem = document.createElement('div');
         legendItem.className = 'legend-item';
 
         const colorBox = document.createElement('div');
-        colorBox.className = 'legend-color';
+        colorBox.className = 'legend-patch';
         colorBox.style.backgroundColor = `#${parseInt(color).toString(16).padStart(6, '0')}`;
 
         const label = document.createElement('span');
-        label.textContent = category;
+        label.textContent = `${category} (${commaSeparator.format(count)})`; // Format count with commas
 
         legendItem.addEventListener('click', () => {
             handleLegendInteraction(activeScheme, category, legendItem);

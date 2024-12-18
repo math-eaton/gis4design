@@ -147,45 +147,58 @@ button {
   padding: 2vw;
   font-size: 1em;
   display: flex; 
-  flex-direction: column;
+  flex-direction:column;
   gap: 1em;
   text-align: left;
-  word-break: break-word;
+  word-wrap: break-word;
+  word-break: break-all;
+  text-wrap: pretty;
+  width: 20vw;
 
 }
 
-/* Legend item */
 .legend-item {
   display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-    cursor: url('../cursor/point.cur'), auto;;
+  align-items: center; 
+  gap: 1em; 
+  margin-bottom: 1em;
+  cursor: url('../cursor/point.cur'), auto;
+  word-wrap: break-word; 
+  /* word-break: break-word; */
+  max-width: 100%; 
 }
 
 .legend-item:last-child {
   margin-bottom: 0;
 }
 
-/* Default color patch */
-.legend-color {
+.legend-patch {
+  flex-shrink: 0; /* Prevent the circle from resizing */
   width: 20px;
   height: 20px;
   margin-right: 10px;
   border: 1px solid #000;
-  border-radius: 50%;
+  border-radius: 50%; /* Keep it circular */
   transition: transform 0.2s ease, opacity 0.2s ease;
   opacity: 1;
-    cursor: url('../cursor/point.cur'), auto;;
+  cursor: url('../cursor/point.cur'), auto;
+}
+
+.legend-item span {
+  flex: 1; 
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Transparent state for non-active patches */
-.legend-item.inactive .legend-color {
+.legend-item.inactive .legend-patch {
   opacity: 0.5; 
   filter: contrast(0.2);
 }
 
 /* Reset to normal when no active filter */
-.legend-item:not(.inactive) .legend-color {
+.legend-item:not(.inactive) .legend-patch {
   opacity: 1;
 }
 
