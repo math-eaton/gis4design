@@ -186,6 +186,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         // console.log('Parsed Classification Schemes:', JSON.stringify(classificationSchemes, null, 2));
 
         updateLegend(activeScheme);
+
     
         animate();
     }
@@ -847,6 +848,7 @@ function createSatelliteMeshes(allSatellites) {
 
     if (satelliteMesh && satelliteMesh.count > 0) {
         console.log("Consolidated satellite mesh created and added to the scene.");
+        initializeSatelliteLines(satelliteMesh);
         pivot.add(satelliteMesh);
     } else {
         console.error("Failed to create satellite mesh or no instances were added.");
@@ -986,48 +988,41 @@ function updateSatellitePositions(instancedMesh) {
 
 const satelliteLines = new Map(); // Map satellite index to its line
 
-function updateSatelliteLine(index, satellitePosition, earthCenter, isSatelliteVisibleByFilter) {
-    const isVisible = isSatelliteVisibleByFilter;
-
-    if (!isVisible) {
-        // Remove line if it's no longer visible
-        if (satelliteLines.has(index)) {
-            const line = satelliteLines.get(index);
-            pivot.remove(line);
-            line.geometry.dispose();
-            line.material.dispose();
-            satelliteLines.delete(index);
-        }
-        return;
-    }
-
-    // Create or update the line
-    if (!satelliteLines.has(index)) {
-        // Retrieve the satellite's color from instanceColor
-        const colorArray = satelliteMesh.instanceColor.array;
-        const satelliteColor = new THREE.Color(
-            colorArray[index * 3],
-            colorArray[index * 3 + 1],
-            colorArray[index * 3 + 2]
-        );
-
+function initializeSatelliteLines(instancedMesh) {
+    const instanceCount = instancedMesh.count;
+    for (let i = 0; i < instanceCount; i++) {
+        // Create a simple line geometry with placeholder positions
         const lineGeometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(6); // Two points (start and end)
+        const positions = new Float32Array(6); // 2 endpoints (0,0,0) to (0,0,0) initially
         lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
+        // Simple material, will update color dynamically later
         const lineMaterial = new THREE.LineBasicMaterial({
-            color: satelliteColor, // Assign satellite's color to the line
+            color: 0xffffff, 
             transparent: false,
             alphaHash: true,
         });
 
         const line = new THREE.Line(lineGeometry, lineMaterial);
+        line.visible = false; // Start hidden
         pivot.add(line);
-        satelliteLines.set(index, line);
+
+        // Store in the satelliteLines map
+        satelliteLines.set(i, line);
+    }
+}
+
+function updateSatelliteLine(index, satellitePosition, earthCenter, isSatelliteVisibleByFilter) {
+    const line = satelliteLines.get(index);
+    if (!line) return; 
+
+    if (!isSatelliteVisibleByFilter) {
+        // hide the line (dont dispose)
+        line.visible = false;
+        return;
     }
 
-    // Update line geometry
-    const line = satelliteLines.get(index);
+    // Line should be visible:
     const positions = line.geometry.attributes.position.array;
     positions[0] = earthCenter.x;
     positions[1] = earthCenter.y;
@@ -1036,6 +1031,17 @@ function updateSatelliteLine(index, satellitePosition, earthCenter, isSatelliteV
     positions[4] = satellitePosition.y;
     positions[5] = satellitePosition.z;
     line.geometry.attributes.position.needsUpdate = true;
+
+    // Update line color from instanceColor
+    const colorArray = satelliteMesh.instanceColor.array;
+    const satelliteColor = new THREE.Color(
+        colorArray[index * 3],
+        colorArray[index * 3 + 1],
+        colorArray[index * 3 + 2]
+    );
+    line.material.color = satelliteColor;
+
+    line.visible = true;
 }
             
 function refreshSatelliteLines() {
@@ -1043,17 +1049,14 @@ function refreshSatelliteLines() {
         const { metadata, visible } = satelliteMesh.userData[index];
         if (!metadata) return;
 
-        // Ensure the satellite is visible and within the frustum
         const isVisible = visible && isSatelliteVisible(satelliteMesh.userData[index].position);
         if (!isVisible) {
-            // Hide the line
-            if (line.visible) {
-                line.visible = false;
-            }
+            // Just hide
+            line.visible = false;
             return;
         }
 
-        // Retrieve the updated satellite color from instanceColor
+        // Update color from instanceColor
         const colorArray = satelliteMesh.instanceColor.array;
         const satelliteColor = new THREE.Color(
             colorArray[index * 3],
@@ -1061,10 +1064,9 @@ function refreshSatelliteLines() {
             colorArray[index * 3 + 2]
         );
 
-        // Update line material and visibility
         line.material.color = satelliteColor;
-        line.material.needsUpdate = true; // Ensure material refresh
-        line.visible = true; // Show the line
+        line.material.needsUpdate = true;
+        line.visible = true;
     });
 }
 
