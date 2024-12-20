@@ -50,13 +50,14 @@ function determineOrbitClass(tleLine1, tleLine2) {
 
         if (Math.abs(inclination) < 0.1 && Math.abs(period - 1436) < 1) orbitClasses.push('geostationary');
         // if (Math.abs(period - 1436) < 10) orbitClasses.push('geosynchronous');
-        if (Math.abs(inclination - 98) < 2 && Math.abs(period - 100) < 5) orbitClasses.push('sunSynchronous');
+        if (Math.abs(inclination - 98) < 2 && Math.abs(period - 100) < 5) orbitClasses.push('sun synchronous');
 
-        // Classify non-geostationary orbits by altitude
-        if (altitude >= 100 && altitude < 450) orbitClasses.push('veryLowEarthOrbit'); // VLEO (altitude 100-450 km)
-        if (altitude >= 450 && altitude < 2000) orbitClasses.push('lowEarthOrbit'); // LEO (altitude 450-2000 km)
-        if (altitude >= 2000 && altitude < 35786) orbitClasses.push('mediumEarthOrbit'); // MEO (altitude 2000-35786 km)
-        if (altitude > 35786) orbitClasses.push('highEarthOrbit'); // HEO (altitude > 35786 km)
+
+        // Classify non-geostationary orbits by period / altitude todo - refine VLEO description
+        // if (period <= 120 && altitude < 100) orbitClasses.push('very low earth'); // VLEO (altitude 100-450 km)
+        if (period < 225) orbitClasses.push('low earth'); // LEO (altitude 450-2000 km)
+        if (period >= 225 && period < 1440 && altitude < 35786) orbitClasses.push('medium earth'); // MEO (altitude 2000-35786 km)
+        if (period >= 1440 && altitude >= 35786) orbitClasses.push('high earth'); // HEO (altitude > 35786 km)
 
         // Additional classifications
         // if (Math.abs(inclination - 90) < 5) orbitClasses.push('polarOrbit'); // Polar Orbits (inclination close to 90°)
@@ -70,7 +71,6 @@ function determineOrbitClass(tleLine1, tleLine2) {
         return ['unknown'];
     }
 }
-
 // Preprocess Space-Track data using Python script
 async function preprocessSpaceTrackData(spaceTrackData) {
     const outputFile = path.join(CACHE_DIR, 'spacetrack_processed.json');
