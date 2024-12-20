@@ -71,6 +71,7 @@ function determineOrbitClass(tleLine1, tleLine2) {
         return ['unknown'];
     }
 }
+
 // Preprocess Space-Track data using Python script
 async function preprocessSpaceTrackData(spaceTrackData) {
     const outputFile = path.join(CACHE_DIR, 'spacetrack_processed.json');
@@ -183,7 +184,6 @@ async function consolidateData() {
     console.log("Starting data consolidation...");
     const spaceTrackData = await fetchSpaceTrackData();
     console.log("Space-Track data preprocessed and loaded successfully.");
-
     const allData = {};
 
     for (const group of groups) {
@@ -196,17 +196,17 @@ async function consolidateData() {
 
             if (!allData[catalogNumber]) {
                 allData[catalogNumber] = {
-                    catalogNumber: catalogNumber,
+                    catalogNumber,
                     name: celestrakItem.name,
                     tleLine1: celestrakItem.tleLine1,
                     tleLine2: celestrakItem.tleLine2,
                     orbitClass: new Set(celestrakItem.orbitClass),
                     ISO3: spaceTrackItem?.country || "Unknown",
                     country: spaceTrackItem?.country_full || "Unknown",
-                    continent: spaceTrackItem?.continent || "Unknown",
+                    continent: spaceTrackItem?.continent || "Unknown",                
                     group_major: new Set(),
                     group_minor: new Set(),
-                    constellation: null,
+                    constellation: null
                 };
             }
 
@@ -223,16 +223,14 @@ async function consolidateData() {
         });
     }
 
-    console.log("Consolidation complete. Sorting by catalog number...");
-    return Object.values(allData)
-        .map((sat) => ({
-            ...sat,
-            orbitClass: Array.from(sat.orbitClass),
-            group_major: Array.from(sat.group_major),
-            group_minor: Array.from(sat.group_minor),
-            constellation: sat.constellation,
-        }))
-        .sort((a, b) => parseInt(a.catalogNumber, 10) - parseInt(b.catalogNumber, 10)); // Sort by catalog number
+    console.log("Consolidation complete. Converting sets to arrays...");
+    return Object.values(allData).map((sat) => ({
+        ...sat,
+        orbitClass: Array.from(sat.orbitClass),
+        group_major: Array.from(sat.group_major),
+        group_minor: Array.from(sat.group_minor),
+        constellation: sat.constellation
+    }));
 }
 
 function initializeTimestamp() {
@@ -274,8 +272,6 @@ function isCacheExpired() {
 app.get('/satellites', async (req, res) => {
     try {
         console.log("Received request to /satellites endpoint.");
-
-        // Check if cache is expired or missing
         if (isCacheExpired() || !fs.existsSync(CONSOLIDATED_CACHE_FILE)) {
             console.log("Cache expired or missing. Refreshing cache...");
             await saveConsolidatedDataToCache();
@@ -283,35 +279,8 @@ app.get('/satellites', async (req, res) => {
             console.log("Serving data from cache.");
         }
 
-        // Load cached data
         const cachedData = JSON.parse(fs.readFileSync(CONSOLIDATED_CACHE_FILE, 'utf-8'));
-
-        // Parse query parameters for pagination
-        const page = parseInt(req.query.page, 10) || 1; // Default to page 1
-        const size = parseInt(req.query.size, 10) || 500; // Default to 500 satellites per page
-
-        // Validate pagination parameters
-        if (page < 1 || size < 1) {
-            return res.status(400).send('Invalid pagination parameters.');
-        }
-
-        // Calculate start and end indices for slicing
-        const startIndex = (page - 1) * size;
-        const endIndex = startIndex + size;
-
-        // Slice the data for the current page
-        const paginatedData = cachedData.slice(startIndex, endIndex);
-
-        // Return paginated data along with metadata
-        res.json({
-            metadata: {
-                totalSatellites: cachedData.length,
-                totalPages: Math.ceil(cachedData.length / size),
-                currentPage: page,
-                pageSize: size,
-            },
-            data: paginatedData,
-        });
+        res.json({ data: cachedData });
     } catch (error) {
         console.error('Error fetching consolidated data:', error.message);
         res.status(500).send('Error fetching data.');
