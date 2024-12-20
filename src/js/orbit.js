@@ -186,7 +186,6 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         // console.log('Parsed Classification Schemes:', JSON.stringify(classificationSchemes, null, 2));
 
         updateLegend(activeScheme);
-
     
         animate();
     }
@@ -365,56 +364,72 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
 // Load sat data from cached JSON file
 let satelliteMesh;
 
-function loadSatelliteData() {
+function loadSatelliteData(batchSize = 500) {
     const endpoint = "https://orbital-bbfd.onrender.com/satellites";
+    const localCache = "cache/consolidated_satellites.json";
+    let currentPage = 1;
+    let totalPages = null;
 
-    // Fetch consolidated satellite data
-    fetch(endpoint)
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`Failed to load data from ${endpoint}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then((allSatellites) => {
-            console.log("LOADING SAT...")
-            // Normalize into array for compatibility
-            const satelliteArray = Array.isArray(allSatellites) ? allSatellites : allSatellites.data;
+    function loadRemoteData() {
+        fetch(`${endpoint}?page=${currentPage}&size=${batchSize}`)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Failed to load data from ${endpoint}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(({ metadata, data }) => {
+                console.log(`Loaded page ${metadata.currentPage} of ${metadata.totalPages}`);
+                totalPages = metadata.totalPages;
 
-            processSatelliteData(satelliteArray);
+                // Process and render the current batch
+                processSatelliteData(data);
+                createSatelliteMeshes(data);
 
-            console.log("Successfully loaded and processed all satellite data.");
-            onSatelliteLoadComplete(); // Callback to signal completion
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    setTimeout(loadRemoteData, 0); // Load next page asynchronously
+                } else {
+                    console.log("All satellite data loaded and rendered.");
+                    orbitControls.enabled = true; // Enable controls after all data is loaded
+                }
+            })
+            .catch((error) => {
+                console.error("Failed to load data from remote endpoint:", error);
+                console.log("Falling back to local cache...");
+                loadLocalData(); // Trigger fallback to local cache
+            });
+    }
 
-            updateLegend(activeScheme);
-        })
-        .catch((error) => {
-            console.error("Failed to load satellite data:", error);
-            console.log("Attempting to load data from local cache...");
+    function loadLocalData() {
+        fetch(localCache)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Failed to load data from local cache: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then((localData) => {
+                console.log("Loaded data from local cache.");
+                const satelliteArray = Array.isArray(localData) ? localData : localData.data;
 
-            // Fallback to local cache
-            fetch('cache/consolidated_satellites.json')
-                .then((localResponse) => {
-                    if (!localResponse.ok) throw new Error("Local cache fetch failed");
-                    return localResponse.json();
-                })
-                .then((localAllSatellites) => {
-                    // Normalize local data
-                    const satelliteArray = Array.isArray(localAllSatellites) 
-                        ? localAllSatellites 
-                        : localAllSatellites.data;
+                // Process and render the local data
+                processSatelliteData(satelliteArray);
+                createSatelliteMeshes(satelliteArray);
 
-                    processSatelliteData(satelliteArray);
+                console.log("All satellite data loaded and rendered from local cache.");
+                orbitControls.enabled = true; // Enable controls
+                onSatelliteLoadComplete(); // Signal loading complete
+            })
+            .catch((localError) => {
+                console.error("Failed to load satellite data from both remote and local cache:", localError);
+                onSatelliteLoadComplete(); // Trigger callback even if loading fails
+            });
+    }
 
-                    onSatelliteLoadComplete();
-                })
-                .catch((localError) => {
-                    console.error("Failed to load satellite data from both server and local cache:", localError);
-                    onSatelliteLoadComplete(); // Trigger callback even if loading fails
-                });
-        });
+    // Start by attempting to load remote data
+    loadRemoteData();
 }
-
 
 
 function processSatelliteData(allSatellites) {
@@ -476,6 +491,8 @@ function processSatelliteData(allSatellites) {
 
     // Precompute colors for each scheme once.
     precomputeSatelliteColors(allSatellites);
+
+    updateLegend(activeScheme);
 
     // Pass TLE data for mesh creation
     createSatelliteMeshes(allSatellites);
@@ -585,6 +602,8 @@ function precomputeSatelliteColors(allSatellites) {
 
         sat.metadata.precomputedColors = {};
 
+        // console.log(`metadata:`, sat.metadata)
+
         // For each scheme, compute and store the color once
         for (const scheme in classificationSchemes) {
             const color = getPrecomputedColorForScheme(scheme, sat.metadata);
@@ -600,6 +619,7 @@ function getPrecomputedColorForScheme(scheme, metadata) {
         ? metadata[scheme] 
         : (metadata[scheme] ? [metadata[scheme]] : []);
     const normalizedCategories = categories.map((cat) => (cat || 'unknown').trim().toLowerCase());
+
 
     for (const category of normalizedCategories) {
         if (colors[category]) {

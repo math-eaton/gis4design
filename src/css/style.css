@@ -148,7 +148,7 @@ button {
   font-size: 1em;
   display: flex; 
   flex-direction:column;
-  gap: 1em;
+  gap: 2vh;
   text-align: left;
   word-wrap: break-word;
   word-break: break-all;
@@ -173,9 +173,9 @@ button {
 }
 
 .legend-patch {
-  flex-shrink: 0; /* Prevent the circle from resizing */
-  width: 20px;
-  height: 20px;
+  flex-shrink: 0; 
+  width: 1em;
+  height: 1em;
   margin-right: 10px;
   border: 1px solid #000;
   border-radius: 50%; /* Keep it circular */
@@ -454,6 +454,23 @@ label{
     height: 100vh;
     /* filter: contrast(0.7); */
     /* mix-blend-mode:exclusion; */
+  }
+
+  .legend{
+    font-size: 0.75em;
+    width: 30vw;
+    gap: 0vh;
+    right: 1vw;
+    /* line-break: loose; */
+    /* word-wrap:normal; */
+    /* word-break: break-all; */
+    /* text-wrap: pretty; */
+  
+    }
+  
+  .legend-patch{
+
+ 
   }
 
   /* .copy-message {

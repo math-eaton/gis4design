@@ -163,10 +163,12 @@
     },
     "orbitClass": {
         "colors": {
-            "highEarthOrbit": "#00ff00",
-            "mediumEarthOrbit": "#ff0000",
-            "sunSynchronous": "#ffff00",
-            "geostationary": "#0000ff"
+            "high earth": "#00ff00",
+            "medium earth": "#ffffff",
+            "low earth": "#ff0000",
+            "sun synchronous": "#ffff00",
+            "geostationary": "#0000ff",
+            "other": "#888888"
         }
     }
 }
