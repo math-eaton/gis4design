@@ -272,9 +272,10 @@ function isCacheExpired() {
     return isExpired;
 }
 
+// split endpoint into batches
 app.get('/satellites/paginated', async (req, res) => {
     try {
-        console.log("Received request to /satellites endpoint.");
+        console.log("Received request to /paginated endpoint.");
 
         // Check if cache is expired or missing
         if (isCacheExpired() || !fs.existsSync(CONSOLIDATED_CACHE_FILE)) {
@@ -289,7 +290,7 @@ app.get('/satellites/paginated', async (req, res) => {
 
         // Parse query parameters for pagination
         const page = parseInt(req.query.page, 10) || 1; // Default to page 1
-        const size = parseInt(req.query.size, 10) || 500; // Default to 500 satellites per page
+        const size = parseInt(req.query.size, 10) || 2000; // Default to N satellites per page
 
         // Validate pagination parameters
         if (page < 1 || size < 1) {
@@ -318,6 +319,26 @@ app.get('/satellites/paginated', async (req, res) => {
         res.status(500).send('Error fetching data.');
     }
 });
+
+// non-paginated option for backwards compatibility
+app.get('/satellites', async (req, res) => {
+    try {
+        console.log("Received request to /satellites endpoint.");
+        if (isCacheExpired() || !fs.existsSync(CONSOLIDATED_CACHE_FILE)) {
+            console.log("Cache expired or missing. Refreshing cache...");
+            await saveConsolidatedDataToCache();
+        } else {
+            console.log("Serving data from cache.");
+        }
+
+        const cachedData = JSON.parse(fs.readFileSync(CONSOLIDATED_CACHE_FILE, 'utf-8'));
+        res.json({ data: cachedData });
+    } catch (error) {
+        console.error('Error fetching consolidated data:', error.message);
+        res.status(500).send('Error fetching data.');
+    }
+});
+
 
 app.get('/timestamp', (req, res) => {
     if (!fs.existsSync(TIMESTAMP_FILE)) {

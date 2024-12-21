@@ -422,7 +422,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
                     satelliteMesh = createSatelliteMeshes(globalSatelliteArray);
                     if (satelliteMesh) {
                         console.log('adding new')
-                        // pivot.add(satelliteMesh);
+                        pivot.add(satelliteMesh);
                     }
     
                     // Hide loading screen after the first batch
@@ -473,7 +473,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
                     satelliteMesh = createSatelliteMeshes(globalSatelliteArray);
                     if (satelliteMesh) {
                         console.log('adding new')
-                        // pivot.add(satelliteMesh);
+                        pivot.add(satelliteMesh);
                     }
     
                     orbitControls.enabled = true;
@@ -963,7 +963,7 @@ function createSatelliteMeshes(allSatellites) {
     if (satelliteMesh && satelliteMesh.count > 0) {
         console.log("Consolidated satellite mesh created and added to the scene.");
         initializeSatelliteLines(satelliteMesh);
-        pivot.add(satelliteMesh); // or remove this, see note below
+        // pivot.add(satelliteMesh); 
     } else {
         console.error("Failed to create satellite mesh or no instances were added.");
     }
