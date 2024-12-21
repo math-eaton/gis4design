@@ -360,78 +360,137 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         moonMesh.position.copy(moonPosition);
     }
         
+    // A global or higher scoped array to accumulate all satellites
+    let globalSatelliteArray = [];
 
-// Load sat data from cached JSON file
-let satelliteMesh;
+    // Load sat data from cached JSON file
+    let satelliteMesh;
 
-function loadSatelliteData(batchSize = 500) {
-    const endpoint = "https://orbital-bbfd.onrender.com/satellites/paginated";
-    const localCache = "cache/consolidated_satellites.json";
-    let currentPage = 1;
-    let totalPages = null;
+    function loadSatelliteData(batchSize = 2000) {
+        const remoteEndpoint = "https://orbital-bbfd.onrender.com/satellites/paginated";
+        const localCache = "cache/consolidated_satellites.json";
+        let currentPage = 1;
+        let totalPages = null;
+    
+        const progressElement = document.getElementById('loading-progress');
+        progressElement.style.display = 'block';
+    
+        function updateProgress(current, total) {
+            const progress = Math.min((current / total) * 100, 100).toFixed(0);
+            progressElement.textContent = `${progress}%`;
+        }
+    
+        function hideProgress() {
+            progressElement.style.display = 'none';
+        }
+    
+        function loadRemoteData() {
+            fetch(`${remoteEndpoint}?page=${currentPage}&size=${batchSize}`)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to load data: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(({ metadata, data }) => {
+                    console.log(`Loaded page ${metadata.currentPage} of ${metadata.totalPages}`);
+                    totalPages = metadata.totalPages;
 
-    function loadRemoteData() {
-        fetch(`${endpoint}?page=${currentPage}&size=${batchSize}`)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Failed to load data from ${endpoint}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(({ metadata, data }) => {
-                console.log(`Loaded page ${metadata.currentPage} of ${metadata.totalPages}`);
-                totalPages = metadata.totalPages;
 
-                // Process and render the current batch
-                processSatelliteData(data);
-                createSatelliteMeshes(data);
+                    console.log("Batch size from server:", data.length);
+                    console.log("Master array total length after push:", globalSatelliteArray.length);
 
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    setTimeout(loadRemoteData, 0); // Load next page asynchronously
-                } else {
-                    console.log("All satellite data loaded and rendered.");
-                    orbitControls.enabled = true; // Enable controls after all data is loaded
-                }
-            })
-            .catch((error) => {
-                console.error("Failed to load data from remote endpoint:", error);
-                console.log("Falling back to local cache...");
-                loadLocalData(); // Trigger fallback to local cache
-            });
+    
+                    // 1) Update progress
+                    updateProgress(currentPage, totalPages);
+    
+                    // 2) Append new satellites to the MASTER array
+                    globalSatelliteArray.push(...data);
+
+    
+                    // 3) Re-run classification on the FULL array
+                    processSatelliteData(globalSatelliteArray);
+
+    
+                    // 4) Remove old mesh from the scene, if it exists
+                    if (satelliteMesh) {
+                        console.log('removing previous')
+                        pivot.remove(satelliteMesh);
+                    }
+    
+                    // 5) Create the updated mesh from the master array and add it to scene
+                    satelliteMesh = createSatelliteMeshes(globalSatelliteArray);
+                    if (satelliteMesh) {
+                        console.log('adding new')
+                        // pivot.add(satelliteMesh);
+                    }
+    
+                    // Hide loading screen after the first batch
+                    onSatelliteLoadComplete();
+    
+                    // 6) Move to next page, or finalize if done
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        setTimeout(loadRemoteData, 0); // next batch
+                    } else {
+                        console.log("All satellite data loaded & rendered.");
+                        orbitControls.enabled = true;
+                        hideProgress();
+                    }
+                })
+                .catch((error) => {
+                    console.error("Failed remote load:", error);
+                    console.log("Falling back to local cache...");
+                    hideProgress();
+                    loadLocalData();
+                });
+        }
+    
+        function loadLocalData() {
+            // Similar approach if remote fails — accumulate all local data into master array, then
+            // process + create mesh
+            fetch(localCache)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to load from local: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then((localData) => {
+                    console.log("Loaded data from local cache.");
+                    const satelliteArray = Array.isArray(localData) ? localData : localData.data;
+    
+                    // Append all local satellites
+                    globalSatelliteArray.push(...satelliteArray);
+    
+                    // Re-classify and show
+                    processSatelliteData(globalSatelliteArray);
+    
+                    if (satelliteMesh) {
+                        console.log('removing previous')
+                        pivot.remove(satelliteMesh);
+                    }
+                    satelliteMesh = createSatelliteMeshes(globalSatelliteArray);
+                    if (satelliteMesh) {
+                        console.log('adding new')
+                        // pivot.add(satelliteMesh);
+                    }
+    
+                    orbitControls.enabled = true;
+                    onSatelliteLoadComplete();
+                    hideProgress();
+                })
+                .catch((err) => {
+                    console.error("Failed local load:", err);
+                    onSatelliteLoadComplete();
+                    hideProgress();
+                });
+        }
+    
+        // Attempt remote data first
+        loadRemoteData();
     }
-
-    function loadLocalData() {
-        fetch(localCache)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Failed to load data from local cache: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then((localData) => {
-                console.log("Loaded data from local cache.");
-                const satelliteArray = Array.isArray(localData) ? localData : localData.data;
-
-                // Process and render the local data
-                processSatelliteData(satelliteArray);
-                createSatelliteMeshes(satelliteArray);
-
-                console.log("All satellite data loaded and rendered from local cache.");
-                orbitControls.enabled = true; // Enable controls
-                onSatelliteLoadComplete(); // Signal loading complete
-            })
-            .catch((localError) => {
-                console.error("Failed to load satellite data from both remote and local cache:", localError);
-                onSatelliteLoadComplete(); // Trigger callback even if loading fails
-            });
-    }
-
-    // Start by attempting to load remote data
-    loadRemoteData();
-}
-
-
+        
 function processSatelliteData(allSatellites) {
     if (!Array.isArray(allSatellites) || allSatellites.length === 0) {
         console.error("No valid satellite data to process.");
@@ -494,8 +553,11 @@ function processSatelliteData(allSatellites) {
 
     updateLegend(activeScheme);
 
-    // Pass TLE data for mesh creation
-    createSatelliteMeshes(allSatellites);
+    console.log('processed satellites')
+
+    return satelliteMesh;
+
+
 }
 
 function createSatrec(tleLine1, tleLine2) {
@@ -627,7 +689,7 @@ function getPrecomputedColorForScheme(scheme, metadata) {
         }
     }
 
-    console.warn(`No color found for categories '${normalizedCategories}' in scheme '${scheme}'. Defaulting to magenta.`);
+    // console.warn(`No color found for categories '${normalizedCategories}' in scheme '${scheme}'. Defaulting to magenta.`);
     return new THREE.Color(0xff00ff); // Default fallback
 }
 
@@ -708,7 +770,7 @@ function switchClassification(newScheme) {
     activeScheme = newScheme;
 
     // Reapply classification and reset visibility/colors
-    applyClassification(satelliteMesh, activeScheme, tleArray);
+    applyClassification(satelliteMesh, activeScheme, globalSatelliteArray);
     resetSatelliteVisibility(satelliteMesh, activeScheme);
     resetSatelliteColors(satelliteMesh); 
 
@@ -901,10 +963,12 @@ function createSatelliteMeshes(allSatellites) {
     if (satelliteMesh && satelliteMesh.count > 0) {
         console.log("Consolidated satellite mesh created and added to the scene.");
         initializeSatelliteLines(satelliteMesh);
-        pivot.add(satelliteMesh);
+        pivot.add(satelliteMesh); // or remove this, see note below
     } else {
         console.error("Failed to create satellite mesh or no instances were added.");
     }
+
+    return satelliteMesh;
 }
 
 // Propagate position helper
@@ -1036,6 +1100,8 @@ function updateSatellitePositions(instancedMesh) {
     }
 
     instancedMesh.instanceMatrix.needsUpdate = true;
+    // satelliteMesh.userData[i].position = position;
+
 }
 
 const satelliteLines = new Map(); // Map satellite index to its line
