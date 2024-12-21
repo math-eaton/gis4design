@@ -186,6 +186,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         // console.log('Parsed Classification Schemes:', JSON.stringify(classificationSchemes, null, 2));
 
         updateLegend(activeScheme);
+
     
         animate();
     }
@@ -557,7 +558,6 @@ function processSatelliteData(allSatellites) {
 
     return satelliteMesh;
 
-
 }
 
 function createSatrec(tleLine1, tleLine2) {
@@ -664,8 +664,6 @@ function precomputeSatelliteColors(allSatellites) {
 
         sat.metadata.precomputedColors = {};
 
-        // console.log(`metadata:`, sat.metadata)
-
         // For each scheme, compute and store the color once
         for (const scheme in classificationSchemes) {
             const color = getPrecomputedColorForScheme(scheme, sat.metadata);
@@ -681,7 +679,6 @@ function getPrecomputedColorForScheme(scheme, metadata) {
         ? metadata[scheme] 
         : (metadata[scheme] ? [metadata[scheme]] : []);
     const normalizedCategories = categories.map((cat) => (cat || 'unknown').trim().toLowerCase());
-
 
     for (const category of normalizedCategories) {
         if (colors[category]) {

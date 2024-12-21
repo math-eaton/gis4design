@@ -184,7 +184,6 @@ async function consolidateData() {
     console.log("Starting data consolidation...");
     const spaceTrackData = await fetchSpaceTrackData();
     console.log("Space-Track data preprocessed and loaded successfully.");
-
     const allData = {};
 
     for (const group of groups) {
@@ -197,17 +196,17 @@ async function consolidateData() {
 
             if (!allData[catalogNumber]) {
                 allData[catalogNumber] = {
-                    catalogNumber: catalogNumber,
+                    catalogNumber,
                     name: celestrakItem.name,
                     tleLine1: celestrakItem.tleLine1,
                     tleLine2: celestrakItem.tleLine2,
                     orbitClass: new Set(celestrakItem.orbitClass),
                     ISO3: spaceTrackItem?.country || "Unknown",
                     country: spaceTrackItem?.country_full || "Unknown",
-                    continent: spaceTrackItem?.continent || "Unknown",
+                    continent: spaceTrackItem?.continent || "Unknown",                
                     group_major: new Set(),
                     group_minor: new Set(),
-                    constellation: null,
+                    constellation: null
                 };
             }
 
@@ -224,16 +223,14 @@ async function consolidateData() {
         });
     }
 
-    console.log("Consolidation complete. Sorting by catalog number...");
-    return Object.values(allData)
-        .map((sat) => ({
-            ...sat,
-            orbitClass: Array.from(sat.orbitClass),
-            group_major: Array.from(sat.group_major),
-            group_minor: Array.from(sat.group_minor),
-            constellation: sat.constellation,
-        }))
-        .sort((a, b) => parseInt(a.catalogNumber, 10) - parseInt(b.catalogNumber, 10)); // Sort by catalog number
+    console.log("Consolidation complete. Converting sets to arrays...");
+    return Object.values(allData).map((sat) => ({
+        ...sat,
+        orbitClass: Array.from(sat.orbitClass),
+        group_major: Array.from(sat.group_major),
+        group_minor: Array.from(sat.group_minor),
+        constellation: sat.constellation
+    }));
 }
 
 function initializeTimestamp() {
@@ -285,7 +282,6 @@ app.get('/satellites/paginated', async (req, res) => {
             console.log("Serving data from cache.");
         }
 
-        // Load cached data
         const cachedData = JSON.parse(fs.readFileSync(CONSOLIDATED_CACHE_FILE, 'utf-8'));
 
         // Parse query parameters for pagination

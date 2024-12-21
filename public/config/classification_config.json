@@ -165,9 +165,9 @@
         "colors": {
             "high earth": "#00ff00",
             "medium earth": "#ffffff",
-            "low earth": "#ff0000",
             "sun synchronous": "#ffff00",
             "geostationary": "#0000ff",
+            "low earth": "#ff0000",
             "other": "#888888"
         }
     }
