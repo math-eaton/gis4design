@@ -272,7 +272,7 @@ function isCacheExpired() {
     return isExpired;
 }
 
-app.get('/satellites', async (req, res) => {
+app.get('/satellites/paginated', async (req, res) => {
     try {
         console.log("Received request to /satellites endpoint.");
 

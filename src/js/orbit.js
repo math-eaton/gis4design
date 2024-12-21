@@ -208,7 +208,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         const sunGeometry = new THREE.SphereGeometry(sunRadius, 24, 24);
         const sunMaterial = new THREE.MeshBasicMaterial({
             color: 0xffff00,
-            emissive: 0xffa500,
+            // emissive: 0xffa500,
             opacity: 0.25,
             transparent: true,
             wireframe: true,
@@ -365,7 +365,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
 let satelliteMesh;
 
 function loadSatelliteData(batchSize = 500) {
-    const endpoint = "https://orbital-bbfd.onrender.com/satellites";
+    const endpoint = "https://orbital-bbfd.onrender.com/satellites/paginated";
     const localCache = "cache/consolidated_satellites.json";
     let currentPage = 1;
     let totalPages = null;
