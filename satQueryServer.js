@@ -269,6 +269,54 @@ function isCacheExpired() {
     return isExpired;
 }
 
+// split endpoint into batches
+app.get('/satellites/paginated', async (req, res) => {
+    try {
+        console.log("Received request to /paginated endpoint.");
+
+        // Check if cache is expired or missing
+        if (isCacheExpired() || !fs.existsSync(CONSOLIDATED_CACHE_FILE)) {
+            console.log("Cache expired or missing. Refreshing cache...");
+            await saveConsolidatedDataToCache();
+        } else {
+            console.log("Serving data from cache.");
+        }
+
+        const cachedData = JSON.parse(fs.readFileSync(CONSOLIDATED_CACHE_FILE, 'utf-8'));
+
+        // Parse query parameters for pagination
+        const page = parseInt(req.query.page, 10) || 1; // Default to page 1
+        const size = parseInt(req.query.size, 10) || 2000; // Default to N satellites per page
+
+        // Validate pagination parameters
+        if (page < 1 || size < 1) {
+            return res.status(400).send('Invalid pagination parameters.');
+        }
+
+        // Calculate start and end indices for slicing
+        const startIndex = (page - 1) * size;
+        const endIndex = startIndex + size;
+
+        // Slice the data for the current page
+        const paginatedData = cachedData.slice(startIndex, endIndex);
+
+        // Return paginated data along with metadata
+        res.json({
+            metadata: {
+                totalSatellites: cachedData.length,
+                totalPages: Math.ceil(cachedData.length / size),
+                currentPage: page,
+                pageSize: size,
+            },
+            data: paginatedData,
+        });
+    } catch (error) {
+        console.error('Error fetching consolidated data:', error.message);
+        res.status(500).send('Error fetching data.');
+    }
+});
+
+// non-paginated option for backwards compatibility
 app.get('/satellites', async (req, res) => {
     try {
         console.log("Received request to /satellites endpoint.");
@@ -286,6 +334,7 @@ app.get('/satellites', async (req, res) => {
         res.status(500).send('Error fetching data.');
     }
 });
+
 
 app.get('/timestamp', (req, res) => {
     if (!fs.existsSync(TIMESTAMP_FILE)) {

@@ -246,7 +246,7 @@ button {
 
 }
 
-#time-display{
+#upper-display{
 
   position: absolute;
   left: 2vw;
@@ -472,7 +472,7 @@ label{
 
   } */
 
-  #time-display{
+  #upper-display{
 
     top: 0vh;
 
