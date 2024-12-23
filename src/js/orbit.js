@@ -368,7 +368,8 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     let satelliteMesh;
 
     function loadSatelliteData(batchSize = 2000) {
-        const remoteEndpoint = "https://orbital-bbfd.onrender.com/satellites/paginated";
+        // const remoteEndpoint = "https://orbital-bbfd.onrender.com/satellites/paginated";
+        let remoteEndpoint;
         const localCache = "cache/consolidated_satellites.json";
         let currentPage = 1;
         let totalPages = null;
@@ -711,7 +712,7 @@ function applyClassification(instancedMesh, scheme, satellites) {
         }
 
         // Retrieve precomputed color array [r, g, b] directly
-        const colorArray = sat.metadata.precomputedColors[scheme];
+        let colorArray = sat.metadata.precomputedColors[scheme];
         if (!colorArray) {
             console.warn(`No precomputed color found for scheme ${scheme} on satellite index ${i}. Using default magenta.`);
             colorArray = [1.0, 0.0, 1.0]; // fallback if needed

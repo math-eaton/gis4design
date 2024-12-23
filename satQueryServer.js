@@ -17,25 +17,54 @@ app.use(cors());
 
 // Load environment variables
 if (process.env.NODE_ENV !== 'production') {
-    dotenv.config();
+  dotenv.config();
 }
 
+// ------------------- CONFIG & CONSTANTS -------------------
+
+// Adjust these as needed:
 const CELESTRAK_API = 'https://celestrak.org/NORAD/elements/gp.php';
+const SPACETRACK_API = 'https://www.space-track.org';
 const CACHE_DIR = path.join(__dirname, 'cache');
 const TIMESTAMP_FILE = path.join(CACHE_DIR, 'timestamp.json');
 const CONSOLIDATED_CACHE_FILE = path.join(CACHE_DIR, 'consolidated_satellites.json');
+
+// If running on a server, set your port. If just a cron script, you may not need Express.
 const PORT = process.env.PORT || 3000;
+
+// Credentials for Space-Track
+const { SPACETRACK_USERNAME, SPACETRACK_PASSWORD } = process.env;
+let spaceTrackCookie = null;
+
+// Adjust the caching interval. 25 hours in milliseconds:
+const CACHE_EXPIRATION_MS = 25 * 60 * 60 * 1000; // 25 hours
 
 // Ensure cache directory exists
 if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
 
 // Load group definitions
-const groups = JSON.parse(fs.readFileSync(path.join(__dirname, 'groups.json'), 'utf-8'));
+const groups = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'groups.json'), 'utf-8')
+);
 
-// Load static Space-Track data
-const staticSpaceTrackData = JSON.parse(fs.readFileSync(path.join(CACHE_DIR, 'spacetrack_static.json'), 'utf-8'));
+// A set of known constellations
+const CONSTELLATIONS = new Set([
+  'starlink',
+  'oneweb',
+  'iridium',
+  'iridium-NEXT',
+  'planet',
+  'spire',
+  'globalstar',
+  'orbcomm',
+  'intelsat',
+  'ses',
+  'eutelsat'
+]);
+
+// ------------------- HELPER FUNCTIONS -------------------
 
 // Determine Orbit Class
 function determineOrbitClass(tleLine1, tleLine2) {
@@ -97,7 +126,7 @@ async function preprocessSpaceTrackData(spaceTrackData) {
     return processedData;
 }
 
-// Run a generic Python preprocessing script
+// init preprocessing
 function runPythonPreprocessing(inputFile, outputFile, scriptPath) {
     return new Promise((resolve, reject) => {
         const pythonProcess = spawn('python3', [scriptPath, inputFile, outputFile]);
@@ -120,244 +149,296 @@ function runPythonPreprocessing(inputFile, outputFile, scriptPath) {
     });
 }
 
-// Fetch Space-Track Data (after preprocessing)
-async function fetchSpaceTrackData() {
-    // Convert staticSpaceTrackData into a simpler form
-    const simpleData = staticSpaceTrackData.map((gp) => ({
-        catalogNumber: gp.catalogNumber,
-        country: gp.country || 'Unknown',
-    }));
+// ------------------- SPACE-TRACK API -------------------
 
-    // Preprocess the data via Python before returning
-    const processedData = await preprocessSpaceTrackData(simpleData);
-    return processedData;
-}
-
-// Fetch CelesTrak Data
-async function fetchCelesTrakGroupData(apiQuery) {
+async function loginToSpaceTrack() {
+    try {
+      const response = await axios.post(
+        `${SPACETRACK_API}/ajaxauth/login`,
+        `identity=${encodeURIComponent(SPACETRACK_USERNAME)}&password=${encodeURIComponent(SPACETRACK_PASSWORD)}`,
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      if (response.status === 200) {
+        spaceTrackCookie = response.headers['set-cookie'][0].split(';')[0];
+        console.log('Successfully logged in to Space-Track.');
+        return true;
+      }
+    } catch (error) {
+      console.error('Space-Track login failed:', error.message);
+    }
+    return false;
+  }
+  
+  async function fetchSpaceTrackData() {
+    if (!spaceTrackCookie && !(await loginToSpaceTrack())) {
+      throw new Error('Failed to authenticate with Space-Track.');
+    }
+  
+    try {
+      const response = await axios.get(
+        `${SPACETRACK_API}/basicspacedata/query/class/gp/decay_date/null-val/epoch/%3Enow-30/orderby/norad_cat_id/format/json`,
+        { headers: { Cookie: spaceTrackCookie } }
+      );
+  
+      // 'gp' is each object from the Space-Track JSON array
+      return response.data.map((gp) => {
+        return {
+          catalogNumber: gp.NORAD_CAT_ID.toString(),    // e.g. "5"
+          name: gp.OBJECT_NAME,
+          country: gp.COUNTRY_CODE || 'Unknown',
+          objType: gp.OBJECT_TYPE || 'Unknown',
+  
+          // --- ADD TIME-RELATED FIELDS ---
+          creationDate: gp.CREATION_DATE || null,
+          epoch: gp.EPOCH || null,
+          launchDate: gp.LAUNCH_DATE || null,
+          decayDate: gp.DECAY_DATE || null,
+          
+          // --- ADD ORBITAL PARAMETERS ---
+        //   meanMotion: gp.MEAN_MOTION || null,
+        //   period: gp.PERIOD || null,         // in minutes
+        //   apoapsis: gp.APOAPSIS || null,     // in km
+        //   periapsis: gp.PERIAPSIS || null,   // in km
+        //   inclination: gp.INCLINATION || null,
+        //   eccentricity: gp.ECCENTRICITY || null,
+        //   argOfPericenter: gp.ARG_OF_PERICENTER || null,
+        //   meanAnomaly: gp.MEAN_ANOMALY || null,
+        //   rcsSize: gp.RCS_SIZE || null,
+          
+        //   stTleLine0: gp.TLE_LINE0 || null,
+        //   stTleLine1: gp.TLE_LINE1 || null,
+        //   stTleLine2: gp.TLE_LINE2 || null
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching GP data from Space-Track:', error.message);
+      throw error;
+    }
+  }
+    
+  // ------------------- CELESTRAK API -------------------
+  
+  async function fetchCelesTrakGroupData(apiQuery) {
     const url = `${CELESTRAK_API}?GROUP=${apiQuery}&FORMAT=tle`;
     try {
-        const response = await axios.get(url);
-        const tleData = response.data.split('\n');
-        const satellites = [];
-
-        for (let i = 0; i < tleData.length; i += 3) {
-            if (tleData[i] && tleData[i + 1] && tleData[i + 2]) {
-                const name = tleData[i].trim();
-                const tleLine1 = tleData[i + 1].trim();
-                const tleLine2 = tleData[i + 2].trim();
-                const orbitClass = determineOrbitClass(tleLine1, tleLine2);
-
-                satellites.push({
-                    catalogNumber: tleLine1.substring(2, 7).trim(),
-                    name,
-                    tleLine1,
-                    tleLine2,
-                    orbitClass,
-                    api: apiQuery,
-                });
-            }
+      const response = await axios.get(url);
+      const tleData = response.data.split('\n');
+      const satellites = [];
+  
+      for (let i = 0; i < tleData.length; i += 3) {
+        if (tleData[i] && tleData[i + 1] && tleData[i + 2]) {
+          const name = tleData[i].trim();
+          const tleLine1 = tleData[i + 1].trim();
+          const tleLine2 = tleData[i + 2].trim();
+  
+          // strip leading zeroes for join:
+          const rawCatNum = tleLine1.substring(2, 7).trim(); // e.g. "00005"
+          const catNumInt = parseInt(rawCatNum, 10);         // e.g. 5
+          const catalogNumber = catNumInt.toString();        // => "5"
+  
+          const orbitClass = determineOrbitClass(tleLine1, tleLine2);
+  
+          satellites.push({
+            catalogNumber,
+            name,
+            tleLine1,
+            tleLine2,
+            orbitClass,
+            api: apiQuery,
+          });
         }
-        return satellites;
+      }
+      return satellites;
     } catch (error) {
-        console.error(`Error fetching data for group "${apiQuery}" from CelesTrak:`, error.message);
-        return [];
+      console.error(
+        `Error fetching data for group "${apiQuery}" from CelesTrak:`,
+        error.message
+      );
+      return [];
     }
-}
+  }
 
-const CONSTELLATIONS = new Set([
-    "starlink",
-    "oneweb",
-    "iridium",
-    "iridium-NEXT",
-    "planet",
-    "spire",
-    "globalstar",
-    "orbcomm",
-    "intelsat",
-    "ses",
-    "eutelsat"
-]);
+  async function fetchActiveCatalogNumbers() {
+    const url = `https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle`;
+    try {
+      const response = await axios.get(url);
+      const tleData = response.data.split('\n');
+      const activeSet = new Set();
+  
+      for (let i = 0; i < tleData.length; i += 3) {
+        if (tleData[i] && tleData[i + 1] && tleData[i + 2]) {
+          // Parse out the catalog number with leading-zero strip
+          const tleLine1 = tleData[i + 1].trim();
+          const rawCatNum = tleLine1.substring(2, 7).trim(); // e.g. "00005"
+          const catNumInt = parseInt(rawCatNum, 10);         // 5
+          const catalogNumber = catNumInt.toString();        // "5"
+  
+          activeSet.add(catalogNumber);
+        }
+      }
+      return activeSet;
+    } catch (error) {
+      console.error('Error fetching Active group from Celestrak:', error.message);
+      return new Set();
+    }
+  }
+  
+    
+  // ------------------- DATA CONSOLIDATION -------------------
+  
+  async function consolidateData(spaceTrackData) {
+    console.log('Starting data consolidation...');
+    const activeSet = await fetchActiveCatalogNumbers();
 
-// Consolidate Data
-async function consolidateData() {
-    console.log("Starting data consolidation...");
-    const spaceTrackData = await fetchSpaceTrackData();
-    console.log("Space-Track data preprocessed and loaded successfully.");
     const allData = {};
-
+    
     for (const group of groups) {
-        const celestrakData = await fetchCelesTrakGroupData(group.api);
+      const celestrakData = await fetchCelesTrakGroupData(group.api);
+      console.log(`Processing ${celestrakData.length} satellites from group: ${group.api}`);
+  
+      celestrakData.forEach((celestrakItem) => {
+        const catalogNumber = celestrakItem.catalogNumber;
+        // Now this matches because we stripped leading zeros
+        const spaceTrackItem = spaceTrackData.find(
+          (item) => item.catalogNumber === catalogNumber
+        );
+  
+        if (!allData[catalogNumber]) {
+          allData[catalogNumber] = {
+            catalogNumber,
+            name: celestrakItem.name,
+  
+            // Celestrak TLE
+            tleLine1: celestrakItem.tleLine1,
+            tleLine2: celestrakItem.tleLine2,
+            orbitClass: new Set(celestrakItem.orbitClass),
+  
+            country: spaceTrackItem?.country || 'Unknown',
+            launchDate: spaceTrackItem?.launchDate || null,
+            epoch: spaceTrackItem?.epoch || null,
+            creationDate: spaceTrackItem?.creationDate || null,
+            decayDate: spaceTrackItem?.decayDate || null,
+            // period: spaceTrackItem?.period || null,
+            // apoapsis: spaceTrackItem?.apoapsis || null,
+            // periapsis: spaceTrackItem?.periapsis || null,
+            // inclination: spaceTrackItem?.inclination || null,
+            // rcsSize: spaceTrackItem?.rcsSize || null,
+  
+            group_major: new Set(),
+            group_minor: new Set(),
+            constellation: null,
 
-        console.log(`Processing ${celestrakData.length} satellites from group: ${group.api}`);
-        celestrakData.forEach((celestrakItem) => {
-            const catalogNumber = celestrakItem.catalogNumber;
-            const spaceTrackItem = spaceTrackData.find((item) => item.catalogNumber === catalogNumber);
+            isActive: activeSet.has(catalogNumber) // boolean
 
-            if (!allData[catalogNumber]) {
-                allData[catalogNumber] = {
-                    catalogNumber,
-                    name: celestrakItem.name,
-                    tleLine1: celestrakItem.tleLine1,
-                    tleLine2: celestrakItem.tleLine2,
-                    orbitClass: new Set(celestrakItem.orbitClass),
-                    ISO3: spaceTrackItem?.country || "Unknown",
-                    country: spaceTrackItem?.country_full || "Unknown",
-                    continent: spaceTrackItem?.continent || "Unknown",                
-                    group_major: new Set(),
-                    group_minor: new Set(),
-                    constellation: null
-                };
-            }
-
-            celestrakItem.orbitClass.forEach((oc) => allData[catalogNumber].orbitClass.add(oc));
-            allData[catalogNumber].group_major.add(group.group_major);
-
-            if (group.group_major !== "Active") {
-                allData[catalogNumber].group_minor.add(group.api);
-            }
-
-            if (CONSTELLATIONS.has(group.api)) {
-                allData[catalogNumber].constellation = group.api;
-            }
-        });
+          };
+        }
+  
+        // Merge orbit classes, group, constellation, etc.
+        celestrakItem.orbitClass.forEach((oc) => 
+          allData[catalogNumber].orbitClass.add(oc)
+        );
+        allData[catalogNumber].group_major.add(group.group_major);
+        if (group.group_major !== "Active") {
+          allData[catalogNumber].group_minor.add(group.api);
+        }
+        if (CONSTELLATIONS.has(group.api)) {
+          allData[catalogNumber].constellation = group.api;
+        }
+      });
     }
-
-    console.log("Consolidation complete. Converting sets to arrays...");
-    return Object.values(allData).map((sat) => ({
-        ...sat,
-        orbitClass: Array.from(sat.orbitClass),
-        group_major: Array.from(sat.group_major),
-        group_minor: Array.from(sat.group_minor),
-        constellation: sat.constellation
+  
+    // Convert sets to arrays
+    const final = Object.values(allData).map((sat) => ({
+      ...sat,
+      orbitClass: Array.from(sat.orbitClass),
+      group_major: Array.from(sat.group_major),
+      group_minor: Array.from(sat.group_minor),
     }));
-}
-
-function initializeTimestamp() {
-    if (!fs.existsSync(TIMESTAMP_FILE)) {
-        console.log('No timestamp file found. Creating a new one.');
-        const initialTimestamp = groups.reduce((acc, group) => {
-            acc[group.api] = 0; 
-            return acc;
-        }, {});
-        fs.writeFileSync(TIMESTAMP_FILE, JSON.stringify(initialTimestamp, null, 2));
-        console.log('timestamp file created.');
-    }
-}
-
-async function saveConsolidatedDataToCache() {
-    const consolidatedData = await consolidateData();
-
-    const now = Date.now();
-    // After consolidation, we can write directly since it's already preprocessed at the source step
-    fs.writeFileSync(CONSOLIDATED_CACHE_FILE, JSON.stringify(consolidatedData, null, 2));
-    fs.writeFileSync(TIMESTAMP_FILE, JSON.stringify({ lastCached: now }));
-    console.log(`Consolidated data cached at ${new Date(now).toISOString()}`);
-}
-
-function isCacheExpired() {
-    if (!fs.existsSync(TIMESTAMP_FILE)) {
-        console.log("No timestamp file found. Cache is expired.");
-        return true;
-    }
-
+  
+    console.log('Consolidation complete.');
+    return final;
+  }
+    
+  // ------------------- TIMESTAMP & CACHING -------------------
+  
+  function shouldFetchNewData() {
+    // If no timestamp file, we must fetch
+    if (!fs.existsSync(TIMESTAMP_FILE)) return true;
+  
     const { lastCached } = JSON.parse(fs.readFileSync(TIMESTAMP_FILE, 'utf-8'));
-    const eightHours = 8 * 60 * 60 * 1000;
-    const isExpired = Date.now() - lastCached > eightHours;
+    if (!lastCached) return true;
+  
+    const now = Date.now();
+    // If current time - lastCached > 25 hours => refetch
+    return now - lastCached > CACHE_EXPIRATION_MS;
+  }
+  
+  function writeTimestamp() {
+    fs.writeFileSync(
+      TIMESTAMP_FILE,
+      JSON.stringify({ lastCached: Date.now() }, null, 2)
+    );
+    console.log('Timestamp updated.');
+  }
+  
+  const USE_PYTHON_PROCESSING = false;  // false to skip python pipeline
 
-    console.log(isExpired ? "Cache is expired. Re-caching required." : "Cache is valid. Using cached data.");
-    return isExpired;
-}
-
-// split endpoint into batches
-app.get('/satellites/paginated', async (req, res) => {
+  async function buildAndWriteConsolidatedData() {
+    const rawSpaceTrackData = await fetchSpaceTrackData();
+    let finalSpaceTrackData;
+  
+    if (USE_PYTHON_PROCESSING) {
+      finalSpaceTrackData = await preprocessSpaceTrackData(rawSpaceTrackData);
+    } else {
+      finalSpaceTrackData = rawSpaceTrackData; // no preprocessing
+    }
+  
+    const consolidatedData = await consolidateData(finalSpaceTrackData);
+  
+    fs.writeFileSync(
+      CONSOLIDATED_CACHE_FILE,
+      JSON.stringify(consolidatedData, null, 2)
+    );
+    writeTimestamp();
+  }
+    
+  // ------------------- MAIN LOGIC (CRON or SERVER) -------------------
+  
+  
+  app.get('/refresh', async (req, res) => {
     try {
-        console.log("Received request to /paginated endpoint.");
-
-        // Check if cache is expired or missing
-        if (isCacheExpired() || !fs.existsSync(CONSOLIDATED_CACHE_FILE)) {
-            console.log("Cache expired or missing. Refreshing cache...");
-            await saveConsolidatedDataToCache();
-        } else {
-            console.log("Serving data from cache.");
-        }
-
-        const cachedData = JSON.parse(fs.readFileSync(CONSOLIDATED_CACHE_FILE, 'utf-8'));
-
-        // Parse query parameters for pagination
-        const page = parseInt(req.query.page, 10) || 1; // Default to page 1
-        const size = parseInt(req.query.size, 10) || 2000; // Default to N satellites per page
-
-        // Validate pagination parameters
-        if (page < 1 || size < 1) {
-            return res.status(400).send('Invalid pagination parameters.');
-        }
-
-        // Calculate start and end indices for slicing
-        const startIndex = (page - 1) * size;
-        const endIndex = startIndex + size;
-
-        // Slice the data for the current page
-        const paginatedData = cachedData.slice(startIndex, endIndex);
-
-        // Return paginated data along with metadata
-        res.json({
-            metadata: {
-                totalSatellites: cachedData.length,
-                totalPages: Math.ceil(cachedData.length / size),
-                currentPage: page,
-                pageSize: size,
-            },
-            data: paginatedData,
-        });
-    } catch (error) {
-        console.error('Error fetching consolidated data:', error.message);
-        res.status(500).send('Error fetching data.');
+      if (shouldFetchNewData()) {
+        console.log('Cache expired. Building new data...');
+        await buildAndWriteConsolidatedData();
+        return res.json({ status: 'Data refreshed' });
+      } else {
+        console.log('Cache still valid, skip refreshing.');
+        return res.json({ status: 'Cache is still valid' });
+      }
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+      return res.status(500).json({ error: err.message });
     }
-});
-
-// non-paginated option for backwards compatibility
-app.get('/satellites', async (req, res) => {
-    try {
-        console.log("Received request to /satellites endpoint.");
-        if (isCacheExpired() || !fs.existsSync(CONSOLIDATED_CACHE_FILE)) {
-            console.log("Cache expired or missing. Refreshing cache...");
-            await saveConsolidatedDataToCache();
-        } else {
-            console.log("Serving data from cache.");
-        }
-
-        const cachedData = JSON.parse(fs.readFileSync(CONSOLIDATED_CACHE_FILE, 'utf-8'));
-        res.json({ data: cachedData });
-    } catch (error) {
-        console.error('Error fetching consolidated data:', error.message);
-        res.status(500).send('Error fetching data.');
+  });
+  
+  app.get('/satellites', (req, res) => {
+    // Serve the JSON file from local cache. If not found, force refresh.
+    if (!fs.existsSync(CONSOLIDATED_CACHE_FILE)) {
+      return res.status(404).json({ error: 'No cached data found.' });
     }
-});
-
-
-app.get('/timestamp', (req, res) => {
-    if (!fs.existsSync(TIMESTAMP_FILE)) {
-        // If timestamp.json doesn't exist, return a default response or null
-        return res.json({ lastCached: null });
+    const data = JSON.parse(fs.readFileSync(CONSOLIDATED_CACHE_FILE, 'utf-8'));
+    res.json({ data });
+  });
+  
+  // local dev
+  app.listen(PORT, async () => {
+    console.log(`Server is running on port ${PORT}`);
+  
+    if (shouldFetchNewData()) {
+      console.log('Initial cache is stale or missing, refreshing now...');
+      await buildAndWriteConsolidatedData();
+    } else {
+      console.log('Initial cache is valid, no refresh needed.');
     }
-
-    try {
-        const timestampData = JSON.parse(fs.readFileSync(TIMESTAMP_FILE, 'utf-8'));
-        res.json(timestampData);
-    } catch (error) {
-        console.error('Error reading timestamp file:', error);
-        res.status(500).send('Error reading timestamp file.');
-    }
-});
-
-
-app.listen(PORT, async () => {
-    initializeTimestamp();
-    console.log("Server starting...");
-    if (isCacheExpired() || !fs.existsSync(CONSOLIDATED_CACHE_FILE)) {
-        console.log("Initializing cache on startup...");
-        await saveConsolidatedDataToCache();
-    }
-    console.log(`Server running at http://localhost:${PORT}/satellites`);
-});
+  });
+  
