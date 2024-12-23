@@ -1,25 +1,21 @@
 import os
 import json
 from collections import defaultdict
-
+from datetime import datetime
 
 def load_and_flatten_json(folder_path):
     flattened_data = []
-    # ignored_files = {"timestamps.json", "spacetrack_static.json"}
     process_files = {"consolidated_satellites.json"}
 
     for filename in os.listdir(folder_path):
         if filename in process_files and filename.endswith(".json"):
-            print(f"Processing file: {filename}")  # Debugging print
-
             file_path = os.path.join(folder_path, filename)
 
             with open(file_path, "r") as f:
                 data = json.load(f)
-                print(f"Loaded file: {filename}")  # Debugging print
 
                 if not isinstance(data, list):
-                    print(f"Invalid structure in file: {filename}")  # Debugging print
+                    print(f"Invalid structure in file: {filename}")
                     continue
 
                 for satellite in data:
@@ -35,13 +31,22 @@ def load_and_flatten_json(folder_path):
                             "country": satellite.get("country", "Unknown"),
                             "group_major": satellite.get("group_major", []),
                             "group_minor": satellite.get("group_minor", []),
+                            "launchYear": extract_year(satellite.get("launchDate")),
+                            "decayYear": extract_year(satellite.get("decayDate"), "Still Active"),
+                            "epochYear": extract_year(satellite.get("epoch")),
+                            "isActive": satellite.get("isActive", False)
                         })
-        elif filename not in process_files:
-            print(f"Not processing file: {filename}")  # Debugging print
-
-        print(f"Flattened data size: {len(flattened_data)}")  # Debugging print
 
     return flattened_data
+
+
+def extract_year(date_str, default="Unknown"):
+    if not date_str:
+        return default
+    try:
+        return datetime.fromisoformat(date_str).year
+    except ValueError:
+        return default
 
 
 def summarize_data(flattened_data):
@@ -51,12 +56,30 @@ def summarize_data(flattened_data):
         "country": defaultdict(int),
         "orbitClass": defaultdict(int),
         "constellation": defaultdict(int),
+        "launchYear": defaultdict(int),
+        "decayYear": defaultdict(int),
+        "epochYear": defaultdict(int),
         "duplicates": 0
     }
 
     catalog_number_counts = defaultdict(int)
+    unique_launches = defaultdict(set)  # Track unique launches by year, grouped by name
 
     for sat in flattened_data:
+        launch_year = sat["launchYear"]
+        name = sat["name"]
+
+        # Check if the satellite is debris
+        is_debris = "Debris" in sat["group_major"]
+
+        # For debris, group by name to avoid double-counting
+        if not is_debris or name not in unique_launches[launch_year]:
+            # Count only once per unique satellite name for debris
+            unique_launches[launch_year].add(name)
+
+            # Increment summaries for non-debris or first instance of debris
+            summary["launchYear"][launch_year] += 1
+
         for group in sat["group_major"]:
             summary["group_major"][group] += 1
 
@@ -68,9 +91,10 @@ def summarize_data(flattened_data):
 
         summary["country"][sat["country"]] += 1
         summary["constellation"][sat["constellation"]] += 1
+        summary["decayYear"][sat["decayYear"]] += 1
+        summary["epochYear"][sat["epochYear"]] += 1
 
-        catalog_number = sat["catalogNumber"]
-        catalog_number_counts[catalog_number] += 1
+        catalog_number_counts[sat["catalogNumber"]] += 1
 
     summary["duplicates"] = sum(count - 1 for count in catalog_number_counts.values() if count > 1)
 
@@ -78,11 +102,10 @@ def summarize_data(flattened_data):
 
 
 def save_summary(summary, output_file):
-    summary["group_major"] = dict(summary["group_major"])
-    summary["group_minor"] = dict(summary["group_minor"])
-    summary["country"] = dict(summary["country"])
-    summary["orbitClass"] = dict(summary["orbitClass"])
-    summary["constellation"] = dict(summary["constellation"])
+    # Convert defaultdicts to regular dicts for JSON serialization
+    for key in summary:
+        if isinstance(summary[key], defaultdict):
+            summary[key] = dict(summary[key])
 
     with open(output_file, "w") as f:
         json.dump(summary, f, indent=4)
