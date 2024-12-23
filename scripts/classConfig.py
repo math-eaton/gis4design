@@ -21,7 +21,7 @@ def generate_config_from_summary(summary_file, output_file):
     
     # Identify unique categories and assign colors
     config = {}
-    for key in ["group_major", "group_minor", "country", "orbitClass"]:
+    for key in ["group_major", "group_minor", "country", "orbitClass", "launchYear"]:
         unique_values = summary.get(key, {}).keys()
         config[key] = {
             "colors": generate_unique_colors(unique_values),

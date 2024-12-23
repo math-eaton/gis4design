@@ -77,23 +77,41 @@ function determineOrbitClass(tleLine1, tleLine2) {
 
         const orbitClasses = [];
 
-        if (Math.abs(inclination) < 0.1 && Math.abs(period - 1436) < 1) orbitClasses.push('geostationary');
-        // if (Math.abs(period - 1436) < 10) orbitClasses.push('geosynchronous');
-        if (Math.abs(inclination - 98) < 2 && Math.abs(period - 100) < 5) orbitClasses.push('sun synchronous');
+        // geosyncronous
+        if (Math.abs(period - 1436) < 10) { orbitClasses.push('geosynchronous');
+        }
 
+        // Geostationary Orbit (GEO)
+        if (Math.abs(inclination) < 0.1 && Math.abs(period - 1436) < 1) { orbitClasses.push('geostationary');
+        }
 
-        // Classify non-geostationary orbits by period / altitude todo - refine VLEO description
-        // if (period <= 120 && altitude < 100) orbitClasses.push('very low earth'); // VLEO (altitude 100-450 km)
-        if (period < 225) orbitClasses.push('low earth'); // LEO (altitude 450-2000 km)
-        if (period >= 225 && period < 1440 && altitude < 35786) orbitClasses.push('medium earth'); // MEO (altitude 2000-35786 km)
-        if (period >= 1440 && altitude >= 35786) orbitClasses.push('high earth'); // HEO (altitude > 35786 km)
-
-        // Additional classifications
-        // if (Math.abs(inclination - 90) < 5) orbitClasses.push('polarOrbit'); // Polar Orbits (inclination close to 90°)
-        // if (eccentricity > 0.1 && period > 600) orbitClasses.push('highlyEllipticalOrbit'); // Highly Elliptical Orbit (HEO)
-        // if (Math.abs(inclination - 63.4) < 1 && Math.abs(period - 720) < 10) orbitClasses.push('molniyaOrbit'); // Molniya Orbit
-        // if (eccentricity < 0.01) orbitClasses.push('circularOrbit'); // Circular Orbit
-        // if (Math.abs(inclination) < 0.1 && period > 1436) orbitClasses.push('graveyardOrbit'); // Graveyard Orbit
+        // Sun-Synchronous Orbit
+        if (inclination >= 95 && inclination <= 104 && Math.abs(period - 100) < 5) {
+            orbitClasses.push('sun-synchronous');
+        }
+        // Low Earth Orbit (LEO)
+        if (altitude >= 80 && altitude < 1700) {
+            orbitClasses.push('low earth');
+        }
+        // Medium Earth Orbit (MEO)
+        if (altitude >= 1700 && altitude < 35786) {
+            orbitClasses.push('medium earth');
+            if (Math.abs(period - 720) < 10) {
+                orbitClasses.push('semi-synchronous');
+            }
+        }
+        // Highly Elliptical Orbit (HEO)
+        if (eccentricity > 0.1 && period > 600) {
+            orbitClasses.push('highly elliptical');
+        }
+        // Molniya Orbit
+        if (eccentricity >= 0.5 && eccentricity <= 0.77 && inclination >= 62 && inclination <= 64 && Math.abs(period - 720) < 10) {
+            orbitClasses.push('molniya');
+        }
+        // Other classifications
+        if (Math.abs(inclination - 90) < 5) {
+            orbitClasses.push('polar');
+        }
 
         return orbitClasses.length > 0 ? orbitClasses : ['other'];
     } catch {

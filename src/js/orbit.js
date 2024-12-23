@@ -173,6 +173,9 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         addMoon();
         // setupChapterControls();
 
+        await initClassificationSchemes('config/classification_config.json');
+        // console.log('Parsed Classification Schemes:', JSON.stringify(classificationSchemes, null, 2));
+
         // Load GP data and initialize satellite mesh
         loadSatelliteData();
                
@@ -182,8 +185,6 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         window.addEventListener("resize", onWindowResize, false);
         onWindowResize();
 
-        await initClassificationSchemes('config/classification_config.json');
-        // console.log('Parsed Classification Schemes:', JSON.stringify(classificationSchemes, null, 2));
 
         updateLegend(activeScheme);
 
@@ -386,71 +387,69 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
             progressElement.style.display = 'none';
         }
     
-        function loadRemoteData() {
-            fetch(`${remoteEndpoint}?page=${currentPage}&size=${batchSize}`)
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`Failed to load data: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(({ metadata, data }) => {
-                    console.log(`Loaded page ${metadata.currentPage} of ${metadata.totalPages}`);
-                    totalPages = metadata.totalPages;
+        // function loadRemoteData() {
+        //     fetch(`${remoteEndpoint}?page=${currentPage}&size=${batchSize}`)
+        //         .then((response) => {
+        //             if (!response.ok) {
+        //                 throw new Error(`Failed to load data: ${response.statusText}`);
+        //             }
+        //             return response.json();
+        //         })
+        //         .then(({ metadata, data }) => {
+        //             console.log(`Loaded page ${metadata.currentPage} of ${metadata.totalPages}`);
+        //             totalPages = metadata.totalPages;
 
 
-                    console.log("Batch size from server:", data.length);
-                    console.log("Master array total length after push:", globalSatelliteArray.length);
+        //             console.log("Batch size from server:", data.length);
+        //             console.log("Master array total length after push:", globalSatelliteArray.length);
 
     
-                    // 1) Update progress
-                    updateProgress(currentPage, totalPages);
+        //             // 1) Update progress
+        //             updateProgress(currentPage, totalPages);
     
-                    // 2) Append new satellites to the MASTER array
-                    globalSatelliteArray.push(...data);
+        //             // 2) Append new satellites to the MASTER array
+        //             globalSatelliteArray.push(...data);
 
     
-                    // 3) Re-run classification on the FULL array
-                    processSatelliteData(globalSatelliteArray);
+        //             // 3) Re-run classification on the FULL array
+        //             processSatelliteData(globalSatelliteArray);
 
     
-                    // 4) Remove old mesh from the scene, if it exists
-                    if (satelliteMesh) {
-                        console.log('removing previous')
-                        pivot.remove(satelliteMesh);
-                    }
+        //             // 4) Remove old mesh from the scene, if it exists
+        //             if (satelliteMesh) {
+        //                 console.log('removing previous')
+        //                 pivot.remove(satelliteMesh);
+        //             }
     
-                    // 5) Create the updated mesh from the master array and add it to scene
-                    satelliteMesh = createSatelliteMeshes(globalSatelliteArray);
-                    if (satelliteMesh) {
-                        console.log('adding new')
-                        pivot.add(satelliteMesh);
-                    }
+        //             // 5) Create the updated mesh from the master array and add it to scene
+        //             satelliteMesh = createSatelliteMeshes(globalSatelliteArray);
+        //             if (satelliteMesh) {
+        //                 console.log('adding new')
+        //                 pivot.add(satelliteMesh);
+        //             }
     
-                    // Hide loading screen after the first batch
-                    onSatelliteLoadComplete();
+        //             // Hide loading screen after the first batch
+        //             onSatelliteLoadComplete();
     
-                    // 6) Move to next page, or finalize if done
-                    if (currentPage < totalPages) {
-                        currentPage++;
-                        setTimeout(loadRemoteData, 0); // next batch
-                    } else {
-                        console.log("All satellite data loaded & rendered.");
-                        orbitControls.enabled = true;
-                        hideProgress();
-                    }
-                })
-                .catch((error) => {
-                    console.error("Failed remote load:", error);
-                    console.log("Falling back to local cache...");
-                    hideProgress();
-                    loadLocalData();
-                });
-        }
+        //             // 6) Move to next page, or finalize if done
+        //             if (currentPage < totalPages) {
+        //                 currentPage++;
+        //                 setTimeout(loadRemoteData, 0); // next batch
+        //             } else {
+        //                 console.log("All satellite data loaded & rendered.");
+        //                 orbitControls.enabled = true;
+        //                 hideProgress();
+        //             }
+        //         })
+        //         .catch((error) => {
+        //             console.error("Failed remote load:", error);
+        //             console.log("Falling back to local cache...");
+        //             hideProgress();
+        //             loadLocalData();
+        //         });
+        // }
     
         function loadLocalData() {
-            // Similar approach if remote fails — accumulate all local data into master array, then
-            // process + create mesh
             fetch(localCache)
                 .then((response) => {
                     if (!response.ok) {
@@ -461,12 +460,23 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
                 .then((localData) => {
                     console.log("Loaded data from local cache.");
                     const satelliteArray = Array.isArray(localData) ? localData : localData.data;
+                    if (!Array.isArray(satelliteArray)) {
+                      throw new Error("Local JSON didn't contain an array");
+                    }
+              
+                    console.log("Local data length:", satelliteArray.length);
+                    processSatelliteData(satelliteArray);
+              
+                    const activeSatellites = satelliteArray.filter((sat) => sat.isActive === true);
+                    console.log(`Total satellites in JSON: ${satelliteArray.length}`);
+                    console.log(`Active satellites found: ${activeSatellites.length}`);
+    
     
                     // Append all local satellites
-                    globalSatelliteArray.push(...satelliteArray);
+                    globalSatelliteArray.push(...activeSatellites);
     
                     // Re-classify and show
-                    processSatelliteData(globalSatelliteArray);
+                    // processSatelliteData(globalSatelliteArray);
     
                     if (satelliteMesh) {
                         console.log('removing previous')
@@ -489,8 +499,9 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
                 });
         }
     
-        // Attempt remote data first
-        loadRemoteData();
+        // loadRemoteData();
+        loadLocalData();
+
     }
         
 function processSatelliteData(allSatellites) {
@@ -505,6 +516,7 @@ function processSatelliteData(allSatellites) {
         orbitClass: new Set(),
         country: new Set(),
         constellation: new Set(),
+        launchYear: new Set(),
     };
 
     // Initialize counts for each classification scheme
@@ -514,12 +526,19 @@ function processSatelliteData(allSatellites) {
 
     // Add metadata for classification
     allSatellites.forEach((sat) => {
+
+        // Extract launch year from launchDate
+        const launchYear = sat.launchDate
+        ? new Date(sat.launchDate).getFullYear().toString()
+        : "Unknown";
+    
         sat.metadata = {
             satrec: createSatrec(sat.tleLine1, sat.tleLine2), // Generate satrec for propagation
             orbitClass: sat.orbitClass.map((oc) => oc.toLowerCase()), // Normalize orbit classes
             country: sat.country.toLowerCase(),
             group_major: sat.group_major.map((gm) => gm.toLowerCase()),
             group_minor: sat.group_minor.map((gm) => gm.toLowerCase()),
+            launchYear: launchYear.toLowerCase(),
             constellation: sat.constellation ? sat.constellation.toLowerCase() : null,
         };
 
@@ -545,6 +564,7 @@ function processSatelliteData(allSatellites) {
             representedClasses.constellation.add(sat.metadata.constellation);
         }
         representedClasses.country.add(sat.metadata.country);
+        representedClasses.launchYear.add(sat.metadata.launchYear);
     });
 
     // Filter the classification schemes based on available data
@@ -754,6 +774,11 @@ document.getElementById('owner-country').addEventListener('click', () => {
     switchClassification('country');
 });
 
+document.getElementById('launch-year').addEventListener('click', () => {
+    switchClassification('launchYear');
+});
+
+
 
 function switchClassification(newScheme) {
     if (!satelliteMesh || !satelliteMesh.count) {
@@ -802,7 +827,10 @@ function updateLegend(activeScheme) {
 
     // Sort categories based on the active scheme
     const sortedCategories = Object.keys(colors).sort((a, b) => {
-        if (activeScheme === 'group_minor') {
+        if (activeScheme === 'launchYear') {
+            // Sort years as numbers in descending order
+            return parseInt(b, 10) - parseInt(a, 10);
+        } else if (activeScheme === 'group_minor') {
             // Sort by descending counts
             return (counts[b] || 0) - (counts[a] || 0);
         } else {
@@ -1215,55 +1243,34 @@ function setResponsiveCameraPosition() {
     let timeMultiplier = 1000; // Overall simulation speed multiplier
 
 // Function to fetch and set initial simulation time
-function initializeSimulationTime() {
-    return fetch('https://orbital-bbfd.onrender.com/timestamp') // Fetch timestamp from the server
+async function initializeSimulationTime() {
+    return fetch('cache/timestamp.json') // Fetch timestamp from local cache
         .then(response => {
             if (!response.ok) {
-                throw new Error("Failed to fetch timestamp from server");
+                throw new Error("Failed to fetch timestamp from local cache");
             }
             return response.json();
         })
         .then(timestamps => {
-            // Check if we have a valid lastCached timestamp
+            // Validate the lastCached timestamp
             if (!timestamps || typeof timestamps.lastCached !== 'number') {
-                throw new Error("No valid lastCached timestamp found in server response");
+                throw new Error("No valid lastCached timestamp found in local cache");
             }
 
+            // Parse and display the simulation time
             simulationTime = new Date(timestamps.lastCached);
             document.getElementById("simulation-time").textContent = simulationTime
                 .toUTCString()
                 .replace("GMT", "UTC");
         })
-        .catch(serverError => {
-            console.error("Error loading timestamp from server, attempting local cache:", serverError);
+        .catch(error => {
+            console.error("Error loading timestamp from local cache:", error);
 
-            // Fallback to local cache
-            return fetch('cache/timestamp.json')
-                .then(localResponse => {
-                    if (!localResponse.ok) {
-                        throw new Error("Failed to fetch timestamp from local cache");
-                    }
-                    return localResponse.json();
-                })
-                .then(timestamps => {
-                    if (!timestamps || typeof timestamps.lastCached !== 'number') {
-                        throw new Error("No valid lastCached timestamp found in local cache");
-                    }
-
-                    simulationTime = new Date(timestamps.lastCached);
-                    document.getElementById("simulation-time").textContent = simulationTime
-                        .toUTCString()
-                        .replace("GMT", "UTC");
-                })
-                .catch(localError => {
-                    console.error("Error loading timestamp from local cache, using hardcoded fallback:", localError);
-
-                    // Fallback to hardcoded date
-                    simulationTime = new Date('2024-11-01T00:00:00Z');
-                    document.getElementById("simulation-time").textContent = simulationTime
-                        .toUTCString()
-                        .replace("GMT", "UTC");
-                });
+            // Fallback to hardcoded date in case of error
+            simulationTime = new Date('2024-11-01T00:00:00Z');
+            document.getElementById("simulation-time").textContent = simulationTime
+                .toUTCString()
+                .replace("GMT", "UTC");
         });
 }
 

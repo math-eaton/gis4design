@@ -160,9 +160,11 @@
         "medium earth": 12195,
         "sun-synchronous": 2519,
         "polar": 969,
-        "other": 787,
+        "other": 171,
         "highly elliptical": 62,
-        "molniya": 19
+        "geosynchronous": 617,
+        "molniya": 19,
+        "geostationary": 347
     },
     "constellation": {
         "Unknown": 4958,
