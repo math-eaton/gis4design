@@ -1,13 +1,13 @@
 {
     "group_major": {
         "colors": {
-            "brightest": "#ffff00",
+            "Brightest": "#ff0000",
             "Miscellaneous": "#00ff00",
             "Communications": "#0000ff",
-            "Navigation": "#ff0000",
+            "Navigation": "#ffff00",
             "Weather & Earth Resources": "#ff00ff",
             "Scientific": "#00ffff",
-            "Debris": "#00ffff",
+            "Debris": "#888888",
             "Space Stations": "#880000",
             "Last 30 Days": "#008800",
             "Analyst": "#000088"
@@ -15,7 +15,7 @@
     },
     "group_minor": {
         "colors": {
-            "brightest": "#ff0",
+            "visual": "#ff0000",
             "radar": "#00ff00",
             "satnogs": "#0000ff",
             "nnss": "#ffff00",
@@ -27,7 +27,7 @@
             "raduga": "#000088",
             "gorizont": "#ff8800",
             "tdrss": "#88ff00",
-            "geo": "#ff0000",
+            "geo": "#ffffff",
             "science": "#00ff00",
             "orbcomm": "#0000ff",
             "resource": "#ffff00",
@@ -65,7 +65,7 @@
             "oneweb": "#88ff00",
             "starlink": "#ff0000",
             "cosmos-1408-debris": "#00ff00",
-            "last-30-days": "#008800",
+            "last-30-days": "#0000ff",
             "analyst": "#ffff00"
         }
     },
@@ -164,13 +164,15 @@
     },
     "orbitClass": {
         "colors": {
-            "medium earth": "#ff0000",
+            "low earth": "#ff0000",
             "sun-synchronous": "#ffff00",
-            "polar": "#ffffff",
-            "other": "#888888",
-            "highly elliptical": "#ff00ff",
+            "polar": "#888888",
+            "medium earth": "#00ff00",
+            "other": "#ff00ff",
             "geosynchronous": "#00ffff",
-            "geostationary": "#0000ff"
+            "geostationary": "#0000ff",
+            "highly elliptical": "#880000",
+            "semi-synchronous": "#008800"
         }
     },
     "launchYear": {

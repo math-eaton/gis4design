@@ -67,56 +67,130 @@ const CONSTELLATIONS = new Set([
 // ------------------- HELPER FUNCTIONS -------------------
 
 // Determine Orbit Class
+// GM for Earth: ~398600.4418 km^3 / s^2
+const MU_EARTH = 398600.4418;
+
+const EARTH_RADIUS_KM = 6378.137;
+
 function determineOrbitClass(tleLine1, tleLine2) {
-    try {
-        const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
-        const inclination = satrec.inclo * (180 / Math.PI); // Convert inclination to degrees
-        const period = (2 * Math.PI) / satrec.no; // Orbital period in minutes
-        const eccentricity = satrec.ecco; // Orbital eccentricity
-        const altitude = (Math.cbrt(398600.4418 / Math.pow(satrec.no * 2 * Math.PI / 1440, 2)) - 6371); // Altitude in km
+  const orbitClasses = [];
+  
+  let satrec;
+  try {
+    satrec = satellite.twoline2satrec(tleLine1.trim(), tleLine2.trim());
+  } catch (err) {
+    console.warn("Error parsing TLE:", err);
+    return ["unknown"];
+  }
 
-        const orbitClasses = [];
+  if (!satrec) return ["unknown"];
 
-        // geosyncronous
-        if (Math.abs(period - 1436) < 10) { orbitClasses.push('geosynchronous');
-        }
+  const ecc = satrec.ecco;                  // Eccentricity
+  const incRad = satrec.inclo;             // Inclination in radians
+  const incDeg = incRad * (180 / Math.PI); // Convert to degrees
+  const meanMotionRadMin = satrec.no;       // Mean motion in rad/min
 
-        // Geostationary Orbit (GEO)
-        if (Math.abs(inclination) < 0.1 && Math.abs(period - 1436) < 1) { orbitClasses.push('geostationary');
-        }
+  // 2) Convert mean motion to rad/s
+  const meanMotionRadSec = meanMotionRadMin / 60.0;
 
-        // Sun-Synchronous Orbit
-        if (inclination >= 95 && inclination <= 104 && Math.abs(period - 100) < 5) {
-            orbitClasses.push('sun-synchronous');
-        }
-        // Low Earth Orbit (LEO)
-        if (altitude >= 80 && altitude < 1700) {
-            orbitClasses.push('low earth');
-        }
-        // Medium Earth Orbit (MEO)
-        if (altitude >= 1700 && altitude < 35786) {
-            orbitClasses.push('medium earth');
-            if (Math.abs(period - 720) < 10) {
-                orbitClasses.push('semi-synchronous');
-            }
-        }
-        // Highly Elliptical Orbit (HEO)
-        if (eccentricity > 0.1 && period > 600) {
-            orbitClasses.push('highly elliptical');
-        }
-        // Molniya Orbit
-        if (eccentricity >= 0.5 && eccentricity <= 0.77 && inclination >= 62 && inclination <= 64 && Math.abs(period - 720) < 10) {
-            orbitClasses.push('molniya');
-        }
-        // Other classifications
-        if (Math.abs(inclination - 90) < 5) {
-            orbitClasses.push('polar');
-        }
+  // 3) Orbital period (in minutes)
+  const orbitalPeriodMin = (2.0 * Math.PI) / meanMotionRadMin;
 
-        return orbitClasses.length > 0 ? orbitClasses : ['other'];
-    } catch {
-        return ['unknown'];
+  // 4) Semi-major axis (in km)
+  if (meanMotionRadSec <= 0) {
+    return ["unknown"];
+  }
+  const a = Math.pow(MU_EARTH / (meanMotionRadSec * meanMotionRadSec), 1 / 3);
+
+  // 5) Perigee & apogee distances from Earth's center
+  const perigeeDistKm = a * (1 - ecc); 
+  const apogeeDistKm  = a * (1 + ecc);
+
+  // 6) Convert to altitude above Earth’s surface
+  const perigeeAltKm = perigeeDistKm - EARTH_RADIUS_KM;
+  const apogeeAltKm  = apogeeDistKm - EARTH_RADIUS_KM;
+
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // Classification thresholds
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // LEO threshold: up to ~2,000 km apogee
+  // MEO threshold: 2,000 <= alt < ~35,786 km (GEO altitude)
+  // GEO altitude: ~35,786 km
+  // Geosynchronous period: ~1,436 minutes (sidereal day ~23h56m)
+  // Molniya: ~12h period (720 min), high inclination (~63.4), ecc ~0.7
+  // SSO: near-polar inc ~97-103°, alt ~600-800 km => period ~98-102 min
+  // etc.
+
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // 7) Add classification tags:
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  // 7.1: Check near geosynchronous ( ~24h )
+  //     allow ± 15 min tolerance
+  if (Math.abs(orbitalPeriodMin - 1436.0) < 15.0) {
+    orbitClasses.push("geosynchronous");
+
+    // near-zero inclination & near-zero eccentricity => geostationary
+    if (ecc < 0.01 && incDeg < 2.0) {
+      orbitClasses.push("geostationary");
     }
+  }
+
+  // 7.2: If apogee below ~2,000 km => LEO
+  if (apogeeAltKm < 2000) {
+    orbitClasses.push("low earth");
+  }
+  // 7.3: If orbit extends above LEO but below GEO => MEO
+  else if (perigeeAltKm > 2000 && apogeeAltKm < 35786) {
+    orbitClasses.push("medium earth");
+
+    // Check for semi-synchronous (~12h)
+    if (Math.abs(orbitalPeriodMin - 720.0) < 20.0) {
+      orbitClasses.push("semi-synchronous");
+    }
+  }
+  // 7.4: If orbit is around or above GEO altitude
+//   else if (perigeeAltKm >= 35786) {
+//     orbitClasses.push("high earth");
+//   }
+
+  // 7.5: Highly Elliptical Orbit check
+  //      If eccentricity > 0.25 and apogee over ~2,000 km
+  if (ecc > 0.25 && apogeeAltKm > 2000) {
+    orbitClasses.push("highly elliptical");
+
+    // Check for Molniya: ~12h period, inc near 63.4, ecc ~0.7
+    // if (
+    //   Math.abs(orbitalPeriodMin - 720) < 30 &&
+    //   incDeg > 62 && incDeg < 64 &&
+    //   ecc >= 0.5 && ecc <= 0.8
+    // ) {
+    //   orbitClasses.push("molniya");
+    // }
+  }
+
+  // 7.6: Sun-Synchronous check
+  //      Typically inc ~97-103°, period ~ 96-105 min, altitude ~600-800 km
+  //      We'll keep it simple here:
+  if (
+    incDeg >= 96 && incDeg <= 103 &&
+    orbitalPeriodMin >= 90 && orbitalPeriodMin <= 110
+  ) {
+    orbitClasses.push("sun-synchronous");
+  }
+
+  // 7.7: Polar check
+  if (Math.abs(incDeg - 90.0) < 5.0) {
+    orbitClasses.push("polar");
+  }
+
+  // else default to "other"
+  if (orbitClasses.length === 0) {
+    orbitClasses.push("other");
+  }
+
+  // Return an array of unique labels
+  return Array.from(new Set(orbitClasses));
 }
 
 // Preprocess Space-Track data using Python script

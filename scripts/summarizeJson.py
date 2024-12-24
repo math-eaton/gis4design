@@ -119,7 +119,7 @@ def main(folder_path, output_file):
     save_summary(summary, output_file)
 
 
-folder_path = "cache"
+folder_path = "public/data"
 output_file = "public/config/summary.json"
 
 main(folder_path, output_file)

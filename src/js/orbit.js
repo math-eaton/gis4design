@@ -173,25 +173,25 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         addMoon();
         // setupChapterControls();
 
+
+        // Load GP data and initialize satellite mesh
+        loadSatelliteData();
+               
+
+
         await initClassificationSchemes('config/classification_config.json');
         // console.log('Parsed Classification Schemes:', JSON.stringify(classificationSchemes, null, 2));
 
         satPivot = new THREE.Group();
         satPivot.rotation.z = earthTilt; // Tilt the entire sat system by 23.4 degrees on the Z-axis
         scene.add(satPivot);
-
-        // Load GP data and initialize satellite mesh
-        loadSatelliteData();
-               
         loadAllData();
         initializeSlider();
     
         window.addEventListener("resize", onWindowResize, false);
         onWindowResize();
 
-
         updateLegend(activeScheme);
-
     
         animate();
     }
@@ -373,23 +373,19 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     let satelliteMesh;
 
     function loadSatelliteData(batchSize = 2000) {
-        // const remoteEndpoint = "https://orbital-bbfd.onrender.com/satellites/paginated";
-        let remoteEndpoint;
         const localCache = "data/consolidated_satellites.json";
-        let currentPage = 1;
-        let totalPages = null;
     
-        const progressElement = document.getElementById('loading-progress');
-        progressElement.style.display = 'block';
+        // const progressElement = document.getElementById('loading-progress');
+        // progressElement.style.display = 'block';
     
-        function updateProgress(current, total) {
-            const progress = Math.min((current / total) * 100, 100).toFixed(0);
-            progressElement.textContent = `${progress}%`;
-        }
+        // function updateProgress(current, total) {
+        //     const progress = Math.min((current / total) * 100, 100).toFixed(0);
+        //     progressElement.textContent = `${progress}%`;
+        // }
     
-        function hideProgress() {
-            progressElement.style.display = 'none';
-        }
+        // function hideProgress() {
+        //     progressElement.style.display = 'none';
+        // }
     
         function loadLocalData() {
             fetch(localCache)
@@ -406,12 +402,12 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
                       throw new Error("Local JSON didn't contain an array");
                     }
               
-                    console.log("Local data length:", satelliteArray.length);
+                    // console.log("Local data length:", satelliteArray.length);
                     processSatelliteData(satelliteArray);
               
                     const activeSatellites = satelliteArray.filter((sat) => sat.isActive === true);
-                    console.log(`Total satellites in JSON: ${satelliteArray.length}`);
-                    console.log(`Active satellites found: ${activeSatellites.length}`);
+                    // console.log(`Total satellites in JSON: ${satelliteArray.length}`);
+                    // console.log(`Active satellites found: ${activeSatellites.length}`);
     
     
                     // Append all local satellites
@@ -931,23 +927,37 @@ function precomputeSatelliteColors(allSatellites) {
 
         sat.metadata.precomputedColors = {};
 
-        // For each scheme, compute and store the color once
+        // Count occurrences for each scheme
         for (const scheme in classificationSchemes) {
+            const categories = Array.isArray(sat.metadata[scheme])
+                ? sat.metadata[scheme]
+                : (sat.metadata[scheme] ? [sat.metadata[scheme]] : []);
+            const normalizedCategories = categories.map((cat) => (cat || 'unknown').trim().toLowerCase());
+
+            normalizedCategories.forEach((category) => {
+                classificationSchemes[scheme].counts[category] = 
+                    (classificationSchemes[scheme].counts[category] || 0) + 1;
+            });
+
             const color = getPrecomputedColorForScheme(scheme, sat.metadata);
-            // Store as a simple [r,g,b] array for easy application later
             sat.metadata.precomputedColors[scheme] = color.toArray();
         }
     });
 }
 
 function getPrecomputedColorForScheme(scheme, metadata) {
-    const { colors } = classificationSchemes[scheme];
+    const { colors, counts } = classificationSchemes[scheme];
     const categories = Array.isArray(metadata[scheme]) 
         ? metadata[scheme] 
         : (metadata[scheme] ? [metadata[scheme]] : []);
     const normalizedCategories = categories.map((cat) => (cat || 'unknown').trim().toLowerCase());
 
-    for (const category of normalizedCategories) {
+    // Sort categories by occurrence count (ascending) and select the first available color
+    const sortedCategories = normalizedCategories.sort((a, b) => {
+        return (counts[a] || Infinity) - (counts[b] || Infinity);
+    });
+
+    for (const category of sortedCategories) {
         if (colors[category]) {
             return new THREE.Color(colors[category]);
         }

@@ -96,6 +96,20 @@ button {
   image-rendering: pixelated;
 }
 
+#title{
+  font-family: sans-serif;
+  font-size: 3em;
+  writing-mode:vertical-lr;
+  text-orientation: upright;
+  margin-left: 3vw;
+  margin-top: 10vh;
+  height: 33vh;
+  width: auto;
+  color: black;
+  -webkit-text-fill-color: black; /* Will override color (regardless of order) */
+  -webkit-text-stroke: .5px white;
+}
+
 #statistics{
 
   /* filter: grayscale(); */
