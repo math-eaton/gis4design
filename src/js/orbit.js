@@ -10,7 +10,7 @@ import { createNoise2D } from 'simplex-noise';
 // 'R' key toggles rotation
 
 export function orbitalView(containerId, onSatelliteLoadComplete) {
-    let scene, camera, renderer, controls, pivot, moonPivot, sunMesh;
+    let scene, camera, renderer, controls, earthPivot, satPivot, moonPivot, sunMesh;
     let animationFrameId;
     let tleArray = [];
     let sunLine;
@@ -80,7 +80,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     window.addEventListener('keydown', (event) => {
         if (event.key === 'W' || event.key === 'w') {
             wireframe = !wireframe;
-            pivot.traverse(function (child) {
+            earthPivot.traverse(function (child) {
                 if (child.isMesh) {
                     child.material.wireframe = wireframe;
                     child.material.needsUpdate = true;
@@ -160,9 +160,9 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         updateSunDistance();
         updateSunPosition(simulationTime, scaleFactor); // Update Sun position
     
-        pivot = new THREE.Group();
-        pivot.rotation.z = earthTilt; // Tilt the entire Earth system by 23.4 degrees on the Z-axis
-        scene.add(pivot);
+        earthPivot = new THREE.Group();
+        earthPivot.rotation.z = earthTilt; // Tilt the entire Earth system by 23.4 degrees on the Z-axis
+        scene.add(earthPivot);
     
         moonPivot = new THREE.Group();
         scene.add(moonPivot);
@@ -175,6 +175,10 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
 
         await initClassificationSchemes('config/classification_config.json');
         // console.log('Parsed Classification Schemes:', JSON.stringify(classificationSchemes, null, 2));
+
+        satPivot = new THREE.Group();
+        satPivot.rotation.z = earthTilt; // Tilt the entire sat system by 23.4 degrees on the Z-axis
+        scene.add(satPivot);
 
         // Load GP data and initialize satellite mesh
         loadSatelliteData();
@@ -221,7 +225,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
         scene.add(sunMesh);
     
-        // Sun pivot group to hold position
+        // Sun earthPivot group to hold position
         const sunPivot = new THREE.Group();
         scene.add(sunPivot);
         sunPivot.add(sunMesh);
@@ -332,7 +336,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     
         const moonGeometry = new THREE.SphereGeometry(moonRadius, 32, 32);
         moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
-        moonPivot.add(moonMesh); // Add moon mesh to the pivot so it orbits with Earth
+        moonPivot.add(moonMesh); // Add moon mesh to the earthPivot so it orbits with Earth
     }
     
     function updateMoonPosition() {
@@ -418,12 +422,12 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     
                     if (satelliteMesh) {
                         console.log('removing previous')
-                        pivot.remove(satelliteMesh);
+                        satPivot.remove(satelliteMesh);
                     }
                     satelliteMesh = createSatelliteMeshes(globalSatelliteArray);
                     if (satelliteMesh) {
                         console.log('adding new')
-                        pivot.add(satelliteMesh);
+                        satPivot.add(satelliteMesh);
                     }
     
                     orbitControls.enabled = true;
@@ -555,7 +559,7 @@ function createSatelliteMeshes(allSatellites) {
     if (satelliteMesh && satelliteMesh.count > 0) {
         console.log("Consolidated satellite mesh created and added to the scene.");
         initializeSatelliteLines(satelliteMesh);
-        // pivot.add(satelliteMesh); 
+        // earthPivot.add(satelliteMesh); 
     } else {
         console.error("Failed to create satellite mesh or no instances were added.");
     }
@@ -668,19 +672,63 @@ function createSatelliteInstancedMesh(satellites, material, isFixedView = false)
 
 
 function updateSatellitePositions(instancedMesh) {
-    const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
-    const dummy = new THREE.Object3D();
-    let earthCenter = new THREE.Vector3(0, 0, 0);
-
-    for (let i = 0; i < instancedMesh.count; i++) {
+        const dummy = new THREE.Object3D();
+    
+        for (let i = 0; i < instancedMesh.count; i++) {
         const { metadata, visible } = instancedMesh.userData[i];
         if (!metadata) continue;
-
-        const position = propagateSatellitePosition(metadata.satrec, gmst);
-        if (!position) continue;
-
-        dummy.position.copy(position);
+    
+        const posVel = satellite.propagate(metadata.satrec, simulationTime);
+        if (!posVel.position) continue; // sometimes null
+    
+        // 1) ECI vector in km
+        const eci = posVel.position;  // eci.x, eci.y, eci.z in kilometers
+    
+        // 2) Compute distance from Earth center
+        const r = Math.sqrt(eci.x * eci.x + eci.y * eci.y + eci.z * eci.z);
+    
+        // 3) Earth radius in km
+        const earthRadiusKm = 6371;
+        // 4) Altitude above Earth’s surface
+        const altitude = r - earthRadiusKm;
+    
+        // 5) Multiply altitude by your distanceCompressionFactor
+        const altExaggerated = altitude * distanceCompressionFactor;
+    
+        // 6) Get new total distance
+        const rExaggerated = earthRadiusKm + altExaggerated;
+    
+        // 7) Scale factor for scene
+        const scaleFactor = sphereRadius / earthRadiusKm; // e.g. sphereRadius=1 => Earth=1
+    
+        // 8) Final distance in Three.js units
+        const rFinal = rExaggerated * scaleFactor;
+    
+        // 9) Scale the original ECI to get the new position
+        //    ratio = new length / original length
+        const ratio = rFinal / r;
+    
+        // 10) Re-map axes if needed (the code below is same as your approach where eci.y->x, eci.z->y, eci.x->z)
+        dummy.position.set(
+            eci.y * ratio,
+            eci.z * ratio,
+            eci.x * ratio
+        );
+    
         dummy.updateMatrix();
+    
+        // handle visibility
+        if (visible) {
+            instancedMesh.setMatrixAt(i, dummy.matrix);
+        } else {
+            instancedMesh.setMatrixAt(i, new THREE.Matrix4());
+        }
+  
+        // Store position for line updates:
+        const satPos = dummy.position.clone();
+
+        // Save the position so refreshSatelliteLines() can do a frustum test:
+        instancedMesh.userData[i].position = satPos; 
 
         if (visible) {
             instancedMesh.setMatrixAt(i, dummy.matrix); // Update matrix only for visible satellites
@@ -690,7 +738,7 @@ function updateSatellitePositions(instancedMesh) {
 
         // Update lines in fixed view
         if (currentChapter !== 'smallScale') {
-            updateSatelliteLine(i, position, earthCenter, visible);
+            updateSatelliteLine(i, satPos, visible);
         }
     }
 
@@ -718,14 +766,14 @@ function initializeSatelliteLines(instancedMesh) {
 
         const line = new THREE.Line(lineGeometry, lineMaterial);
         line.visible = false; // Start hidden
-        pivot.add(line);
+        satPivot.add(line);
 
         // Store in the satelliteLines map
         satelliteLines.set(i, line);
     }
 }
 
-function updateSatelliteLine(index, satellitePosition, earthCenter, isSatelliteVisibleByFilter) {
+function updateSatelliteLine(index, satellitePosition, isSatelliteVisibleByFilter) {
     const line = satelliteLines.get(index);
     if (!line) return; 
 
@@ -735,7 +783,8 @@ function updateSatelliteLine(index, satellitePosition, earthCenter, isSatelliteV
         return;
     }
 
-    // Line should be visible:
+    const earthCenter = new THREE.Vector3(0,0,0);
+
     const positions = line.geometry.attributes.position.array;
     positions[0] = earthCenter.x;
     positions[1] = earthCenter.y;
@@ -1292,25 +1341,27 @@ function updateSimulationTime() {
 
 // Adjust Earth rotation based on centralized simulation time
 function updateEarthRotation() {
-    if (isRotationEnabled) {
-        const elapsedSeconds = (simulationTime.getTime() / 1000) % 86400; // Earth day in seconds
-        const rotationAngle = (elapsedSeconds * earthRotationSpeed) % (2 * Math.PI);
+    if (!isRotationEnabled) return;
 
-        // Apply tilt and rotation in the correct order
-        pivot.rotation.set(0, 0, 0); // Reset previous rotations
-        pivot.rotateZ(earthTilt); // Apply axial tilt first
-        pivot.rotateY(rotationAngle); // Apply Earth's rotation
-    }
+    // 1) Get GMST (0..2π) from satellite.js for the current simulationTime
+    const gmst = satellite.gstime(simulationTime);
+
+    // 2) Reset the earthPivot and apply Earth’s axial tilt
+    earthPivot.rotation.set(0, 0, 0);
+    earthPivot.rotateZ(earthTilt);
+
+    // 3) Rotate Earth around its spin axis (commonly Y in three.js) by -gmst
+    earthPivot.rotateY(gmst + Math.PI);
 }
 
-    function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-        // Update camera position for responsiveness
-        setResponsiveCameraPosition();
-    }
+    // Update camera position for responsiveness
+    setResponsiveCameraPosition();
+}
 
 
 // lock framerate
@@ -1344,6 +1395,8 @@ function updateEarthRotation() {
         updateMoonPosition();
         animateSunRotation();
         updateSunDistance();
+
+
 
         // Sync Sun's position dynamically
         // updateSunPosition(simulationTime, scaleFactor);
@@ -1451,7 +1504,7 @@ function updateEarthRotation() {
     function cleanupLargeScaleFeatures() {
         // Remove satellite lines from the scene
         satelliteLines.forEach((line, index) => {
-            pivot.remove(line);
+            satPivot.remove(line);
             line.geometry.dispose();
             line.material.dispose();
         });
@@ -1536,7 +1589,7 @@ function updateEarthRotation() {
         sphere = new THREE.Mesh(geometry, material);
         sphere.castShadow = true; // Enable shadows for the sphere
         sphere.receiveShadow = true; // Enable receiving shadows    
-        pivot.add(sphere); // Add the sphere to the pivot group, so it rotates with the graticules   
+        earthPivot.add(sphere); // Add the sphere to the earthPivot group, so it rotates with the graticules   
             }
 
 
@@ -1567,7 +1620,8 @@ function updateEarthRotation() {
             'data/ne_110m_graticules_5.geojson',
             'data/ne_110m_land.geojson',
             'data/ne_110m_ocean.geojson',
-            'data/ne_50m_ocean.geojson'
+            'data/ne_50m_ocean.geojson',
+            'data/ne_110m_wgs84_bounding_box.geojson'
 
         ];
 
@@ -1608,23 +1662,24 @@ function updateEarthRotation() {
 
 
             case 'data/ne_110m_coastline.geojson':
-                // Example: Handle contour line GeoJSON
                 console.log("loaded coastlines:", data);
                 addCoastlinesToScene(data);
                 break;
 
             case 'data/ne_110m_land.geojson':
-                // Example: Handle contour line GeoJSON
                 // console.log("loaded land:", data);
                 // addLandToScene(data);
                 break;
 
             case 'data/ne_50m_ocean.geojson':
-                // Example: Handle contour line GeoJSON
                 console.log("loaded ocean:", data);
                 // addOceanToScene(data);
                 break;
-    
+
+            case 'data/ne_110m_wgs84_bounding_box.geojson':
+                console.log("loaded bb:", data);
+                // addOceanToScene(data);
+                break;
     
 
             // case '/remotesensing/assets/data/CellularTowers_FeaturesToJSON_HIFLD_AOI_20231204.geojson':
@@ -1659,12 +1714,12 @@ function updateEarthRotation() {
             if (feature.geometry.type === "LineString") {
                 const lineGeometry = createLineGeometryFromCoordinates(coordinates, radius);
                 const line = new THREE.Line(lineGeometry, lineMaterial);
-                pivot.add(line); // Add the coastline line to the scene pivot
+                earthPivot.add(line); // Add the coastline line to the scene earthPivot
             } else if (feature.geometry.type === "MultiLineString") {
                 coordinates.forEach(lineString => {
                     const lineGeometry = createLineGeometryFromCoordinates(lineString, radius);
                     const line = new THREE.Line(lineGeometry, lineMaterial);
-                    pivot.add(line);
+                    earthPivot.add(line);
                 });
             }
         });
@@ -1690,12 +1745,12 @@ function updateEarthRotation() {
             if (feature.geometry.type === "LineString") {
                 const lineGeometry = createLineGeometryFromCoordinates(coordinates, radius);
                 const line = new THREE.Line(lineGeometry, lineMaterial);
-                pivot.add(line);
+                earthPivot.add(line);
             } else if (feature.geometry.type === "MultiLineString") {
                 coordinates.forEach(lineString => {
                     const lineGeometry = createLineGeometryFromCoordinates(lineString, radius);
                     const line = new THREE.Line(lineGeometry, lineMaterial);
-                    pivot.add(line);
+                    earthPivot.add(line);
                 });
             }
         });
