@@ -387,68 +387,6 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
             progressElement.style.display = 'none';
         }
     
-        // function loadRemoteData() {
-        //     fetch(`${remoteEndpoint}?page=${currentPage}&size=${batchSize}`)
-        //         .then((response) => {
-        //             if (!response.ok) {
-        //                 throw new Error(`Failed to load data: ${response.statusText}`);
-        //             }
-        //             return response.json();
-        //         })
-        //         .then(({ metadata, data }) => {
-        //             console.log(`Loaded page ${metadata.currentPage} of ${metadata.totalPages}`);
-        //             totalPages = metadata.totalPages;
-
-
-        //             console.log("Batch size from server:", data.length);
-        //             console.log("Master array total length after push:", globalSatelliteArray.length);
-
-    
-        //             // 1) Update progress
-        //             updateProgress(currentPage, totalPages);
-    
-        //             // 2) Append new satellites to the MASTER array
-        //             globalSatelliteArray.push(...data);
-
-    
-        //             // 3) Re-run classification on the FULL array
-        //             processSatelliteData(globalSatelliteArray);
-
-    
-        //             // 4) Remove old mesh from the scene, if it exists
-        //             if (satelliteMesh) {
-        //                 console.log('removing previous')
-        //                 pivot.remove(satelliteMesh);
-        //             }
-    
-        //             // 5) Create the updated mesh from the master array and add it to scene
-        //             satelliteMesh = createSatelliteMeshes(globalSatelliteArray);
-        //             if (satelliteMesh) {
-        //                 console.log('adding new')
-        //                 pivot.add(satelliteMesh);
-        //             }
-    
-        //             // Hide loading screen after the first batch
-        //             onSatelliteLoadComplete();
-    
-        //             // 6) Move to next page, or finalize if done
-        //             if (currentPage < totalPages) {
-        //                 currentPage++;
-        //                 setTimeout(loadRemoteData, 0); // next batch
-        //             } else {
-        //                 console.log("All satellite data loaded & rendered.");
-        //                 orbitControls.enabled = true;
-        //                 hideProgress();
-        //             }
-        //         })
-        //         .catch((error) => {
-        //             console.error("Failed remote load:", error);
-        //             console.log("Falling back to local cache...");
-        //             hideProgress();
-        //             loadLocalData();
-        //         });
-        // }
-    
         function loadLocalData() {
             fetch(localCache)
                 .then((response) => {
@@ -503,85 +441,94 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
         loadLocalData();
 
     }
-        
-function processSatelliteData(allSatellites) {
-    if (!Array.isArray(allSatellites) || allSatellites.length === 0) {
-        console.error("No valid satellite data to process.");
-        return;
-    }
-
-    const representedClasses = {
-        group_major: new Set(),
-        group_minor: new Set(),
-        orbitClass: new Set(),
-        country: new Set(),
-        constellation: new Set(),
-        launchYear: new Set(),
-    };
-
-    // Initialize counts for each classification scheme
-    for (const scheme in classificationSchemes) {
-        classificationSchemes[scheme].counts = {};
-    }    
-
-    // Add metadata for classification
-    allSatellites.forEach((sat) => {
-
-        // Extract launch year from launchDate
-        const launchYear = sat.launchDate
-        ? new Date(sat.launchDate).getFullYear().toString()
-        : "Unknown";
     
-        sat.metadata = {
-            satrec: createSatrec(sat.tleLine1, sat.tleLine2), // Generate satrec for propagation
-            orbitClass: sat.orbitClass.map((oc) => oc.toLowerCase()), // Normalize orbit classes
-            country: sat.country.toLowerCase(),
-            group_major: sat.group_major.map((gm) => gm.toLowerCase()),
-            group_minor: sat.group_minor.map((gm) => gm.toLowerCase()),
-            launchYear: launchYear.toLowerCase(),
-            constellation: sat.constellation ? sat.constellation.toLowerCase() : null,
+    function processSatelliteData(allSatellites) {
+        if (!Array.isArray(allSatellites) || allSatellites.length === 0) {
+            console.error("No valid satellite data to process.");
+            return;
+        }
+    
+        const representedClasses = {
+            group_major: new Set(),
+            group_minor: new Set(),
+            orbitClass: new Set(),
+            country: new Set(),
+            constellation: new Set(),
+            launchYear: new Set(),
         };
-
-        // Count occurrences for each classification scheme
+    
+        // Initialize counts for each classification scheme
         for (const scheme in classificationSchemes) {
-            const categories = Array.isArray(sat.metadata[scheme])
-                ? sat.metadata[scheme]
-                : [sat.metadata[scheme]];
-            categories.forEach((category) => {
-                if (!category) return;
-                const normalizedCategory = category.toLowerCase();
-                classificationSchemes[scheme].counts[normalizedCategory] =
-                    (classificationSchemes[scheme].counts[normalizedCategory] || 0) + 1;
-            });
+            classificationSchemes[scheme].counts = { total: {}, active: {} };
         }
-
-
-        // Collect represented classes for legend visibility
-        sat.metadata.orbitClass.forEach((oc) => representedClasses.orbitClass.add(oc));
-        sat.metadata.group_major.forEach((gm) => representedClasses.group_major.add(gm));
-        sat.metadata.group_minor.forEach((gm) => representedClasses.group_minor.add(gm));
-        if (sat.metadata.constellation) {
-            representedClasses.constellation.add(sat.metadata.constellation);
-        }
-        representedClasses.country.add(sat.metadata.country);
-        representedClasses.launchYear.add(sat.metadata.launchYear);
-    });
-
-    // Filter the classification schemes based on available data
-    filterClassificationSchemes(representedClasses);
-
-    // Precompute colors for each scheme once.
-    precomputeSatelliteColors(allSatellites);
-
-    updateLegend(activeScheme);
-
-    console.log('processed satellites')
-
-    return satelliteMesh;
-
-}
-
-function createSatrec(tleLine1, tleLine2) {
+    
+        // Add metadata for classification and count occurrences
+        allSatellites.forEach((sat) => {
+            const isActive = sat.isActive === true;
+    
+            // Extract launch year from launchDate
+            const launchYear = sat.launchDate
+                ? new Date(sat.launchDate).getFullYear().toString()
+                : "Unknown";
+    
+            sat.metadata = {
+                satrec: createSatrec(sat.tleLine1, sat.tleLine2), // Generate satrec for propagation
+                orbitClass: sat.orbitClass.map((oc) => oc.toLowerCase()), // Normalize orbit classes
+                country: sat.country.toLowerCase(),
+                group_major: sat.group_major.map((gm) => gm.toLowerCase()),
+                group_minor: sat.group_minor.map((gm) => gm.toLowerCase()),
+                launchYear: launchYear.toLowerCase(),
+                constellation: sat.constellation ? sat.constellation.toLowerCase() : null,
+                isActive, // Add activity status for convenience
+            };
+    
+            // Count occurrences for total and active classifications
+            for (const scheme in classificationSchemes) {
+                const categories = Array.isArray(sat.metadata[scheme])
+                    ? sat.metadata[scheme]
+                    : [sat.metadata[scheme]];
+    
+                categories.forEach((category) => {
+                    if (!category) return;
+                    const normalizedCategory = category.toLowerCase();
+    
+                    // Increment total counts
+                    classificationSchemes[scheme].counts.total[normalizedCategory] =
+                        (classificationSchemes[scheme].counts.total[normalizedCategory] || 0) + 1;
+    
+                    // Increment active counts if applicable
+                    if (isActive) {
+                        classificationSchemes[scheme].counts.active[normalizedCategory] =
+                            (classificationSchemes[scheme].counts.active[normalizedCategory] || 0) + 1;
+                    }
+                });
+            }
+    
+            // Collect represented classes for legend visibility
+            sat.metadata.orbitClass.forEach((oc) => representedClasses.orbitClass.add(oc));
+            sat.metadata.group_major.forEach((gm) => representedClasses.group_major.add(gm));
+            sat.metadata.group_minor.forEach((gm) => representedClasses.group_minor.add(gm));
+            if (sat.metadata.constellation) {
+                representedClasses.constellation.add(sat.metadata.constellation);
+            }
+            representedClasses.country.add(sat.metadata.country);
+            representedClasses.launchYear.add(sat.metadata.launchYear);
+        });
+    
+        // Filter the classification schemes based on available data
+        filterClassificationSchemes(representedClasses);
+    
+        // Precompute colors for each scheme once
+        precomputeSatelliteColors(allSatellites);
+    
+        updateLegend(activeScheme);
+    
+        console.log('Processed satellites with updated counts.');
+    
+        return satelliteMesh;
+    }
+    
+    function createSatrec(tleLine1, tleLine2) {
     try {
         return satellite.twoline2satrec(tleLine1.trim(), tleLine2.trim());
     } catch (error) {
@@ -591,6 +538,256 @@ function createSatrec(tleLine1, tleLine2) {
 }
 
 
+// satellite material
+function createSatelliteMeshes(allSatellites) {
+    // console.log('All satellites passed to createSatelliteMeshes:', allSatellites);
+    console.log('Satellite count:', allSatellites.length);
+
+    const material = new THREE.MeshStandardMaterial({
+        metalness: 0.3,
+        roughness: 0.2,
+        transparent: false,
+        wireframe: true,
+    });
+
+    satelliteMesh = createSatelliteInstancedMesh(allSatellites, material, currentChapter === 'smallScale');
+
+    if (satelliteMesh && satelliteMesh.count > 0) {
+        console.log("Consolidated satellite mesh created and added to the scene.");
+        initializeSatelliteLines(satelliteMesh);
+        // pivot.add(satelliteMesh); 
+    } else {
+        console.error("Failed to create satellite mesh or no instances were added.");
+    }
+
+    return satelliteMesh;
+}
+
+// Propagate position helper
+function propagateSatellitePosition(satrec, gmst) {
+    const positionAndVelocity = satellite.propagate(satrec, simulationTime);
+    if (!positionAndVelocity.position) return null;
+
+    const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+    const altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
+    const latitude = satellite.degreesLat(positionGd.latitude);
+    const longitude = satellite.degreesLong(positionGd.longitude);
+
+    let position = latLonToVector3(latitude, longitude, sphereRadius + altitude);
+
+    return position;
+}
+
+
+// custom frustrum culling for satellite lines
+const frustum = new THREE.Frustum();
+const cameraViewProjectionMatrix = new THREE.Matrix4();
+
+function isSatelliteVisible(position) {
+    camera.updateMatrixWorld(); // Ensure the camera matrix is up-to-date
+
+    // Dynamically calculate buffer factor based on scene scale
+    const sceneScale = 1000; // Adjust based on your scene's scale
+    const bufferFactor = sceneScale > 500 ? 1.2 : 1.0; // Increase buffer for larger scales
+
+    // Use a clone of the projection matrix
+    const projectionMatrixWithBuffer = camera.projectionMatrix.clone();
+    projectionMatrixWithBuffer.scale(new THREE.Vector3(bufferFactor, bufferFactor, 1)); // Apply buffer scaling
+
+    cameraViewProjectionMatrix.multiplyMatrices(projectionMatrixWithBuffer, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
+
+    // Check if the satellite is within the frustum
+    if (!frustum.containsPoint(position)) {
+        return false;
+    }
+
+    // Additional occlusion logic for Earth sphere
+    const earthCenter = new THREE.Vector3(0, 0, 0);
+    const directionToSatellite = position.clone().sub(earthCenter).normalize();
+    const directionToCamera = camera.position.clone().sub(earthCenter).normalize();
+
+    // Check if the angle between the satellite and camera directions is valid
+    const dotProduct = directionToSatellite.dot(directionToCamera);
+    if (dotProduct < 0.1) { // Adjust threshold for occlusion
+        return false;
+    }
+
+    return true;
+}
+
+// create satellite instances (scale dependent appearance)
+function createSatelliteInstancedMesh(satellites, material, isFixedView = false) {
+    console.log('Creating instanced mesh. Satellite count:', satellites.length);
+
+    const instanceCount = satellites.length;
+    if (instanceCount === 0) {
+        console.error('No satellites to create instanced mesh.');
+        return null;
+    }
+
+    const satelliteGeometry = isFixedView
+        ? new THREE.SphereGeometry(0.0035, 2, 3)
+        : new THREE.SphereGeometry(0.004, 2, 3);
+
+    const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, material, instanceCount);
+    const colors = new Float32Array(instanceCount * 3); // Color buffer
+    const dummy = new THREE.Object3D();
+
+    instancedMesh.userData = []; // Store metadata and visibility state
+
+    satellites.forEach((sat, i) => {
+        try {
+            dummy.position.set(0, 0, 0); // Default position
+            dummy.updateMatrix();
+            instancedMesh.setMatrixAt(i, dummy.matrix);
+
+            const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
+            colors.set(color.toArray(), i * 3);
+
+            // Save original matrix for visibility toggling
+            sat.originalMatrix = dummy.matrix.clone();
+
+            instancedMesh.userData[i] = {
+                metadata: sat.metadata,
+                visible: true, // Start as visible
+                originalMatrix: dummy.matrix.clone(), // Save a clone of the original matrix
+            };
+        } catch (error) {
+            console.error(`Error initializing satellite ${sat.name}:`, error);
+            instancedMesh.userData[i] = null;
+        }
+    });
+
+    instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
+    instancedMesh.instanceMatrix.needsUpdate = true;
+    instancedMesh.instanceColor.needsUpdate = true;
+
+    return instancedMesh;
+}
+
+
+function updateSatellitePositions(instancedMesh) {
+    const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
+    const dummy = new THREE.Object3D();
+    let earthCenter = new THREE.Vector3(0, 0, 0);
+
+    for (let i = 0; i < instancedMesh.count; i++) {
+        const { metadata, visible } = instancedMesh.userData[i];
+        if (!metadata) continue;
+
+        const position = propagateSatellitePosition(metadata.satrec, gmst);
+        if (!position) continue;
+
+        dummy.position.copy(position);
+        dummy.updateMatrix();
+
+        if (visible) {
+            instancedMesh.setMatrixAt(i, dummy.matrix); // Update matrix only for visible satellites
+        } else {
+            instancedMesh.setMatrixAt(i, new THREE.Matrix4()); // Reset matrix for hidden satellites
+        }
+
+        // Update lines in fixed view
+        if (currentChapter !== 'smallScale') {
+            updateSatelliteLine(i, position, earthCenter, visible);
+        }
+    }
+
+    instancedMesh.instanceMatrix.needsUpdate = true;
+    // satelliteMesh.userData[i].position = position;
+
+}
+
+const satelliteLines = new Map(); // Map satellite index to its line
+
+function initializeSatelliteLines(instancedMesh) {
+    const instanceCount = instancedMesh.count;
+    for (let i = 0; i < instanceCount; i++) {
+        // Create a simple line geometry with placeholder positions
+        const lineGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(6); // 2 endpoints (0,0,0) to (0,0,0) initially
+        lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        // Simple material, will update color dynamically later
+        const lineMaterial = new THREE.LineBasicMaterial({
+            color: 0xffffff, 
+            transparent: false,
+            alphaHash: true,
+        });
+
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        line.visible = false; // Start hidden
+        pivot.add(line);
+
+        // Store in the satelliteLines map
+        satelliteLines.set(i, line);
+    }
+}
+
+function updateSatelliteLine(index, satellitePosition, earthCenter, isSatelliteVisibleByFilter) {
+    const line = satelliteLines.get(index);
+    if (!line) return; 
+
+    if (!isSatelliteVisibleByFilter) {
+        // hide the line (dont dispose)
+        line.visible = false;
+        return;
+    }
+
+    // Line should be visible:
+    const positions = line.geometry.attributes.position.array;
+    positions[0] = earthCenter.x;
+    positions[1] = earthCenter.y;
+    positions[2] = earthCenter.z;
+    positions[3] = satellitePosition.x;
+    positions[4] = satellitePosition.y;
+    positions[5] = satellitePosition.z;
+    line.geometry.attributes.position.needsUpdate = true;
+
+    // Update line color from instanceColor
+    const colorArray = satelliteMesh.instanceColor.array;
+    const satelliteColor = new THREE.Color(
+        colorArray[index * 3],
+        colorArray[index * 3 + 1],
+        colorArray[index * 3 + 2]
+    );
+    line.material.color = satelliteColor;
+
+    line.visible = true;
+}
+            
+function refreshSatelliteLines() {
+    satelliteLines.forEach((line, index) => {
+        const { metadata, visible } = satelliteMesh.userData[index];
+        if (!metadata) return;
+
+        const isVisible = visible && isSatelliteVisible(satelliteMesh.userData[index].position);
+        if (!isVisible) {
+            // Just hide
+            line.visible = false;
+            return;
+        }
+
+        // Update color from instanceColor
+        const colorArray = satelliteMesh.instanceColor.array;
+        const satelliteColor = new THREE.Color(
+            colorArray[index * 3],
+            colorArray[index * 3 + 1],
+            colorArray[index * 3 + 2]
+        );
+
+        line.material.color = satelliteColor;
+        line.material.needsUpdate = true;
+        line.visible = true;
+    });
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+
+// classification and legend stuff
 // Transform external config into the classificationSchemes format
 function populateClassificationSchemes(config) {
     const classificationSchemes = {};
@@ -825,14 +1022,20 @@ function updateLegend(activeScheme) {
 
     const commaSeparator = new Intl.NumberFormat();
 
+    // Filter out categories with zero active counts
+    const representedCategories = Object.keys(colors).filter(
+        (category) => (counts.active?.[category] || 0) > 0
+    );
+
     // Sort categories based on the active scheme
-    const sortedCategories = Object.keys(colors).sort((a, b) => {
+    const sortedCategories = representedCategories.sort((a, b) => {
         if (activeScheme === 'launchYear') {
             // Sort years as numbers in descending order
             return parseInt(b, 10) - parseInt(a, 10);
         } else if (activeScheme === 'group_minor') {
-            // Sort by descending counts
-            return (counts[b] || 0) - (counts[a] || 0);
+            // Sort by descending active counts, fallback to total if no active
+            return (counts.active[b] || 0) - (counts.active[a] || 0) || 
+                   (counts.total[b] || 0) - (counts.total[a] || 0);
         } else {
             // Sort alphabetically for other schemes
             return a.localeCompare(b);
@@ -842,7 +1045,7 @@ function updateLegend(activeScheme) {
     // Generate legend items
     sortedCategories.forEach((category) => {
         const color = colors[category];
-        const count = counts?.[category] || 0; // Default to 0 if count is undefined
+        const activeCount = counts.active?.[category] || 0;
 
         const legendItem = document.createElement('div');
         legendItem.className = 'legend-item';
@@ -852,7 +1055,7 @@ function updateLegend(activeScheme) {
         colorBox.style.backgroundColor = `#${parseInt(color).toString(16).padStart(6, '0')}`;
 
         const label = document.createElement('span');
-        label.textContent = `${category} (${commaSeparator.format(count)})`; // Format count with commas
+        label.textContent = `${category}: ${commaSeparator.format(activeCount)}`;
 
         legendItem.addEventListener('click', () => {
             handleLegendInteraction(activeScheme, category, legendItem);
@@ -868,6 +1071,8 @@ function handleLegendInteraction(scheme, category, clickedItem) {
     const legendContainer = document.getElementById('legend-container');
     const activeItem = legendContainer.querySelector('.legend-item.active');
 
+    const normalizedCategory = category.trim().toLowerCase();
+
     if (activeItem === clickedItem) {
         // If already active, clear the filter
         clickedItem.classList.remove('active');
@@ -882,12 +1087,47 @@ function handleLegendInteraction(scheme, category, clickedItem) {
         setLegendTransparency(legendContainer, clickedItem);
 
         // Filter satellites based on the selected category
-        filterSatellitesByClass(scheme, category);
+        filterSatellitesByClass(scheme, normalizedCategory);
+
+        // Recolor all matching satellites to the selected category's color
+        recolorSatellitesByPriority(scheme, normalizedCategory);
     }
 
     // Update satellite visibility and lines
     updateSatelliteVisibility();
     refreshSatelliteLines();
+}
+
+function recolorSatellitesByPriority(scheme, category) {
+    const { colors } = classificationSchemes[scheme];
+    const normalizedCategory = category.trim().toLowerCase();
+    const categoryColor = colors[normalizedCategory];
+
+    if (!categoryColor) {
+        console.warn(`No color found for category '${normalizedCategory}' in scheme '${scheme}'.`);
+        return;
+    }
+
+    const categoryColorArray = new THREE.Color(categoryColor).toArray();
+    const colorArray = satelliteMesh.instanceColor.array;
+
+    // Batch update colors
+    satelliteMesh.userData.forEach((sat, i) => {
+        const classifications = Array.isArray(sat.metadata[scheme])
+            ? sat.metadata[scheme]
+            : [sat.metadata[scheme]];
+
+        const matches = classifications.some(
+            (classification) => classification.toString().trim().toLowerCase() === normalizedCategory
+        );
+
+        if (matches) {
+            // Update colors directly in the buffer
+            colorArray.set(categoryColorArray, i * 3);
+        }
+    });
+
+    satelliteMesh.instanceColor.needsUpdate = true;
 }
 
 function setLegendTransparency(legendContainer, activeItem) {
@@ -926,11 +1166,8 @@ function updateSatelliteVisibility() {
 }
 
 function filterSatellitesByClass(scheme, category) {
-    const { colors } = classificationSchemes[scheme];
     const normalizedCategory = category.trim().toLowerCase();
-    if (!colors[normalizedCategory]) {
-        return;
-    }
+    const dummy = new THREE.Object3D();
 
     satelliteMesh.userData.forEach((sat, i) => {
         const classifications = Array.isArray(sat.metadata[scheme])
@@ -941,12 +1178,24 @@ function filterSatellitesByClass(scheme, category) {
             (classification) => classification.toString().trim().toLowerCase() === normalizedCategory
         );
 
-        sat.visible = matches;
+        if (sat.visible !== matches) {
+            sat.visible = matches;
+
+            if (!matches) {
+                // Hide satellite
+                satelliteMesh.setMatrixAt(i, new THREE.Matrix4());
+            } else {
+                // Restore original matrix, ensuring it exists
+                if (!sat.originalMatrix) {
+                    sat.originalMatrix = new THREE.Matrix4(); // Default identity matrix
+                }
+                satelliteMesh.setMatrixAt(i, sat.originalMatrix);
+            }
+        }
     });
 
-    updateSatelliteVisibility();
+    satelliteMesh.instanceMatrix.needsUpdate = true;
 }
-
 
 function resetSatelliteVisibility(scheme) {
     satelliteMesh.userData.forEach((sat) => {
@@ -969,249 +1218,6 @@ function resetSatelliteColors(mesh) {
     });
 
     mesh.instanceColor.needsUpdate = true;
-}
-
-
-// satellite material
-function createSatelliteMeshes(allSatellites) {
-    // console.log('All satellites passed to createSatelliteMeshes:', allSatellites);
-    console.log('Satellite count:', allSatellites.length);
-
-    const material = new THREE.MeshStandardMaterial({
-        metalness: 0.3,
-        roughness: 0.2,
-        transparent: false,
-        wireframe: true,
-    });
-
-    satelliteMesh = createSatelliteInstancedMesh(allSatellites, material, currentChapter === 'smallScale');
-
-    if (satelliteMesh && satelliteMesh.count > 0) {
-        console.log("Consolidated satellite mesh created and added to the scene.");
-        initializeSatelliteLines(satelliteMesh);
-        // pivot.add(satelliteMesh); 
-    } else {
-        console.error("Failed to create satellite mesh or no instances were added.");
-    }
-
-    return satelliteMesh;
-}
-
-// Propagate position helper
-function propagateSatellitePosition(satrec, gmst) {
-    const positionAndVelocity = satellite.propagate(satrec, simulationTime);
-    if (!positionAndVelocity.position) return null;
-
-    const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-    const altitude = positionGd.height * scaleFactor * distanceCompressionFactor;
-    const latitude = satellite.degreesLat(positionGd.latitude);
-    const longitude = satellite.degreesLong(positionGd.longitude);
-
-    let position = latLonToVector3(latitude, longitude, sphereRadius + altitude);
-
-    return position;
-}
-
-
-// custom frustrum culling for satellite lines
-const frustum = new THREE.Frustum();
-const cameraViewProjectionMatrix = new THREE.Matrix4();
-
-function isSatelliteVisible(position) {
-    camera.updateMatrixWorld(); // Ensure the camera matrix is up-to-date
-
-    // Dynamically calculate buffer factor based on scene scale
-    const sceneScale = 1000; // Adjust based on your scene's scale
-    const bufferFactor = sceneScale > 500 ? 1.2 : 1.0; // Increase buffer for larger scales
-
-    // Use a clone of the projection matrix
-    const projectionMatrixWithBuffer = camera.projectionMatrix.clone();
-    projectionMatrixWithBuffer.scale(new THREE.Vector3(bufferFactor, bufferFactor, 1)); // Apply buffer scaling
-
-    cameraViewProjectionMatrix.multiplyMatrices(projectionMatrixWithBuffer, camera.matrixWorldInverse);
-    frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
-
-    // Check if the satellite is within the frustum
-    if (!frustum.containsPoint(position)) {
-        return false;
-    }
-
-    // Additional occlusion logic for Earth sphere
-    const earthCenter = new THREE.Vector3(0, 0, 0);
-    const directionToSatellite = position.clone().sub(earthCenter).normalize();
-    const directionToCamera = camera.position.clone().sub(earthCenter).normalize();
-
-    // Check if the angle between the satellite and camera directions is valid
-    const dotProduct = directionToSatellite.dot(directionToCamera);
-    if (dotProduct < 0.1) { // Adjust threshold for occlusion
-        return false;
-    }
-
-    return true;
-}
-
-// create satellite instances (scale dependent appearance)
-function createSatelliteInstancedMesh(satellites, material, isFixedView = false) {
-    console.log('Creating instanced mesh. Satellite count:', satellites.length);
-
-    const instanceCount = satellites.length;
-    if (instanceCount === 0) {
-        console.error('No satellites to create instanced mesh.');
-        return null;
-    }
-
-    const satelliteGeometry = isFixedView
-        ? new THREE.SphereGeometry(0.0035, 2, 3)
-        : new THREE.SphereGeometry(0.004, 2, 3);
-
-    const instancedMesh = new THREE.InstancedMesh(satelliteGeometry, material, instanceCount);
-    const colors = new Float32Array(instanceCount * 3); // Color buffer
-    const dummy = new THREE.Object3D();
-
-    instancedMesh.userData = []; // Store metadata and visibility state
-
-    satellites.forEach((sat, i) => {
-        try {
-            dummy.position.set(0, 0, 0); // Default position
-            dummy.updateMatrix();
-            instancedMesh.setMatrixAt(i, dummy.matrix);
-
-            const color = new THREE.Color(getColorByScheme(activeScheme, sat.metadata));
-            colors.set(color.toArray(), i * 3);
-
-            instancedMesh.userData[i] = {
-                metadata: sat.metadata,
-                visible: true, // Start as visible
-    
-            };
-        } catch (error) {
-            console.error(`Error initializing satellite ${sat.name}:`, error);
-            instancedMesh.userData[i] = null;
-        }
-    });
-
-    instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
-    instancedMesh.instanceMatrix.needsUpdate = true;
-    instancedMesh.instanceColor.needsUpdate = true;
-
-    return instancedMesh;
-}
-
-
-function updateSatellitePositions(instancedMesh) {
-    const gmst = satellite.gstime(simulationTime); // Greenwich Mean Sidereal Time
-    const dummy = new THREE.Object3D();
-    let earthCenter = new THREE.Vector3(0, 0, 0);
-
-    for (let i = 0; i < instancedMesh.count; i++) {
-        const { metadata, visible } = instancedMesh.userData[i];
-        if (!metadata) continue;
-
-        const position = propagateSatellitePosition(metadata.satrec, gmst);
-        if (!position) continue;
-
-        dummy.position.copy(position);
-        dummy.updateMatrix();
-
-        if (visible) {
-            instancedMesh.setMatrixAt(i, dummy.matrix); // Update matrix only for visible satellites
-        } else {
-            instancedMesh.setMatrixAt(i, new THREE.Matrix4()); // Reset matrix for hidden satellites
-        }
-
-        // Update lines in fixed view
-        if (currentChapter !== 'smallScale') {
-            updateSatelliteLine(i, position, earthCenter, visible);
-        }
-    }
-
-    instancedMesh.instanceMatrix.needsUpdate = true;
-    // satelliteMesh.userData[i].position = position;
-
-}
-
-const satelliteLines = new Map(); // Map satellite index to its line
-
-function initializeSatelliteLines(instancedMesh) {
-    const instanceCount = instancedMesh.count;
-    for (let i = 0; i < instanceCount; i++) {
-        // Create a simple line geometry with placeholder positions
-        const lineGeometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(6); // 2 endpoints (0,0,0) to (0,0,0) initially
-        lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-        // Simple material, will update color dynamically later
-        const lineMaterial = new THREE.LineBasicMaterial({
-            color: 0xffffff, 
-            transparent: false,
-            alphaHash: true,
-        });
-
-        const line = new THREE.Line(lineGeometry, lineMaterial);
-        line.visible = false; // Start hidden
-        pivot.add(line);
-
-        // Store in the satelliteLines map
-        satelliteLines.set(i, line);
-    }
-}
-
-function updateSatelliteLine(index, satellitePosition, earthCenter, isSatelliteVisibleByFilter) {
-    const line = satelliteLines.get(index);
-    if (!line) return; 
-
-    if (!isSatelliteVisibleByFilter) {
-        // hide the line (dont dispose)
-        line.visible = false;
-        return;
-    }
-
-    // Line should be visible:
-    const positions = line.geometry.attributes.position.array;
-    positions[0] = earthCenter.x;
-    positions[1] = earthCenter.y;
-    positions[2] = earthCenter.z;
-    positions[3] = satellitePosition.x;
-    positions[4] = satellitePosition.y;
-    positions[5] = satellitePosition.z;
-    line.geometry.attributes.position.needsUpdate = true;
-
-    // Update line color from instanceColor
-    const colorArray = satelliteMesh.instanceColor.array;
-    const satelliteColor = new THREE.Color(
-        colorArray[index * 3],
-        colorArray[index * 3 + 1],
-        colorArray[index * 3 + 2]
-    );
-    line.material.color = satelliteColor;
-
-    line.visible = true;
-}
-            
-function refreshSatelliteLines() {
-    satelliteLines.forEach((line, index) => {
-        const { metadata, visible } = satelliteMesh.userData[index];
-        if (!metadata) return;
-
-        const isVisible = visible && isSatelliteVisible(satelliteMesh.userData[index].position);
-        if (!isVisible) {
-            // Just hide
-            line.visible = false;
-            return;
-        }
-
-        // Update color from instanceColor
-        const colorArray = satelliteMesh.instanceColor.array;
-        const satelliteColor = new THREE.Color(
-            colorArray[index * 3],
-            colorArray[index * 3 + 1],
-            colorArray[index * 3 + 2]
-        );
-
-        line.material.color = satelliteColor;
-        line.material.needsUpdate = true;
-        line.visible = true;
-    });
 }
 
 function setResponsiveCameraPosition() {

@@ -11,8 +11,8 @@
     },
     {
       "api": "visual",
-      "group_minor": "100 Brightest",
-      "group_major": "100 Brightest"
+      "group_minor": "Brightest",
+      "group_major": "Brightest"
     },
     {
       "api": "analyst",
@@ -41,32 +41,32 @@
     },
     {
       "api": "weather",
-      "group_minor": "Weather Satellites",
+      "group_minor": "Weather",
       "group_major": "Weather & Earth Resources"
     },
     {
       "api": "noaa",
-      "group_minor": "NOAA Satellites",
+      "group_minor": "NOAA",
       "group_major": "Weather & Earth Resources"
     },
     {
       "api": "goes",
-      "group_minor": "GOES Satellites",
+      "group_minor": "GOES",
       "group_major": "Weather & Earth Resources"
     },
     {
       "api": "resource",
-      "group_minor": "Earth Resource Satellites",
+      "group_minor": "Earth Resource",
       "group_major": "Weather & Earth Resources"
     },
     {
       "api": "sarsat",
-      "group_minor": "Search & Rescue Satellites (SARSAT)",
+      "group_minor": "Search & Rescue (SARSAT)",
       "group_major": "Weather & Earth Resources"
     },
     {
       "api": "dmc",
-      "group_minor": "Disaster Monitoring Satellites",
+      "group_minor": "Disaster Monitoring",
       "group_major": "Weather & Earth Resources"
     },
     {
@@ -81,12 +81,12 @@
     },
     {
       "api": "planet",
-      "group_minor": "Planet Satellites",
+      "group_minor": "Planet",
       "group_major": "Weather & Earth Resources"
     },
     {
       "api": "spire",
-      "group_minor": "Spire Satellites",
+      "group_minor": "Spire",
       "group_major": "Weather & Earth Resources"
     },
     {
@@ -106,112 +106,112 @@
     },
     {
       "api": "intelsat",
-      "group_minor": "Intelsat Satellites",
+      "group_minor": "Intelsat",
       "group_major": "Communications"
     },
     {
       "api": "ses",
-      "group_minor": "SES Satellites",
+      "group_minor": "SES",
       "group_major": "Communications"
     },
     {
       "api": "eutelsat",
-      "group_minor": "Eutelsat Satellites",
+      "group_minor": "Eutelsat",
       "group_major": "Communications"
     },
     {
       "api": "iridium",
-      "group_minor": "Iridium Satellites",
+      "group_minor": "Iridium",
       "group_major": "Communications"
     },
     {
       "api": "iridium-NEXT",
-      "group_minor": "Iridium NEXT Satellites",
+      "group_minor": "Iridium NEXT",
       "group_major": "Communications"
     },
     {
       "api": "starlink",
-      "group_minor": "Starlink Satellites",
+      "group_minor": "Starlink",
       "group_major": "Communications"
     },
     {
       "api": "oneweb",
-      "group_minor": "OneWeb Satellites",
+      "group_minor": "OneWeb",
       "group_major": "Communications"
     },
     {
       "api": "orbcomm",
-      "group_minor": "Orbcomm Satellites",
+      "group_minor": "Orbcomm",
       "group_major": "Communications"
     },
     {
       "api": "globalstar",
-      "group_minor": "Globalstar Satellites",
+      "group_minor": "Globalstar",
       "group_major": "Communications"
     },
     {
       "api": "swarm",
-      "group_minor": "Swarm Satellites",
+      "group_minor": "Swarm",
       "group_major": "Communications"
     },
     {
       "api": "amateur",
-      "group_minor": "Amateur Radio Satellites",
+      "group_minor": "Amateur Radio",
       "group_major": "Communications"
     },
     {
       "api": "satnogs",
-      "group_minor": "SatNOGS Satellites",
+      "group_minor": "SatNOGS",
       "group_major": "Communications"
     },
     {
       "api": "x-comm",
-      "group_minor": "Experimental Communication Satellites",
+      "group_minor": "Experimental Communication",
       "group_major": "Communications"
     },
     {
       "api": "other-comm",
-      "group_minor": "Other Communication Satellites",
+      "group_minor": "Other Communication",
       "group_major": "Communications"
     },
     {
       "api": "gorizont",
-      "group_minor": "Gorizont Satellites",
+      "group_minor": "Gorizont",
       "group_major": "Communications"
     },
     {
       "api": "raduga",
-      "group_minor": "Raduga Satellites",
+      "group_minor": "Raduga",
       "group_major": "Communications"
     },
     {
       "api": "molniya",
-      "group_minor": "Molniya Satellites",
+      "group_minor": "Molniya",
       "group_major": "Communications"
     },
     {
       "api": "gnss",
-      "group_minor": "GNSS Satellites",
+      "group_minor": "GNSS",
       "group_major": "Navigation"
     },
     {
       "api": "gps-ops",
-      "group_minor": "GPS Operational Satellites",
+      "group_minor": "GPS Operational",
       "group_major": "Navigation"
     },
     {
       "api": "glo-ops",
-      "group_minor": "GLONASS Operational Satellites",
+      "group_minor": "GLONASS Operational",
       "group_major": "Navigation"
     },
     {
       "api": "galileo",
-      "group_minor": "Galileo Satellites",
+      "group_minor": "Galileo",
       "group_major": "Navigation"
     },
     {
       "api": "beidou",
-      "group_minor": "Beidou Satellites",
+      "group_minor": "Beidou",
       "group_major": "Navigation"
     },
     {
@@ -226,37 +226,37 @@
     },
     {
       "api": "musson",
-      "group_minor": "Russian LEO Navigation Satellites",
+      "group_minor": "Russian LEO Navigation",
       "group_major": "Navigation"
     },
     {
       "api": "science",
-      "group_minor": "Space & Earth Science Satellites",
+      "group_minor": "Space & Earth Science",
       "group_major": "Scientific"
     },
     {
       "api": "geodetic",
-      "group_minor": "Geodetic Satellites",
+      "group_minor": "Geodetic",
       "group_major": "Scientific"
     },
     {
       "api": "engineering",
-      "group_minor": "Engineering Satellites",
+      "group_minor": "Engineering",
       "group_major": "Scientific"
     },
     {
       "api": "education",
-      "group_minor": "Education Satellites",
+      "group_minor": "Education",
       "group_major": "Scientific"
     },
     {
       "api": "military",
-      "group_minor": "Miscellaneous Military Satellites",
+      "group_minor": "Miscellaneous Military",
       "group_major": "Miscellaneous"
     },
     {
       "api": "radar",
-      "group_minor": "Radar Calibration Satellites",
+      "group_minor": "Radar Calibration",
       "group_major": "Miscellaneous"
     },
     {
@@ -266,7 +266,7 @@
     },
     {
       "api": "other",
-      "group_minor": "Other Satellites",
+      "group_minor": "Other",
       "group_major": "Miscellaneous"
     }
   ]  

@@ -1,13 +1,13 @@
 {
     "group_major": {
         "colors": {
-            "100 Brightest": "#ff0000",
+            "brightest": "#ffff00",
             "Miscellaneous": "#00ff00",
             "Communications": "#0000ff",
-            "Navigation": "#ffff00",
+            "Navigation": "#ff0000",
             "Weather & Earth Resources": "#ff00ff",
             "Scientific": "#00ffff",
-            "Debris": "#888888",
+            "Debris": "#00ffff",
             "Space Stations": "#880000",
             "Last 30 Days": "#008800",
             "Analyst": "#000088"
@@ -15,7 +15,7 @@
     },
     "group_minor": {
         "colors": {
-            "visual": "#ff0000",
+            "brightest": "#ff0",
             "radar": "#00ff00",
             "satnogs": "#0000ff",
             "nnss": "#ffff00",
@@ -65,7 +65,7 @@
             "oneweb": "#88ff00",
             "starlink": "#ff0000",
             "cosmos-1408-debris": "#00ff00",
-            "last-30-days": "#0000ff",
+            "last-30-days": "#008800",
             "analyst": "#ffff00"
         }
     },
