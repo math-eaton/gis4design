@@ -25,7 +25,7 @@ if (process.env.NODE_ENV !== 'production') {
 // Adjust these as needed:
 const CELESTRAK_API = 'https://celestrak.org/NORAD/elements/gp.php';
 const SPACETRACK_API = 'https://www.space-track.org';
-const CACHE_DIR = path.join(__dirname, 'cache');
+const CACHE_DIR = path.join(__dirname, 'public/data');
 const TIMESTAMP_FILE = path.join(CACHE_DIR, 'timestamp.json');
 const CONSOLIDATED_CACHE_FILE = path.join(CACHE_DIR, 'consolidated_satellites.json');
 

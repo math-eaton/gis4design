@@ -371,7 +371,7 @@ export function orbitalView(containerId, onSatelliteLoadComplete) {
     function loadSatelliteData(batchSize = 2000) {
         // const remoteEndpoint = "https://orbital-bbfd.onrender.com/satellites/paginated";
         let remoteEndpoint;
-        const localCache = "cache/consolidated_satellites.json";
+        const localCache = "data/consolidated_satellites.json";
         let currentPage = 1;
         let totalPages = null;
     
@@ -1250,7 +1250,7 @@ function setResponsiveCameraPosition() {
 
 // Function to fetch and set initial simulation time
 async function initializeSimulationTime() {
-    return fetch('cache/timestamp.json') // Fetch timestamp from local cache
+    return fetch('data/timestamp.json') // Fetch timestamp from local cache
         .then(response => {
             if (!response.ok) {
                 throw new Error("Failed to fetch timestamp from local cache");
