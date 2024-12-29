@@ -106,7 +106,7 @@ button {
   height: 33vh;
   width: auto;
   color: black;
-  -webkit-text-fill-color: black; /* Will override color (regardless of order) */
+  -webkit-text-fill-color: black; 
   -webkit-text-stroke: .5px white;
 }
 
@@ -149,10 +149,10 @@ button {
 }
 
 .legend {
-  background-color: rgba(0, 0, 0, 0); /* Transparent black background */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
-  max-height: 80%; /* Prevent overflow if there are too many items */
-  overflow-y: auto; /* Scroll if content exceeds max height */
+  background-color: rgba(0, 0, 0, 0); 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); 
+  max-height: 80%; 
+  overflow-y: auto;
   z-index: 99999; 
   position: absolute;
   right: 2vw;
@@ -187,12 +187,11 @@ button {
 }
 
 .legend-patch {
-  flex-shrink: 0; /* Prevent the circle from resizing */
-  width: 20px;
-  height: 20px;
-  margin-right: 10px;
+  flex-shrink: 0;
+  width: 1vw;
+  height: 1vw;
   border: 1px solid #000;
-  border-radius: 50%; /* Keep it circular */
+  border-radius: 50%; 
   transition: transform 0.2s ease, opacity 0.2s ease;
   opacity: 1;
   cursor: url('../cursor/point.cur'), auto;
@@ -221,7 +220,7 @@ button {
   display: flex;
   flex-direction:row;
   gap: 0.5em;
-  font-size: small;
+  /* font-size: small; */
 
 }
 
@@ -251,7 +250,7 @@ button {
   z-index: 1;
   padding: 2vw;
   filter: grayscale();
-  font-size: 0.75em;
+  /* font-size: 0.75em; */
   display: flex; 
   flex-direction: column;
   gap: 1em;
@@ -267,7 +266,7 @@ button {
   top: 1vh;
   z-index: 1;
   padding: 2vw;
-  font-size: 1em;
+  /* font-size: 1em; */
   display: flex; 
   flex-direction: column;
   gap: 1em;
@@ -368,13 +367,12 @@ label{
   display: block;
 }
 
-/* Custom slider styling with no fill */
 .slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 1em; 
-  background: none; /* No fill for the slider track */
+  background: none;
   outline: none;
 }
 
@@ -382,8 +380,8 @@ label{
 .slider::-webkit-slider-runnable-track {
   width: 100%;
   height: .5em; 
-  border: 1px solid rgba(255, 255, 255, 0.8); /* Thin white border for track */
-  background: none; /* No background fill */
+  border: 1px solid rgba(255, 255, 255, 0.8); 
+  background: none; 
 }
 
 .slider::-moz-range-track {
@@ -412,17 +410,17 @@ label{
   appearance: none;
   width: 1em;
   height: 1em;
-  margin-top: -0.33em; /* Center the thumb on the track */
-  border: 1px solid rgba(255, 255, 255, 0.8); /* Thin white border for thumb */
-  background: black; /* No background fill */
+  margin-top: -0.33em; 
+  border: 1px solid rgba(255, 255, 255, 0.8); 
+  background: black;
   cursor: url('../cursor/point.cur'), auto;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border-radius: 2px;
 }
 
 .slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1); /* Slightly larger on hover */
-  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5); /* Subtle glow effect */
+  transform: scale(1.1);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
 }
 
 .slider::-moz-range-thumb {
@@ -431,7 +429,7 @@ label{
   border: 1px solid rgba(255, 255, 255, 0.8);
   background: none;
   cursor: url('../cursor/point.cur'), auto;
-  margin-top: -0.1em; /* Center the thumb on the track */
+  margin-top: -0.1em; 
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border-radius: 2px;
 }
@@ -454,7 +452,7 @@ label{
   body {
     padding: 0.5em;
     zoom: 100%;
-    font-size: 0.75rem;
+    font-size: .5rem;
     overflow-y: hidden;
 
   }
@@ -480,11 +478,7 @@ label{
     width: 66%;
 
   }   
-/* 
-  #button-container{
-    padding-bottom: 5vh;
 
-  } */
 
   #upper-display{
 
@@ -493,17 +487,18 @@ label{
   }
 
 
+
   .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 1em;
     height: 1em;
-    background: black; /* Existing background */
-    border: 1px solid rgba(255, 255, 255, 0.8); /* Existing border */
+    background: black; 
+    border: 1px solid rgba(255, 255, 255, 0.8); 
     border-radius: 2px;
       cursor: url('../cursor/point.cur'), auto;;
     position: relative;
-    z-index: 2; /* Ensure thumb is on top */
+    z-index: 2; 
 }
 
 .slider::-webkit-slider-thumb::after {
@@ -512,11 +507,11 @@ label{
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 2.5em; /* Increase this size for a larger target area */
-    height: 2.5em;
+    width: 5rem;
+    height: 5rem;
     background: transparent;
     pointer-events: auto;
-    z-index: 1; /* Ensure this sits below the thumb */
+    z-index: 1;
 }
 
 /* For Firefox */
@@ -549,7 +544,7 @@ label{
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 3vh;
+    /* height: 3vh; */
 
   }  
   
@@ -574,6 +569,11 @@ label{
   
   }
 
+  .legend-patch{
+
+    transform: scale(150%);
+
+  }
 
 
   #links {
@@ -599,12 +599,13 @@ label{
 
   .section#links {
     align-items: flex-start;
-    margin-top: 2vh; /* Adjust as needed to align with the name div */
+    margin-top: 2vh; 
+  }
+
+  *{
+    font-size: 0.75rem;
   }
 
 
 }
 
-*{
-  /* cursor: none; */
-}
